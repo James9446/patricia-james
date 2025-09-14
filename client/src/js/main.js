@@ -88,12 +88,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (targetPage) {
             targetPage.classList.add('active');
             
-            // Add/remove home-page class to body for background control
-            if (pageId === 'home') {
-                document.body.classList.add('home-page');
-            } else {
-                document.body.classList.remove('home-page');
-            }
+            // Remove all page classes from body
+            document.body.classList.remove('home-page', 'rsvp-page', 'events-page', 'location-page', 'photos-page', 'accommodations-page');
+            
+            // Add the appropriate page class to body for navbar color control
+            document.body.classList.add(`${pageId}-page`);
             
             // Initialize venue showcase if location page is shown
             if (pageId === 'location') {

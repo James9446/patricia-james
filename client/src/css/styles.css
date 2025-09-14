@@ -199,33 +199,35 @@ a:hover {
   align-items: center;
   height: 4rem;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .navbar-brand {
   font-family: 'Lucy Said OK';
-  font-size: var(--text-2xl);
+  font-size: 3.8rem;
   font-weight: normal;
-  color: var(--solstice-blue);
+  color: var(--solstice-blue-dark);
   text-decoration: none;
-  transition: color var(--transition-normal);
-  width: 200px; /* Fixed width to maintain consistent space */
   font-style: italic;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "kern" 1, "liga" 1;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
-/* Hide brand on home page but maintain space with placeholder */
+/* Only change color on home page */
 body.home-page .navbar-brand {
-  visibility: hidden;
+  color: #F5F1E8;
+  text-shadow: 0 0 0 transparent;
 }
 
-/* Add placeholder to maintain space when brand is hidden */
-body.home-page .navbar-container::before {
-  content: '';
-  width: 200px;
-  display: block;
+/* Ensure consistent rendering on all pages */
+.navbar-brand {
+  text-shadow: 0 0 0 transparent;
 }
 
 .navbar-brand:hover {
@@ -239,6 +241,8 @@ body.home-page .navbar-container::before {
   list-style: none;
   margin: 0;
   padding: 0;
+  width: 614.453px;
+  flex-shrink: 0;
 }
 
 /* .nav-link {
@@ -937,35 +941,32 @@ body:not(.home-page) .full-screen-background {
   position: relative;
   height: 100vh;
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   z-index: 1;
-  padding-top: 4%;
-  padding-left: 2%;
 }
 
 .save-the-date-content {
   position: relative;
   z-index: 10;
-  text-align: left;
+  text-align: center;
   color: #F5F1E8;
-  max-width: 45%;
+  transform: translateY(10%);
 }
 
 .save-the-date-title {
-  font-family: 'Lucy Said OK';
+  font-family: 'Great Vibes';
   font-size: 3.5rem;
   font-weight: normal;
   color: #F5F1E8;
   margin-bottom: var(--spacing-md);
   letter-spacing: 0.02em;
   text-shadow: 0 2px 6px rgba(40, 54, 38, 0.7);
-  font-style: italic;
+  font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 .save-the-date-date {
@@ -1378,17 +1379,16 @@ body:not(.home-page) .full-screen-background {
 }
 
 .wedding-title {
-  font-family: 'Lucy Said OK';
+  font-family: var(--font-family-script);
   font-size: var(--text-6xl);
   color: var(--charcoal);
   margin-bottom: var(--spacing-lg);
-  font-weight: normal;
+  font-weight: 400;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-style: italic;
+  font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 .wedding-subtitle {
