@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patricia y James Wedding</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@200;300;400;500;600;700&family=Playfair+Display:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <!-- Logo/Title -->
+      <a href="#" class="navbar-brand" data-page="home">Patricia y James</a>
+      
+      <!-- Navigation Links -->
+      <ul class="navbar-nav">
+        <li><a href="#" class="nav-link" data-page="rsvp">RSVP</a></li>
+        <li><a href="#" class="nav-link" data-page="events">Events</a></li>
+        <li><a href="#" class="nav-link" data-page="location">Location</a></li>
+        <li><a href="#" class="nav-link" data-page="photos">Photos</a></li>
+        <li><a href="#" class="nav-link" data-page="accommodations">Accommodations</a></li>
+      </ul>
+      
+      <!-- Mobile menu button -->
+      <button id="mobile-menu-button" class="mobile-menu-button">
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="mobile-menu">
+      <ul class="mobile-nav">
+        <li><a href="#" class="nav-link" data-page="rsvp">RSVP</a></li>
+        <li><a href="#" class="nav-link" data-page="events">Events</a></li>
+        <li><a href="#" class="nav-link" data-page="location">Location</a></li>
+        <li><a href="#" class="nav-link" data-page="photos">Photos</a></li>
+        <li><a href="#" class="nav-link" data-page="accommodations">Accommodations</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Full-Screen Background for Home Page -->
+  <div id="home-background" class="full-screen-background">
+    <img src="./images/engagement-photos/04_proposal.jpg" alt="Patricia & James Engagement" class="full-screen-bg-image">
+    <div class="full-screen-overlay"></div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Home Page -->
+    <div id="home" class="page active">
+      <!-- Simple Save the Date Page -->
+      <div class="save-the-date-hero">
+        <div class="save-the-date-content">
+          <h1 class="save-the-date-title">Patricia y James</h1>
+          <p class="save-the-date-date">June 21st, 2025</p>
+          <p class="save-the-date-text">SAVE THE DATE</p>
+        </div>
+      </div>
+          
+          <!-- Unconventional Design Option 2: Timeline Journey (Comment out above and uncomment this) -->
+          <!--
+          <div class="unconventional-layout timeline-journey">
+            <div class="timeline-container">
+              <div class="timeline-item proposal">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <h4>The Proposal</h4>
+                  <p>Where it all began</p>
+                </div>
+              </div>
+              <div class="timeline-line"></div>
+              <div class="timeline-item wedding">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <h4>Our Wedding</h4>
+                  <p>June 15th, 2024</p>
+                  <p>4:00 PM Ceremony • 6:00 PM Reception</p>
+                </div>
+              </div>
+              <div class="timeline-line"></div>
+              <div class="timeline-item forever">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <h4>Forever</h4>
+                  <p>Our happily ever after</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          -->
+          
+          <!-- Unconventional Design Option 3: Minimalist Overlay (Comment out above and uncomment this) -->
+          <!--
+          <div class="unconventional-layout minimalist-overlay">
+            <div class="minimalist-content">
+              <div class="date-display">
+                <span class="month">JUNE</span>
+                <span class="day">15</span>
+                <span class="year">2024</span>
+              </div>
+              <div class="event-details">
+                <p>Ceremony at 4:00 PM</p>
+                <p>Reception at 6:00 PM</p>
+                <p>Presidio Officers' Club • San Francisco</p>
+              </div>
+            </div>
+          </div>
+          -->
+          
+          <!-- Unconventional Design Option 4: Geometric Layout (Comment out above and uncomment this) -->
+          <!--
+          <div class="unconventional-layout geometric-design">
+            <div class="geometric-shapes">
+              <div class="shape circle ceremony-shape">
+                <div class="shape-content">
+                  <h4>Ceremony</h4>
+                  <p>4:00 PM</p>
+                </div>
+              </div>
+              <div class="shape triangle reception-shape">
+                <div class="shape-content">
+                  <h4>Reception</h4>
+                  <p>6:00 PM</p>
+                </div>
+              </div>
+              <div class="shape square date-shape">
+                <div class="shape-content">
+                  <h4>June 15</h4>
+                  <p>2024</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RSVP Page -->
+    <div id="rsvp" class="page">
+      <div class="container">
+        <h1 class="text-center mb-6">RSVP</h1>
+        <div class="rsvp-form">
+          <div class="card">
+            <form id="rsvp-form">
+              <div class="form-group">
+                <label for="name" class="form-label">Full Name</label>
+                <input type="text" id="name" name="name" required class="form-input">
+              </div>
+              
+              <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" required class="form-input">
+              </div>
+              
+              <div class="form-group">
+                <label for="guests" class="form-label">Number of Guests</label>
+                <select id="guests" name="guests" required class="form-select">
+                  <option value="">Select number of guests</option>
+                  <option value="1">1 Guest</option>
+                  <option value="2">2 Guests</option>
+                  <option value="3">3 Guests</option>
+                  <option value="4">4 Guests</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Will you be attending?</label>
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                  <label style="display: flex; align-items: center;">
+                    <input type="radio" name="attending" value="yes" class="form-radio">
+                    <span style="margin-left: var(--spacing-sm);">Yes, I'll be there!</span>
+                  </label>
+                  <label style="display: flex; align-items: center;">
+                    <input type="radio" name="attending" value="no" class="form-radio">
+                    <span style="margin-left: var(--spacing-sm);">Sorry, I can't make it</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="dietary" class="form-label">Dietary Restrictions</label>
+                <textarea id="dietary" name="dietary" rows="3" class="form-textarea" placeholder="Please let us know about any dietary restrictions or allergies"></textarea>
+              </div>
+              
+              <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                Submit RSVP
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events Page -->
+    <div id="events" class="page">
+      <div class="container">
+        <h1 class="text-center mb-6">Wedding Events</h1>
+        
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Ceremony -->
+          <div class="event-card ceremony">
+            <h2 class="card-title text-primary">Wedding Ceremony</h2>
+            <div class="card-body">
+              <p><strong>Date:</strong> Saturday, June 15th, 2024</p>
+              <p><strong>Time:</strong> 4:00 PM</p>
+              <p><strong>Location:</strong> Garden Pavilion</p>
+              <p><strong>Dress Code:</strong> Cocktail Attire</p>
+              <p class="mt-4">Join us as we exchange vows in a beautiful outdoor ceremony surrounded by our loved ones.</p>
+            </div>
+          </div>
+          
+          <!-- Reception -->
+          <div class="event-card reception">
+            <h2 class="card-title text-secondary">Wedding Reception</h2>
+            <div class="card-body">
+              <p><strong>Date:</strong> Saturday, June 15th, 2024</p>
+              <p><strong>Time:</strong> 6:00 PM</p>
+              <p><strong>Location:</strong> Grand Ballroom</p>
+              <p><strong>Dress Code:</strong> Cocktail Attire</p>
+              <p class="mt-4">Celebrate with us as we dance the night away with dinner, drinks, and dancing.</p>
+            </div>
+          </div>
+          
+          <!-- Welcome Party -->
+          <div class="event-card welcome">
+            <h2 class="card-title text-success">Welcome Party</h2>
+            <div class="card-body">
+              <p><strong>Date:</strong> Friday, June 14th, 2024</p>
+              <p><strong>Time:</strong> 7:00 PM</p>
+              <p><strong>Location:</strong> Hotel Lobby Bar</p>
+              <p><strong>Dress Code:</strong> Casual</p>
+              <p class="mt-4">Join us for a casual evening of drinks and appetizers to kick off the wedding weekend.</p>
+            </div>
+          </div>
+          
+          <!-- Brunch -->
+          <div class="event-card brunch">
+            <h2 class="card-title" style="color: var(--accent-purple);">Farewell Brunch</h2>
+            <div class="card-body">
+              <p><strong>Date:</strong> Sunday, June 16th, 2024</p>
+              <p><strong>Time:</strong> 10:00 AM</p>
+              <p><strong>Location:</strong> Hotel Restaurant</p>
+              <p><strong>Dress Code:</strong> Casual</p>
+              <p class="mt-4">Join us for a relaxed brunch before we head off on our honeymoon.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Page - Interactive Venue Showcase -->
+    <div id="location" class="page">
+      <div class="venue-showcase">
+        <!-- Phase 1: San Francisco Skyline (Side View) -->
+        <section class="phase phase-1 skyline-phase">
+          <div class="phase-content">
+            <div class="phase-text">
+              <h1 class="phase-title">San Francisco</h1>
+              <p class="phase-subtitle">Scroll to explore our venue</p>
+            </div>
+            <div class="skyline-visual">
+              <img src="./images/sf-skyline-silhouette.png" alt="San Francisco Skyline" class="skyline-image" />
+              <svg class="skyline-svg fallback" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+                <g class="skyline-buildings">
+                  <polygon points="200,350 200,150 180,150 180,200 160,200 160,150 140,150 140,200 120,200 120,150 100,150 100,200 80,200 80,150 60,150 60,200 40,200 40,150 20,150 20,200 0,200 0,350" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="300" y="200" width="80" height="150" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="310" y="180" width="60" height="20" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="450" y="250" width="20" height="100" fill="#4DC5E3" opacity="0.8"/>
+                  <circle cx="460" cy="240" r="15" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="600" y="280" width="15" height="70" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="650" y="280" width="15" height="70" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="700" y="280" width="15" height="70" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="800" y="220" width="60" height="130" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="900" y="240" width="40" height="110" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="980" y="260" width="50" height="90" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="1070" y="200" width="70" height="150" fill="#4DC5E3" opacity="0.8"/>
+                  <rect x="1180" y="230" width="20" height="120" fill="#4DC5E3" opacity="0.8"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Phase 2: San Francisco Map (Top-Down View) -->
+        <section class="phase phase-2 map-phase">
+          <div class="phase-content">
+            <div class="phase-text">
+              <h1 class="phase-title">The Presidio</h1>
+              <p class="phase-subtitle">Historic military grounds</p>
+            </div>
+            <div class="map-visual">
+              <img src="./images/sf-map-stylized.png" alt="San Francisco Map" class="sf-map-image" />
+              <svg class="sf-map fallback" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50,500 Q100,450 150,400 Q200,350 250,300 Q300,250 350,200 Q400,150 450,100 Q500,80 550,100 Q600,120 650,150 Q700,180 750,200 L750,500 Q700,480 650,460 Q600,440 550,420 Q500,400 450,420 Q400,440 350,460 Q300,480 250,500 Q200,520 150,500 Q100,480 50,500 Z" 
+                      fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2"/>
+                <line x1="200" y1="200" x2="300" y2="200" stroke="#4DC5E3" stroke-width="4"/>
+                <circle cx="200" cy="200" r="3" fill="#4DC5E3"/>
+                <circle cx="300" cy="200" r="3" fill="#4DC5E3"/>
+                <circle cx="250" cy="180" r="25" fill="#ED9FE3" opacity="0.3" stroke="#ED9FE3" stroke-width="2"/>
+                <text x="250" y="185" text-anchor="middle" font-family="Inter" font-size="12" fill="#ED9FE3" font-weight="500">Presidio</text>
+                <rect x="400" y="300" width="150" height="80" fill="#FBCFE8" opacity="0.3" stroke="#FBCFE8" stroke-width="2"/>
+                <text x="475" y="345" text-anchor="middle" font-family="Inter" font-size="12" fill="#FBCFE8" font-weight="500">Golden Gate Park</text>
+                <rect x="450" y="400" width="80" height="60" fill="#4DC5E3" opacity="0.3" stroke="#4DC5E3" stroke-width="2"/>
+                <text x="490" y="435" text-anchor="middle" font-family="Inter" font-size="12" fill="#4DC5E3" font-weight="500">Downtown</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Phase 3: Venue Information -->
+        <section class="phase phase-3 venue-phase">
+          <div class="phase-content">
+            <div class="container">
+              <h1 class="text-center mb-6">Presidio Officers' Club</h1>
+              
+              <div class="card mb-6">
+                <div class="card-header">
+                  <h2 class="card-title text-primary">Historic Venue</h2>
+                </div>
+                <div class="card-body">
+                  <div class="grid grid-cols-2 gap-6">
+                    <div>
+                      <p><strong>Address:</strong><br>50 Moraga Avenue<br>San Francisco, CA 94129</p>
+                      <p><strong>Phone:</strong> (415) 561-5444</p>
+                      <p><strong>Website:</strong> <a href="https://www.presidio.gov/venues/officers-club" class="text-primary" target="_blank">presidio.gov/venues/officers-club</a></p>
+                      <p><strong>Google Maps:</strong> <a href="https://maps.google.com/?q=50+Moraga+Avenue+San+Francisco+CA" class="text-primary" target="_blank">View on Google Maps</a></p>
+                    </div>
+                    <div>
+                      <div class="venue-photo">
+                        <p class="text-center text-gray-500">Venue Photo Gallery</p>
+                        <div class="photo-grid">
+                          <div class="photo-placeholder">Exterior View</div>
+                          <div class="photo-placeholder">Garden Pavilion</div>
+                          <div class="photo-placeholder">Historic Architecture</div>
+                          <div class="photo-placeholder">Golden Gate Views</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-6">
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title text-secondary">Venue History</h3>
+                  </div>
+                  <div class="card-body">
+                    <p>The Presidio Officers' Club is a historic Spanish Colonial Revival building that served as the social center for military officers and their families. Built in the 1930s, it features beautiful adobe walls, dark wood beams, and wrought iron fixtures that create an elegant and historic atmosphere.</p>
+                    <p>The venue offers both indoor and outdoor spaces, with stunning views of the Golden Gate Bridge and San Francisco Bay.</p>
+                  </div>
+                </div>
+                
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title text-success">Directions & Parking</h3>
+                  </div>
+                  <div class="card-body">
+                    <p><strong>From Downtown SF:</strong> Take Lombard Street west to the Presidio, follow signs to Officers' Club.</p>
+                    <p><strong>From Golden Gate Bridge:</strong> Take the first exit after the bridge, follow Lincoln Boulevard to Moraga Avenue.</p>
+                    <p><strong>Parking:</strong> Complimentary parking available in the Presidio. Valet service available for the event.</p>
+                    <p><strong>Public Transit:</strong> Muni bus routes 28, 29, and 43 serve the Presidio.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Photos Page -->
+    <div id="photos" class="page">
+      <div class="container">
+        <h1 class="text-center mb-6">Our Story in Photos</h1>
+        
+        <div class="photo-gallery">
+          <!-- Photo placeholders -->
+          <div class="photo-item">
+            <p>Engagement Photo 1</p>
+          </div>
+          <div class="photo-item">
+            <p>Engagement Photo 2</p>
+          </div>
+          <div class="photo-item">
+            <p>Engagement Photo 3</p>
+          </div>
+          <div class="photo-item">
+            <p>Engagement Photo 4</p>
+          </div>
+          <div class="photo-item">
+            <p>Engagement Photo 5</p>
+          </div>
+          <div class="photo-item">
+            <p>Engagement Photo 6</p>
+          </div>
+        </div>
+        
+        <div class="text-center mt-6">
+          <h2 class="text-2xl font-semibold text-primary mb-4">Share Your Photos</h2>
+          <p class="mb-4">Use our wedding hashtag to share your photos with us!</p>
+          <div class="hashtag">
+            #PatriciaJames2024
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accommodations Page -->
+    <div id="accommodations" class="page">
+      <div class="container">
+        <h1 class="text-center mb-6">Accommodations</h1>
+        
+        <div class="card mb-6">
+          <div class="card-header">
+            <h2 class="card-title text-primary">Wedding Hotel Block</h2>
+          </div>
+          <div class="card-body">
+            <div class="grid grid-cols-2 gap-6">
+              <div>
+                <h3 class="text-xl font-semibold text-secondary mb-3">The Grand Hotel & Gardens</h3>
+                <p><strong>Rate:</strong> $199/night</p>
+                <p><strong>Booking Code:</strong> "Patricia & James Wedding"</p>
+                <p><strong>Deadline:</strong> May 15th, 2024</p>
+                <p><strong>Phone:</strong> (555) 123-4567</p>
+              </div>
+              <div>
+                <h3 class="text-xl font-semibold text-success mb-3">Room Types Available</h3>
+                <ul>
+                  <li>• Standard King Room - $199/night</li>
+                  <li>• Deluxe King Room - $229/night</li>
+                  <li>• Junior Suite - $299/night</li>
+                  <li>• Executive Suite - $399/night</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Alternative Hotels -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title text-secondary">Alternative Hotels</h3>
+            </div>
+            <div class="card-body">
+              <div style="border-left: 4px solid var(--primary-blue); padding-left: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                <h4 class="font-semibold">Garden Inn</h4>
+                <p>2 miles from venue</p>
+                <p>$149/night</p>
+                <p>(555) 987-6543</p>
+              </div>
+              <div style="border-left: 4px solid var(--accent-green); padding-left: var(--spacing-md);">
+                <h4 class="font-semibold">City Center Hotel</h4>
+                <p>3 miles from venue</p>
+                <p>$129/night</p>
+                <p>(555) 456-7890</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Transportation -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title text-success">Transportation</h3>
+            </div>
+            <div class="card-body">
+              <p><strong>Airport Shuttle:</strong> Available from hotel</p>
+              <p><strong>Wedding Shuttle:</strong> Provided to/from venue</p>
+              <p><strong>Uber/Lyft:</strong> Available in area</p>
+              <p><strong>Rental Cars:</strong> Available at airport</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="./js/main.js?v=20241220"></script>
+</body>
+</html>
