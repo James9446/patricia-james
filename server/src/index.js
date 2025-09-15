@@ -65,8 +65,15 @@ app.use((err, req, res, next) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    // Initialize database
-    await initializeDatabase();
+    // Try to initialize database (optional for development)
+    try {
+      await initializeDatabase();
+      console.log('✅ Database connected and initialized');
+    } catch (dbError) {
+      console.warn('⚠️  Database connection failed:', dbError.message);
+      console.log('📝 Server will start without database (development mode)');
+      console.log('💡 To enable database features, set up PostgreSQL and configure DATABASE_URL');
+    }
     
     // Start the server
     app.listen(PORT, () => {
