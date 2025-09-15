@@ -191,8 +191,6 @@ a:hover {
 }
 
 .navbar-container {
-  max-width: 1280px;
-  margin: 0 auto;
   padding: 0 var(--spacing-lg);
   display: flex;
   justify-content: space-between;
@@ -366,6 +364,12 @@ body:not(.home-page) .nav-link:hover {
 /* Remove top padding for home page since it has full-screen background */
 body.home-page .main-content {
   padding-top: 0;
+}
+
+/* Prevent scrolling on home page */
+body.home-page {
+  overflow: hidden;
+  height: 100vh;
 }
 
 .page {
@@ -948,11 +952,13 @@ body:not(.home-page) .full-screen-background {
 }
 
 .save-the-date-content {
-  position: relative;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 10;
   text-align: center;
   color: #F5F1E8;
-  transform: translateY(10%);
 }
 
 .save-the-date-title {
