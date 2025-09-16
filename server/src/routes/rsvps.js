@@ -49,7 +49,7 @@ router.get('/stats', async (req, res) => {
     `);
     
     const totalGuests = await query(`
-      SELECT COUNT(*) as total_invited FROM guests WHERE is_invited = true
+      SELECT COUNT(*) as total_invited FROM guests
     `);
     
     const totalResponses = await query(`
@@ -146,9 +146,9 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Check if guest exists and is invited
+    // Check if guest exists
     const guestCheck = await query(`
-      SELECT id, is_invited FROM guests WHERE id = $1
+      SELECT id FROM guests WHERE id = $1
     `, [guest_id]);
     
     if (guestCheck.rows.length === 0) {
@@ -158,33 +158,36 @@ router.post('/', async (req, res) => {
       });
     }
     
-    if (!guestCheck.rows[0].is_invited) {
-      return res.status(403).json({
-        success: false,
-        message: 'This guest is not invited'
-      });
-    }
-    
     // Check if RSVP already exists
     const existingRsvp = await query(`
       SELECT id FROM rsvps WHERE guest_id = $1
     `, [guest_id]);
     
+    let result;
     if (existingRsvp.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: 'RSVP already exists for this guest. Use PUT to update.'
-      });
+      // Update existing RSVP
+      result = await query(`
+        UPDATE rsvps 
+        SET 
+          response_status = $1,
+          party_size = $2,
+          dietary_restrictions = $3,
+          song_requests = $4,
+          message = $5,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $6
+        RETURNING *
+      `, [response_status, party_size, dietary_restrictions, song_requests, message, existingRsvp.rows[0].id]);
+    } else {
+      // Create new RSVP
+      result = await query(`
+        INSERT INTO rsvps (
+          guest_id, user_id, response_status, party_size,
+          dietary_restrictions, song_requests, message
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `, [guest_id, user_id, response_status, party_size, dietary_restrictions, song_requests, message]);
     }
-    
-    // Create the RSVP
-    const result = await query(`
-      INSERT INTO rsvps (
-        guest_id, user_id, response_status, party_size,
-        dietary_restrictions, song_requests, message
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `, [guest_id, user_id, response_status, party_size, dietary_restrictions, song_requests, message]);
     
     res.status(201).json({
       success: true,

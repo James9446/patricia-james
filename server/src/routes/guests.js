@@ -10,8 +10,8 @@ router.get('/', async (req, res) => {
   try {
     const result = await query(`
       SELECT 
-        id, first_name, last_name, email, phone, party_size, 
-        dietary_restrictions, is_invited, invitation_sent,
+        id, first_name, last_name, full_name, email, phone, 
+        partner_id, plus_one_allowed, admin_notes,
         created_at, updated_at
       FROM guests 
       ORDER BY last_name, first_name
@@ -70,8 +70,8 @@ router.get('/:id', async (req, res) => {
     
     const result = await query(`
       SELECT 
-        id, first_name, last_name, email, phone, party_size,
-        dietary_restrictions, is_invited, invitation_sent,
+        id, first_name, last_name, full_name, email, phone,
+        partner_id, plus_one_allowed, admin_notes,
         created_at, updated_at
       FROM guests 
       WHERE id = $1
@@ -109,9 +109,8 @@ router.post('/', async (req, res) => {
       last_name,
       email,
       phone,
-      party_size = 1,
-      dietary_restrictions,
-      is_invited = true
+      plus_one_allowed = false,
+      admin_notes
     } = req.body;
     
     // Validate required fields
@@ -124,11 +123,11 @@ router.post('/', async (req, res) => {
     
     const result = await query(`
       INSERT INTO guests (
-        first_name, last_name, email, phone, party_size,
-        dietary_restrictions, is_invited
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        first_name, last_name, email, phone,
+        plus_one_allowed, admin_notes
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [first_name, last_name, email, phone, party_size, dietary_restrictions, is_invited]);
+    `, [first_name, last_name, email, phone, plus_one_allowed, admin_notes]);
     
     res.status(201).json({
       success: true,
@@ -166,10 +165,8 @@ router.put('/:id', async (req, res) => {
       last_name,
       email,
       phone,
-      party_size,
-      dietary_restrictions,
-      is_invited,
-      invitation_sent
+      plus_one_allowed,
+      admin_notes
     } = req.body;
     
     const result = await query(`
@@ -179,14 +176,12 @@ router.put('/:id', async (req, res) => {
         last_name = COALESCE($3, last_name),
         email = COALESCE($4, email),
         phone = COALESCE($5, phone),
-        party_size = COALESCE($6, party_size),
-        dietary_restrictions = COALESCE($7, dietary_restrictions),
-        is_invited = COALESCE($8, is_invited),
-        invitation_sent = COALESCE($9, invitation_sent),
+        plus_one_allowed = COALESCE($6, plus_one_allowed),
+        admin_notes = COALESCE($7, admin_notes),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
-    `, [id, first_name, last_name, email, phone, party_size, dietary_restrictions, is_invited, invitation_sent]);
+    `, [id, first_name, last_name, email, phone, plus_one_allowed, admin_notes]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({

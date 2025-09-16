@@ -9,18 +9,33 @@ async function initializeDatabase() {
   try {
     console.log('🗄️  Initializing database...');
     
-    // Read the schema file
-    const schemaPath = path.join(__dirname, 'schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    
-    // Execute the schema
-    await query(schema);
-    
-    console.log('✅ Database schema created successfully');
-    
-    // Test the connection
+    // Test the connection first
     const result = await query('SELECT NOW() as current_time');
     console.log('✅ Database connection successful:', result.rows[0].current_time);
+    
+    // Check if tables already exist
+    const tableCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'guests'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('📋 Creating database schema...');
+      
+      // Read the schema file
+      const schemaPath = path.join(__dirname, 'schema.sql');
+      const schema = fs.readFileSync(schemaPath, 'utf8');
+      
+      // Execute the schema
+      await query(schema);
+      
+      console.log('✅ Database schema created successfully');
+    } else {
+      console.log('✅ Database schema already exists');
+    }
     
     // Check if we have any guests
     const guestCount = await query('SELECT COUNT(*) as count FROM guests');
