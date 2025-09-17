@@ -43,13 +43,13 @@ class RSVPManager {
 
   async getCurrentUser() {
     // TODO: Replace with actual authentication check
-    // For now, simulate a logged-in user
+    // For now, simulate a logged-in user with a real guest ID
     return {
       id: 'user-1',
-      guest_id: 'mock-1',
-      email: 'patricia@example.com',
-      first_name: 'Patricia',
-      last_name: 'Garcia'
+      guest_id: 'fa220be9-a9f9-4f26-9d43-7603af3e1b39', // Cordelia Reynolds
+      email: 'cordelia@example.com',
+      first_name: 'Cordelia',
+      last_name: 'Reynolds'
     };
   }
 
@@ -120,13 +120,15 @@ class RSVPManager {
       guestEmailDisplay.textContent = guest.email;
     }
 
-    if (guestPartySize) {
-      guestPartySize.textContent = guest.party_size;
-    }
+            if (guestPartySize) {
+              // Calculate party size based on plus-one allowance
+              const partySize = guest.plus_one_allowed ? 2 : 1;
+              guestPartySize.textContent = partySize;
+            }
 
-    // Set max party size based on guest's party size
+    // Set max party size based on guest's plus-one allowance
     if (partySizeSelect) {
-      const maxSize = Math.max(guest.party_size, 6);
+      const maxSize = guest.plus_one_allowed ? 2 : 1;
       partySizeSelect.innerHTML = '<option value="">Select number of guests</option>';
       
       for (let i = 1; i <= maxSize; i++) {
