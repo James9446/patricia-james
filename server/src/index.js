@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const { initializeDatabase } = require('./database/init');
+const { query } = require('./config/db');
 
 // Import routes
 const guestsRouter = require('./routes/guests');
@@ -65,14 +65,19 @@ app.use((err, req, res, next) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    // Try to initialize database (optional for development)
+    // Test database connection (optional for development)
     try {
-      await initializeDatabase();
-      console.log('✅ Database connected and initialized');
+      const result = await query('SELECT NOW() as current_time');
+      console.log('✅ Database connected successfully:', result.rows[0].current_time);
+      
+      // Check if we have any guests
+      const guestCount = await query('SELECT COUNT(*) as count FROM guests');
+      console.log(`📊 Current guest count: ${guestCount.rows[0].count}`);
     } catch (dbError) {
       console.warn('⚠️  Database connection failed:', dbError.message);
       console.log('📝 Server will start without database (development mode)');
       console.log('💡 To enable database features, set up PostgreSQL and configure DATABASE_URL');
+      console.log('💡 Run "node src/database/migrate.js reset" to initialize the database');
     }
     
     // Start the server
