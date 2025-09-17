@@ -27,12 +27,12 @@ This guide explains how to populate and manage the guest list for the wedding we
 
 ```sql
 -- Primary guest (receives invitation)
-INSERT INTO guests (first_name, last_name, email, is_primary_guest, plus_one_allowed) 
-VALUES ('Maria', 'Garcia', 'maria@example.com', true, true);
+INSERT INTO guests (first_name, last_name, email, plus_one_allowed) 
+VALUES ('Maria', 'Garcia', 'maria@example.com', true);
 
 -- Partner (linked to primary guest)
-INSERT INTO guests (first_name, last_name, email, is_primary_guest, plus_one_allowed) 
-VALUES ('John', 'Doe', 'john@example.com', false, false);
+INSERT INTO guests (first_name, last_name, email, plus_one_allowed) 
+VALUES ('John', 'Doe', 'john@example.com', false);
 
 -- Link them as partners
 UPDATE guests 
@@ -83,7 +83,6 @@ const guestData = [
     first_name: 'John',
     last_name: 'Smith',
     email: 'john@example.com',
-    is_primary_guest: true,
     plus_one_allowed: false
   },
   
@@ -92,7 +91,6 @@ const guestData = [
     first_name: 'Maria',
     last_name: 'Garcia', 
     email: 'maria@example.com',
-    is_primary_guest: true,
     plus_one_allowed: true,
     partner: {
       first_name: 'John',
@@ -111,7 +109,6 @@ for (const guest of guestData) {
   if (guest.partner) {
     const partnerGuest = await insertGuest({
       ...guest.partner,
-      is_primary_guest: false,
       plus_one_allowed: false
     });
     

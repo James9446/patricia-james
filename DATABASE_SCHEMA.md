@@ -1,4 +1,4 @@
-# Refined Schema v3 - Perfect for Your Wedding
+# Database Schema - Patricia & James Wedding
 
 ## 🎯 **Key Improvements Based on Your Requirements**
 

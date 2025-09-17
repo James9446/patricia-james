@@ -55,6 +55,7 @@ users (
   password_hash VARCHAR(255) NOT NULL,
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
+  is_admin BOOLEAN DEFAULT false, -- Admin privileges
   is_active BOOLEAN DEFAULT true,
   last_login TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -176,6 +177,12 @@ photo_upvotes (
 - [ ] Performance optimization and testing
 - [ ] Final deployment and testing
 
+### Phase 6: Security & Production Hardening
+- [ ] Implement comprehensive security measures
+- [ ] Database security hardening
+- [ ] Application security implementation
+- [ ] Production deployment with security
+
 ## 🎨 Key Features
 
 ### Home Page
@@ -252,6 +259,109 @@ function handleNavigation(pageId) {
 - **Phase 3**: RSVP System (Week 3)
 - **Phase 4**: Photo System (Week 4)
 - **Phase 5**: Integration and Polish (Week 5)
+- **Phase 6**: Security & Production Hardening (Week 6)
+
+## 🔒 Security & Production Hardening
+
+### Database Security
+- [ ] **Create limited-privilege application user**
+  - Separate user for application vs admin operations
+  - Grant only necessary permissions (SELECT, INSERT, UPDATE, DELETE)
+  - No CREATE/DROP privileges for application user
+- [ ] **Environment variable management**
+  - Move all passwords to secure environment variables
+  - Use different passwords for development vs production
+  - Implement password rotation strategy
+- [ ] **Database connection security**
+  - Enable SSL/TLS encryption for all connections
+  - Configure connection pooling with limits
+  - Implement connection timeout and retry logic
+- [ ] **Backup and recovery**
+  - Automated daily backups with retention policy
+  - Test backup restoration procedures
+  - Document disaster recovery plan
+- [ ] **Database monitoring**
+  - Set up database performance monitoring
+  - Implement audit logging for sensitive operations
+  - Configure alerts for unusual activity
+
+### Application Security
+- [ ] **Authentication & Authorization**
+  - Implement secure session management
+  - Add password complexity requirements
+  - Implement account lockout after failed attempts
+  - Add two-factor authentication for admin users
+- [ ] **Input validation & sanitization**
+  - Validate all user inputs on both client and server
+  - Implement SQL injection prevention
+  - Add XSS protection headers
+  - Sanitize file uploads and user-generated content
+- [ ] **API Security**
+  - Implement rate limiting to prevent abuse
+  - Add request size limits
+  - Implement CORS properly for production
+  - Add API authentication tokens
+- [ ] **File upload security**
+  - Validate file types and sizes
+  - Scan uploaded files for malware
+  - Store files outside web root
+  - Implement secure file serving
+
+### Infrastructure Security
+- [ ] **Server security**
+  - Configure firewall rules (only necessary ports)
+  - Keep all software updated
+  - Disable unnecessary services
+  - Implement intrusion detection
+- [ ] **Network security**
+  - Use HTTPS everywhere (SSL certificates)
+  - Implement secure headers (HSTS, CSP, etc.)
+  - Configure proper DNS settings
+  - Use CDN for static assets with security features
+- [ ] **Monitoring & logging**
+  - Implement comprehensive logging
+  - Set up security monitoring and alerting
+  - Monitor for suspicious activity
+  - Regular security audits and penetration testing
+
+### Production Deployment Security
+- [ ] **Environment separation**
+  - Separate development, staging, and production environments
+  - Use different database instances for each environment
+  - Implement proper environment variable management
+- [ ] **Secrets management**
+  - Use secure secret management service
+  - Rotate secrets regularly
+  - Never commit secrets to version control
+- [ ] **Deployment security**
+  - Use secure deployment pipelines
+  - Implement automated security scanning
+  - Use container security best practices
+  - Implement blue-green deployments for zero downtime
+
+### Compliance & Privacy
+- [ ] **Data protection**
+  - Implement GDPR compliance measures
+  - Add privacy policy and terms of service
+  - Implement data retention policies
+  - Add user data export/deletion capabilities
+- [ ] **Security documentation**
+  - Document all security measures
+  - Create incident response plan
+  - Implement security training for administrators
+  - Regular security reviews and updates
+
+### Security Testing
+- [ ] **Automated security testing**
+  - Implement security scanning in CI/CD pipeline
+  - Regular dependency vulnerability scanning
+  - Automated penetration testing
+  - Security code reviews
+- [ ] **Manual security testing**
+  - Regular security audits
+  - Penetration testing by third party
+  - Social engineering awareness training
+  - Security incident simulation exercises
 
 ## 🎯 Current Status
 
@@ -262,6 +372,7 @@ function handleNavigation(pageId) {
 - **RSVP System**: Full CRUD operations, partner support, dietary restrictions
 - **Guest Management**: CSV import, partner linking, plus-one handling
 - **API Testing**: All endpoints tested and functional
+- **Database Admin**: Secure admin user with full privileges created
 
 ### 🚧 In Progress
 - **Authentication System**: Ready to implement user registration and login
@@ -271,9 +382,17 @@ function handleNavigation(pageId) {
 1. Implement authentication system (Phase 2)
 2. Create admin dashboard for RSVP management
 3. Build photo upload and sharing system (Phase 4)
-4. Deploy to Render.com
+4. Implement security measures (Phase 6)
+5. Deploy to Render.com with production security
+
+### 🔒 Security Status
+- ✅ **Database Admin User**: Created with proper privileges
+- ✅ **Basic Database Security**: Password protection and access control
+- ⚠️ **Development Security**: Acceptable for current development phase
+- 🚧 **Production Security**: Comprehensive security plan documented
+- 📋 **Security Checklist**: 50+ security measures identified for production
 
 ---
 
 *Last Updated: September 16, 2025*
-*Status: Phase 1 & 3 Complete - Ready for Authentication Implementation*
+*Status: Phase 1 & 3 Complete - Security Plan Added - Ready for Authentication Implementation*

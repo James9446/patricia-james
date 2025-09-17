@@ -1,201 +1,171 @@
 const express = require('express');
-const { query } = require('../config/db');
 const router = express.Router();
-
-/**
- * GET /api/rsvps
- * Get all RSVPs (for admin purposes)
- */
-router.get('/', async (req, res) => {
-  try {
-    const result = await query(`
-      SELECT 
-        r.id, r.response_status, r.party_size, r.dietary_restrictions,
-        r.song_requests, r.message, r.responded_at, r.created_at,
-        g.first_name, g.last_name, g.email, g.phone
-      FROM rsvps r
-      JOIN guests g ON r.guest_id = g.id
-      ORDER BY r.responded_at DESC
-    `);
-    
-    res.json({
-      success: true,
-      data: result.rows,
-      count: result.rows.length
-    });
-  } catch (error) {
-    console.error('Error fetching RSVPs:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch RSVPs',
-      error: error.message
-    });
-  }
-});
-
-/**
- * GET /api/rsvps/stats
- * Get RSVP statistics
- */
-router.get('/stats', async (req, res) => {
-  try {
-    const stats = await query(`
-      SELECT 
-        response_status,
-        COUNT(*) as count,
-        SUM(party_size) as total_guests
-      FROM rsvps 
-      GROUP BY response_status
-    `);
-    
-    const totalGuests = await query(`
-      SELECT COUNT(*) as total_invited FROM guests
-    `);
-    
-    const totalResponses = await query(`
-      SELECT COUNT(*) as total_responses FROM rsvps
-    `);
-    
-    res.json({
-      success: true,
-      data: {
-        by_status: stats.rows,
-        total_invited: parseInt(totalGuests.rows[0].total_invited),
-        total_responses: parseInt(totalResponses.rows[0].total_responses)
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching RSVP stats:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch RSVP statistics',
-      error: error.message
-    });
-  }
-});
-
-/**
- * GET /api/rsvps/guest/:guestId
- * Get RSVP for a specific guest
- */
-router.get('/guest/:guestId', async (req, res) => {
-  try {
-    const { guestId } = req.params;
-    
-    const result = await query(`
-      SELECT 
-        r.id, r.response_status, r.party_size, r.dietary_restrictions,
-        r.song_requests, r.message, r.responded_at, r.created_at,
-        g.first_name, g.last_name, g.email
-      FROM rsvps r
-      JOIN guests g ON r.guest_id = g.id
-      WHERE r.guest_id = $1
-    `, [guestId]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No RSVP found for this guest'
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Error fetching guest RSVP:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch RSVP',
-      error: error.message
-    });
-  }
-});
+const { query } = require('../config/db');
 
 /**
  * POST /api/rsvps
- * Submit an RSVP
+ * Submit a new RSVP with dynamic plus-one creation
  */
 router.post('/', async (req, res) => {
+  const { 
+    guest_id, 
+    user_id, 
+    response_status, 
+    rsvp_for_self, 
+    rsvp_for_partner, 
+    partner_attending,
+    plus_one_attending,
+    plus_one_name,
+    plus_one_email,
+    dietary_restrictions, 
+    song_requests, 
+    message 
+  } = req.body;
+
+  // Basic validation
+  if (!guest_id || !user_id || !response_status) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Missing required RSVP fields.' 
+    });
+  }
+
+  if (!rsvp_for_self && !rsvp_for_partner) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Must RSVP for self, partner, or both.' 
+    });
+  }
+
   try {
-    const {
-      guest_id,
-      user_id,
-      response_status,
-      party_size,
-      dietary_restrictions,
-      song_requests,
-      message
-    } = req.body;
-    
-    // Validate required fields
-    if (!guest_id || !response_status) {
-      return res.status(400).json({
-        success: false,
-        message: 'Guest ID and response status are required'
-      });
+    // Start a transaction
+    await query('BEGIN');
+
+    // Check if an RSVP already exists for this guest/user
+    const existingRsvp = await query(
+      'SELECT id FROM rsvps WHERE guest_id = $1 AND user_id = $2', 
+      [guest_id, user_id]
+    );
+
+    let rsvpResult;
+    let plusOneGuest = null;
+
+    // Handle plus-one creation if needed
+    if (plus_one_attending && plus_one_name && plus_one_email) {
+      // Check if plus-one already exists
+      const existingPlusOne = await query(
+        'SELECT id FROM guests WHERE first_name = $1 AND last_name = $2',
+        [plus_one_name.split(' ')[0], plus_one_name.split(' ').slice(1).join(' ')]
+      );
+
+      if (existingPlusOne.rows.length > 0) {
+        plusOneGuest = existingPlusOne.rows[0];
+      } else {
+        // Create new guest record for plus-one
+        const plusOneResult = await query(`
+          INSERT INTO guests (
+            first_name, last_name, email, 
+            plus_one_allowed, admin_notes
+          ) VALUES ($1, $2, $3, $4, $5)
+          RETURNING *
+        `, [
+          plus_one_name.split(' ')[0],
+          plus_one_name.split(' ').slice(1).join(' '),
+          plus_one_email,
+          false, // Plus-ones can't bring their own plus-ones
+          `Plus-one of ${req.body.guest_name || 'unknown guest'}`
+        ]);
+
+        plusOneGuest = plusOneResult.rows[0];
+
+        // Link plus-one to the guest who brought them
+        await query(`
+          UPDATE guests 
+          SET partner_id = $2 
+          WHERE id = $1
+        `, [plusOneGuest.id, guest_id]);
+
+        await query(`
+          UPDATE guests 
+          SET partner_id = $2 
+          WHERE id = $1
+        `, [guest_id, plusOneGuest.id]);
+
+        console.log(`✅ Created plus-one guest: ${plus_one_name}`);
+      }
     }
-    
-    // Validate response status
-    const validStatuses = ['attending', 'not_attending', 'pending'];
-    if (!validStatuses.includes(response_status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid response status. Must be: attending, not_attending, or pending'
-      });
-    }
-    
-    // Check if guest exists
-    const guestCheck = await query(`
-      SELECT id FROM guests WHERE id = $1
-    `, [guest_id]);
-    
-    if (guestCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Guest not found'
-      });
-    }
-    
-    // Check if RSVP already exists
-    const existingRsvp = await query(`
-      SELECT id FROM rsvps WHERE guest_id = $1
-    `, [guest_id]);
-    
-    let result;
+
     if (existingRsvp.rows.length > 0) {
       // Update existing RSVP
-      result = await query(`
-        UPDATE rsvps 
+      rsvpResult = await query(`
+        UPDATE rsvps
         SET 
-          response_status = $1,
-          party_size = $2,
-          dietary_restrictions = $3,
-          song_requests = $4,
-          message = $5,
+          response_status = $1, 
+          rsvp_for_self = $2,
+          rsvp_for_partner = $3,
+          partner_attending = $4,
+          plus_one_attending = $5,
+          dietary_restrictions = $6, 
+          song_requests = $7, 
+          message = $8,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $6
-        RETURNING *
-      `, [response_status, party_size, dietary_restrictions, song_requests, message, existingRsvp.rows[0].id]);
+        WHERE id = $9
+        RETURNING *;
+      `, [
+        response_status, 
+        rsvp_for_self,
+        rsvp_for_partner,
+        partner_attending,
+        plus_one_attending,
+        dietary_restrictions, 
+        song_requests, 
+        message, 
+        existingRsvp.rows[0].id
+      ]);
     } else {
-      // Create new RSVP
-      result = await query(`
+      // Insert new RSVP
+      rsvpResult = await query(`
         INSERT INTO rsvps (
-          guest_id, user_id, response_status, party_size,
+          guest_id, user_id, response_status, rsvp_for_self, rsvp_for_partner,
+          partner_attending, plus_one_attending,
           dietary_restrictions, song_requests, message
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `, [guest_id, user_id, response_status, party_size, dietary_restrictions, song_requests, message]);
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *;
+      `, [
+        guest_id, 
+        user_id, 
+        response_status, 
+        rsvp_for_self,
+        rsvp_for_partner,
+        partner_attending,
+        plus_one_attending,
+        dietary_restrictions, 
+        song_requests, 
+        message
+      ]);
     }
+
+    // Commit transaction
+    await query('COMMIT');
     
     res.status(201).json({
       success: true,
-      data: result.rows[0],
-      message: 'RSVP submitted successfully'
+      message: 'RSVP submitted successfully!',
+      data: {
+        rsvp: rsvpResult.rows[0],
+        plus_one_created: plusOneGuest ? {
+          id: plusOneGuest.id,
+          name: plus_one_name,
+          email: plus_one_email
+        } : null
+      }
     });
+
   } catch (error) {
-    console.error('Error creating RSVP:', error);
+    // Rollback transaction on error
+    await query('ROLLBACK');
+    console.error('Error submitting RSVP:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to submit RSVP',
@@ -205,96 +175,118 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * PUT /api/rsvps/:id
- * Update an RSVP
+ * GET /api/rsvps/:guest_id
+ * Get RSVP details for a specific guest
  */
-router.put('/:id', async (req, res) => {
+router.get('/:guest_id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const {
-      response_status,
-      party_size,
-      dietary_restrictions,
-      song_requests,
-      message
-    } = req.body;
-    
-    // Validate response status if provided
-    if (response_status) {
-      const validStatuses = ['attending', 'not_attending', 'pending'];
-      if (!validStatuses.includes(response_status)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid response status. Must be: attending, not_attending, or pending'
-        });
-      }
-    }
-    
+    const { guest_id } = req.params;
+
     const result = await query(`
-      UPDATE rsvps 
-      SET 
-        response_status = COALESCE($2, response_status),
-        party_size = COALESCE($3, party_size),
-        dietary_restrictions = COALESCE($4, dietary_restrictions),
-        song_requests = COALESCE($5, song_requests),
-        message = COALESCE($6, message),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      RETURNING *
-    `, [id, response_status, party_size, dietary_restrictions, song_requests, message]);
-    
+      SELECT 
+        r.*,
+        g.first_name,
+        g.last_name,
+        g.full_name,
+        g.email as guest_email,
+        g.plus_one_allowed,
+        p.first_name as partner_first_name,
+        p.last_name as partner_last_name,
+        p.full_name as partner_full_name,
+        p.email as partner_email
+      FROM rsvps r
+      JOIN guests g ON r.guest_id = g.id
+      LEFT JOIN guests p ON g.partner_id = p.id
+      WHERE r.guest_id = $1
+      ORDER BY r.created_at DESC
+      LIMIT 1
+    `, [guest_id]);
+
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'RSVP not found'
+      return res.json({
+        success: true,
+        data: null,
+        message: 'No RSVP found for this guest'
       });
     }
-    
+
     res.json({
       success: true,
-      data: result.rows[0],
-      message: 'RSVP updated successfully'
+      data: result.rows[0]
     });
+
   } catch (error) {
-    console.error('Error updating RSVP:', error);
+    console.error('Error fetching RSVP:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update RSVP',
+      message: 'Failed to fetch RSVP',
       error: error.message
     });
   }
 });
 
 /**
- * DELETE /api/rsvps/:id
- * Delete an RSVP
+ * GET /api/rsvps/summary
+ * Get RSVP summary for admin (requires authentication in production)
  */
-router.delete('/:id', async (req, res) => {
+router.get('/summary', async (req, res) => {
   try {
-    const { id } = req.params;
-    
     const result = await query(`
-      DELETE FROM rsvps 
-      WHERE id = $1
-      RETURNING *
-    `, [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'RSVP not found'
-      });
-    }
-    
+      SELECT 
+        g.id,
+        g.first_name,
+        g.last_name,
+        g.full_name,
+        g.email,
+        g.plus_one_allowed,
+        r.response_status,
+        r.rsvp_for_self,
+        r.rsvp_for_partner,
+        r.partner_attending,
+        r.plus_one_attending,
+        r.responded_at,
+        p.first_name as partner_first_name,
+        p.last_name as partner_last_name,
+        p.full_name as partner_full_name,
+        CASE 
+          WHEN r.rsvp_for_self = true AND r.rsvp_for_partner = true AND r.partner_attending = true AND r.plus_one_attending = true THEN 3
+          WHEN r.rsvp_for_self = true AND r.rsvp_for_partner = true AND r.partner_attending = true THEN 2
+          WHEN r.rsvp_for_self = true AND r.plus_one_attending = true THEN 2
+          WHEN r.rsvp_for_self = true THEN 1
+          ELSE 0
+        END as total_attending
+      FROM guests g
+      LEFT JOIN rsvps r ON g.id = r.guest_id
+      LEFT JOIN guests p ON g.partner_id = p.id
+      WHERE g.partner_id IS NULL OR g.id < g.partner_id
+      ORDER BY g.last_name, g.first_name
+    `);
+
+    // Calculate summary statistics
+    const totalGuests = result.rows.length;
+    const responded = result.rows.filter(r => r.response_status).length;
+    const attending = result.rows.filter(r => r.response_status === 'attending').length;
+    const totalAttending = result.rows.reduce((sum, r) => sum + (r.total_attending || 0), 0);
+
     res.json({
       success: true,
-      message: 'RSVP deleted successfully'
+      data: {
+        summary: {
+          total_guests: totalGuests,
+          responded: responded,
+          attending: attending,
+          not_attending: responded - attending,
+          total_attending_count: totalAttending
+        },
+        guests: result.rows
+      }
     });
+
   } catch (error) {
-    console.error('Error deleting RSVP:', error);
+    console.error('Error fetching RSVP summary:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete RSVP',
+      message: 'Failed to fetch RSVP summary',
       error: error.message
     });
   }

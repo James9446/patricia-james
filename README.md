@@ -41,7 +41,10 @@ A modern, interactive wedding website with guest authentication, RSVP system, an
    createdb patricia_james_wedding_dev
    
    # Initialize the database schema
-   node src/database/init.js
+   node src/database/migrate.js reset
+   
+   # Create admin user
+   node src/admin/create-admin.js create
    ```
 
 5. **Start the development server**
@@ -319,7 +322,7 @@ node src/admin/import-guests-csv.js reset guests.csv
 node src/admin/create-admin.js create
 
 # Update admin password
-node src/admin/create-admin.js update-password admin@patriciajames.com NewPassword123!
+node src/admin/create-admin.js update-password admin@patriciajames.com [NEW_PASSWORD]
 
 # List all admin users
 node src/admin/create-admin.js list
@@ -370,7 +373,7 @@ curl -X GET http://localhost:5001/api/guests
 The system comes with a default admin user for system management:
 
 - **Email**: `admin@patriciajames.com`
-- **Password**: `admin123`
+- **Password**: `[Generated during setup - check console output]`
 - **Privileges**: Full admin access
 
 ⚠️ **Important**: Change the default password after first login!
@@ -382,7 +385,7 @@ The system comes with a default admin user for system management:
 node src/admin/create-admin.js create
 
 # Update admin password
-node src/admin/create-admin.js update-password admin@patriciajames.com MyNewPassword123!
+node src/admin/create-admin.js update-password admin@patriciajames.com [NEW_PASSWORD]
 
 # List all admin users
 node src/admin/create-admin.js list

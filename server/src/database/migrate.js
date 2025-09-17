@@ -1,8 +1,8 @@
 /**
- * Migration Script: v3 to v4
+ * Database Migration Script
  * 
- * This script migrates the database from schema v3 to v4
- * removing unnecessary fields and streamlining the schema.
+ * This script manages database migrations and resets.
+ * Current schema: v4 (streamlined)
  */
 
 require('dotenv').config();
@@ -247,11 +247,11 @@ async function resetDatabase() {
     // Reinitialize with v4 schema
     const fs = require('fs');
     const path = require('path');
-    const schemaPath = path.join(__dirname, 'schema-v4.sql');
+    const schemaPath = path.join(__dirname, 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
     await query(schema);
     
-    console.log('✅ Database reset and reinitialized with v4 schema');
+    console.log('✅ Database reset and reinitialized with current schema');
     
   } catch (error) {
     console.error('❌ Database reset failed:', error.message);
@@ -271,7 +271,7 @@ switch (command) {
     break;
   default:
     console.log('Usage:');
-    console.log('  node migrate-to-v4.js migrate  - Migrate from v3 to v4');
-    console.log('  node migrate-to-v4.js reset    - Reset database (WARNING: deletes all data)');
+    console.log('  node migrate.js migrate  - Migrate database schema');
+    console.log('  node migrate.js reset    - Reset database (WARNING: deletes all data)');
     break;
 }
