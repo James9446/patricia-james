@@ -26,7 +26,6 @@ router.post('/check-guest', async (req, res) => {
         g.full_name,
         g.email,
         g.partner_id,
-        g.is_primary_guest,
         g.plus_one_allowed,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
@@ -35,7 +34,6 @@ router.post('/check-guest', async (req, res) => {
       FROM guests g
       LEFT JOIN guests p ON g.partner_id = p.id
       WHERE g.first_name ILIKE $1 AND g.last_name ILIKE $2
-      AND g.is_primary_guest = true
     `, [first_name.trim(), last_name.trim()]);
 
     if (result.rows.length === 0) {

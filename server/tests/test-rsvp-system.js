@@ -30,8 +30,6 @@ const testData = {
     rsvp_for_partner: false,
     partner_attending: null,
     plus_one_attending: false,
-    plus_one_name: null,
-    plus_one_email: null,
     dietary_restrictions: 'Vegetarian',
     song_requests: 'Dancing Queen by ABBA',
     message: 'So excited for the wedding!'
@@ -46,8 +44,6 @@ const testData = {
     rsvp_for_partner: false,
     partner_attending: null,
     plus_one_attending: true,
-    plus_one_name: 'Maria Rodriguez',
-    plus_one_email: 'maria.rodriguez@email.com',
     dietary_restrictions: 'No seafood',
     song_requests: 'La Bamba',
     message: 'Can\'t wait to celebrate!'
@@ -62,8 +58,6 @@ const testData = {
     rsvp_for_partner: true,
     partner_attending: true,
     plus_one_attending: false,
-    plus_one_name: null,
-    plus_one_email: null,
     dietary_restrictions: 'Gluten-free',
     song_requests: 'At Last by Etta James',
     message: 'We\'re both so excited!'
@@ -295,8 +289,7 @@ async function testPartnerLinking() {
       g1.first_name as original_guest,
       g1.last_name as original_last,
       g2.first_name as plus_one_first,
-      g2.last_name as plus_one_last,
-      g2.email as plus_one_email
+      g2.last_name as plus_one_last
     FROM guests g1
     JOIN guests g2 ON g1.partner_id = g2.id
     WHERE g1.first_name = 'Alfredo' AND g2.first_name = 'Maria'
@@ -306,7 +299,6 @@ async function testPartnerLinking() {
     const link = plusOneCheck.rows[0];
     console.log(`   ✅ Plus-one linking verified:`);
     console.log(`   ${link.original_guest} ${link.original_last} ↔ ${link.plus_one_first} ${link.plus_one_last}`);
-    console.log(`   Plus-one email: ${link.plus_one_email}`);
   } else {
     console.log('   ⚠️  Plus-one linking not found (this might be expected if plus-one creation failed)');
   }
@@ -347,8 +339,6 @@ async function makeRsvpRequest(rsvpData) {
     rsvp_for_partner, 
     partner_attending,
     plus_one_attending,
-    plus_one_name,
-    plus_one_email,
     dietary_restrictions, 
     song_requests, 
     message 
@@ -365,52 +355,8 @@ async function makeRsvpRequest(rsvpData) {
     );
 
     let rsvpResult;
-    let plusOneGuest = null;
 
-    // Handle plus-one creation if needed
-    if (plus_one_attending && plus_one_name && plus_one_email) {
-      // Check if plus-one already exists
-      const existingPlusOne = await query(
-        'SELECT id FROM guests WHERE first_name = $1 AND last_name = $2',
-        [plus_one_name.split(' ')[0], plus_one_name.split(' ').slice(1).join(' ')]
-      );
-
-      if (existingPlusOne.rows.length > 0) {
-        plusOneGuest = existingPlusOne.rows[0];
-      } else {
-        // Create new guest record for plus-one
-        const plusOneResult = await query(`
-          INSERT INTO guests (
-            first_name, last_name, email, 
-            plus_one_allowed, admin_notes
-          ) VALUES ($1, $2, $3, $4, $5)
-          RETURNING *
-        `, [
-          plus_one_name.split(' ')[0],
-          plus_one_name.split(' ').slice(1).join(' '),
-          plus_one_email,
-          false, // Plus-ones can't bring their own plus-ones
-          `Plus-one of ${rsvpData.guest_name || 'unknown guest'}`
-        ]);
-
-        plusOneGuest = plusOneResult.rows[0];
-
-        // Link plus-one to the guest who brought them
-        await query(`
-          UPDATE guests 
-          SET partner_id = $2 
-          WHERE id = $1
-        `, [plusOneGuest.id, guest_id]);
-
-        await query(`
-          UPDATE guests 
-          SET partner_id = $2 
-          WHERE id = $1
-        `, [guest_id, plusOneGuest.id]);
-
-        console.log(`   ✅ Created plus-one guest: ${plus_one_name}`);
-      }
-    }
+    // Note: Plus-one creation is now handled separately through the guest management system
 
     if (existingRsvp.rows.length > 0) {
       // Update existing RSVP
@@ -471,11 +417,6 @@ async function makeRsvpRequest(rsvpData) {
       message: 'RSVP submitted successfully!',
       data: {
         rsvp: rsvpResult.rows[0],
-        plus_one_created: plusOneGuest ? {
-          id: plusOneGuest.id,
-          name: plus_one_name,
-          email: plus_one_email
-        } : null
       }
     };
 

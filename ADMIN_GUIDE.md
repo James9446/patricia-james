@@ -229,7 +229,7 @@ PUT /api/admin/guests/:id
 #### Issue: Partner not showing up in RSVP
 - Check partner_id is set correctly
 - Verify both guests are in database
-- Check is_primary_guest flags
+- Check partner relationships
 
 #### Issue: Plus-one not allowed
 - Verify plus_one_allowed is true

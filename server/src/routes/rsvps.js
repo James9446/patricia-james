@@ -15,8 +15,6 @@ router.post('/', async (req, res) => {
     rsvp_for_partner, 
     partner_attending,
     plus_one_attending,
-    plus_one_name,
-    plus_one_email,
     dietary_restrictions, 
     song_requests, 
     message 
@@ -48,52 +46,7 @@ router.post('/', async (req, res) => {
     );
 
     let rsvpResult;
-    let plusOneGuest = null;
-
-    // Handle plus-one creation if needed
-    if (plus_one_attending && plus_one_name && plus_one_email) {
-      // Check if plus-one already exists
-      const existingPlusOne = await query(
-        'SELECT id FROM guests WHERE first_name = $1 AND last_name = $2',
-        [plus_one_name.split(' ')[0], plus_one_name.split(' ').slice(1).join(' ')]
-      );
-
-      if (existingPlusOne.rows.length > 0) {
-        plusOneGuest = existingPlusOne.rows[0];
-      } else {
-        // Create new guest record for plus-one
-        const plusOneResult = await query(`
-          INSERT INTO guests (
-            first_name, last_name, email, 
-            plus_one_allowed, admin_notes
-          ) VALUES ($1, $2, $3, $4, $5)
-          RETURNING *
-        `, [
-          plus_one_name.split(' ')[0],
-          plus_one_name.split(' ').slice(1).join(' '),
-          plus_one_email,
-          false, // Plus-ones can't bring their own plus-ones
-          `Plus-one of ${req.body.guest_name || 'unknown guest'}`
-        ]);
-
-        plusOneGuest = plusOneResult.rows[0];
-
-        // Link plus-one to the guest who brought them
-        await query(`
-          UPDATE guests 
-          SET partner_id = $2 
-          WHERE id = $1
-        `, [plusOneGuest.id, guest_id]);
-
-        await query(`
-          UPDATE guests 
-          SET partner_id = $2 
-          WHERE id = $1
-        `, [guest_id, plusOneGuest.id]);
-
-        console.log(`✅ Created plus-one guest: ${plus_one_name}`);
-      }
-    }
+    // Note: Plus-one creation is now handled separately through the guest management system
 
     if (existingRsvp.rows.length > 0) {
       // Update existing RSVP
@@ -153,12 +106,7 @@ router.post('/', async (req, res) => {
       success: true,
       message: 'RSVP submitted successfully!',
       data: {
-        rsvp: rsvpResult.rows[0],
-        plus_one_created: plusOneGuest ? {
-          id: plusOneGuest.id,
-          name: plus_one_name,
-          email: plus_one_email
-        } : null
+        rsvp: rsvpResult.rows[0]
       }
     });
 

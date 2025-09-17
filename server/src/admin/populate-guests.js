@@ -19,7 +19,6 @@ const guestData = [
     last_name: 'Johnson',
     email: 'sarah@example.com',
     phone: '+1-555-0101',
-    is_primary_guest: true,
     plus_one_allowed: true,
     admin_notes: 'College friend, single'
   },
@@ -29,7 +28,6 @@ const guestData = [
     last_name: 'Wilson',
     email: 'mike@example.com',
     phone: '+1-555-0102',
-    is_primary_guest: true,
     plus_one_allowed: false,
     admin_notes: 'Work colleague, no plus-one needed'
   },
@@ -40,7 +38,6 @@ const guestData = [
     last_name: 'Garcia',
     email: 'maria@example.com',
     phone: '+1-555-0103',
-    is_primary_guest: true,
     plus_one_allowed: true,
     admin_notes: 'College roommate, married',
     partner: {
@@ -57,7 +54,6 @@ const guestData = [
     last_name: 'Davis',
     email: 'emily@example.com',
     phone: '+1-555-0105',
-    is_primary_guest: true,
     plus_one_allowed: false,
     admin_notes: 'Childhood friend, in relationship',
     partner: {
@@ -75,7 +71,6 @@ const guestData = [
     last_name: 'Garcia',
     email: 'patricia@example.com',
     phone: '+1-555-0107',
-    is_primary_guest: true,
     plus_one_allowed: false,
     admin_notes: 'Bride - no plus-one needed'
   },
@@ -85,7 +80,6 @@ const guestData = [
     last_name: 'Smith',
     email: 'james@example.com',
     phone: '+1-555-0108',
-    is_primary_guest: true,
     plus_one_allowed: false,
     admin_notes: 'Groom - no plus-one needed'
   }
@@ -98,16 +92,15 @@ async function insertGuest(guestData) {
   try {
     const result = await query(`
       INSERT INTO guests (
-        first_name, last_name, email, phone, is_primary_guest, 
+        first_name, last_name, email, phone, 
         plus_one_allowed, admin_notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `, [
       guestData.first_name,
       guestData.last_name,
       guestData.email,
       guestData.phone || null,
-      guestData.is_primary_guest,
       guestData.plus_one_allowed,
       guestData.admin_notes || null
     ]);
@@ -170,7 +163,6 @@ async function populateGuestList() {
       if (guest.partner) {
         const partnerGuest = await insertGuest({
           ...guest.partner,
-          is_primary_guest: false,
           plus_one_allowed: false
         });
         
@@ -185,8 +177,8 @@ async function populateGuestList() {
     const summary = await query(`
       SELECT 
         COUNT(*) as total_guests,
-        COUNT(CASE WHEN is_primary_guest = true THEN 1 END) as primary_guests,
-        COUNT(CASE WHEN is_primary_guest = false THEN 1 END) as partners,
+        COUNT(CASE WHEN partner_id IS NULL THEN 1 END) as primary_guests,
+        COUNT(CASE WHEN partner_id IS NOT NULL THEN 1 END) as partners,
         COUNT(CASE WHEN plus_one_allowed = true THEN 1 END) as plus_one_allowed
       FROM guests
     `);
@@ -205,7 +197,7 @@ async function populateGuestList() {
         g1.plus_one_allowed
       FROM guests g1
       LEFT JOIN guests g2 ON g1.partner_id = g2.id
-      WHERE g1.is_primary_guest = true
+      WHERE g1.partner_id IS NULL
       ORDER BY g1.last_name, g1.first_name
     `);
     
@@ -235,19 +227,18 @@ async function showGuestList() {
         g1.first_name,
         g1.last_name,
         g1.email,
-        g1.is_primary_guest,
         g1.plus_one_allowed,
         g2.first_name as partner_first_name,
         g2.last_name as partner_last_name,
         g1.admin_notes
       FROM guests g1
       LEFT JOIN guests g2 ON g1.partner_id = g2.id
-      ORDER BY g1.is_primary_guest DESC, g1.last_name, g1.first_name
+      ORDER BY g1.last_name, g1.first_name
     `);
     
     console.log('\n📋 Current Guest List:');
     guests.rows.forEach(guest => {
-      const type = guest.is_primary_guest ? 'Primary' : 'Partner';
+      const type = guest.partner_first_name ? 'Primary' : 'Single';
       const plusOne = guest.plus_one_allowed ? ' (Plus-one allowed)' : '';
       const partner = guest.partner_first_name ? ` + ${guest.partner_first_name} ${guest.partner_last_name}` : '';
       

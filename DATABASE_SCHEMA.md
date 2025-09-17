@@ -93,27 +93,26 @@ Guest selects "bringing plus-one"
 ## 📁 **Files Created**
 
 ### **Database Schema**
-- **`schema-v3.sql`** - Refined database schema
-- **`init-v3.js`** - Database initialization with migration
+- **`schema.sql`** - Current database schema
+- **`migrate.js`** - Database migration and initialization
 
 ### **Admin Tools**
 - **`import-guests-csv.js`** - CSV import script
 - **`ADMIN_GUIDE.md`** - Comprehensive admin documentation
 
 ### **API Routes**
-- **`auth-v3.js`** - Name-based authentication
-- **`rsvps-v3.js`** - Enhanced RSVP handling
+- **`auth.js`** - Name-based authentication
+- **`rsvps.js`** - Enhanced RSVP handling
 
 ### **Documentation**
-- **`SCHEMA_V3_REFINED.md`** - This summary
-- **`SCHEMA_REVIEW.md`** - Detailed review process
+- **`DATABASE_SCHEMA.md`** - This summary
 
 ## 🚀 **Getting Started**
 
 ### **1. Test the New Schema**
 ```bash
-# Initialize with v3 schema
-node src/database/init-v3.js
+# Initialize with current schema
+node src/database/migrate.js reset
 
 # Create sample CSV
 node src/admin/import-guests-csv.js sample

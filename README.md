@@ -298,13 +298,13 @@ npm start
 node test-api.js
 
 # Initialize database schema
-node src/database/init.js
+node src/database/migrate.js reset
 
 # Migrate to schema v4
-node src/database/migrate-to-v4.js migrate
+node src/database/migrate.js migrate
 
 # Reset database (WARNING: deletes all data)
-node src/database/migrate-to-v4.js reset
+node src/database/migrate.js reset
 ```
 
 #### Admin Scripts
