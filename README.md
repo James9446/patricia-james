@@ -47,6 +47,92 @@ A modern, interactive wedding website with guest authentication, RSVP system, an
    node src/admin/create-admin.js create
    ```
 
+## 🔍 Development Startup Sequence
+
+**Before starting any development work, always run the system check:**
+
+```bash
+# From the project root directory
+./check-system.sh
+```
+
+This comprehensive check verifies:
+- ✅ Environment variables and configuration
+- ✅ Database connectivity and admin access
+- ✅ RSVP system functionality
+- ✅ Server startup and API endpoints
+- ✅ All dependencies are installed
+
+**Alternative: Run individual checks**
+```bash
+# From the server directory
+cd server
+node scripts/startup-check.js
+```
+
+### Manual System Verification
+
+If you prefer to run checks manually:
+
+```bash
+# 1. Test database admin access
+cd server
+node tests/test-admin-access.js
+
+# 2. Test RSVP system
+node tests/test-rsvp-system.js
+
+# 3. Start server and test API
+node src/index.js
+# In another terminal:
+curl http://localhost:5001/api/health
+```
+
+## 🔧 Development Commands
+
+### System Verification
+```bash
+# Quick system check (recommended before starting work)
+./check-system.sh
+
+# Detailed system check
+cd server && node scripts/startup-check.js
+```
+
+### Database Management
+```bash
+# Reset database (WARNING: deletes all data)
+cd server && node src/database/migrate.js reset
+
+# Check database status
+cd server && node src/database/migrate.js status
+
+# Import guest list from CSV
+cd server && node src/admin/import-guests.js <path-to-csv-file>
+```
+
+### Testing
+```bash
+# Test RSVP system
+cd server && node tests/test-rsvp-system.js
+
+# Test admin access
+cd server && node tests/test-admin-access.js
+```
+
+### Server Management
+```bash
+# Start development server
+cd server && npm run dev
+
+# Start production server
+cd server && npm start
+
+# Test API endpoints
+curl http://localhost:5001/api/health
+curl http://localhost:5001/api/guests
+```
+
 5. **Start the development server**
    ```bash
    npm run dev
