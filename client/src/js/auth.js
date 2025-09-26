@@ -502,7 +502,6 @@ class AuthSystem {
         lastName
       );
       
-      console.log('Registration result:', result);
       this.showAuthMessage(result.message, result.success);
       
       if (result.success) {
@@ -525,7 +524,6 @@ class AuthSystem {
       return;
     }
     
-    console.log('Showing auth message:', message, 'Success:', isSuccess);
     messageEl.textContent = message;
     messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
     
