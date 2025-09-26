@@ -277,11 +277,8 @@ class AuthSystem {
    * Show login/register modal
    */
   showLoginModal(intendedPage = null) {
-    console.log('Showing login modal...');
-    
     // Create modal if it doesn't exist
     if (!document.getElementById('authModal')) {
-      console.log('Creating auth modal...');
       this.createAuthModal();
     }
 
@@ -290,7 +287,6 @@ class AuthSystem {
 
     // Show modal
     const modal = document.getElementById('authModal');
-    console.log('Modal element:', modal);
     modal.style.display = 'block';
     
     // Focus on first name input
@@ -373,10 +369,6 @@ class AuthSystem {
     const loginForm = document.getElementById('loginFormElement');
     const registerForm = document.getElementById('registerFormElement');
 
-    console.log('Setting up auth modal events...');
-    console.log('Modal:', modal);
-    console.log('Login form:', loginForm);
-    console.log('Register form:', registerForm);
 
     // Close modal
     closeBtn.addEventListener('click', () => {
@@ -451,7 +443,6 @@ class AuthSystem {
 
     // Register form submission
     registerForm.addEventListener('submit', async (e) => {
-      console.log('Register form submitted!');
       e.preventDefault();
       
       const firstName = document.getElementById('firstName').value.trim();
@@ -459,24 +450,19 @@ class AuthSystem {
       const email = document.getElementById('registerEmail').value.trim();
       const password = document.getElementById('registerPassword').value;
       
-      console.log('Form data:', { firstName, lastName, email, password: '***' });
-      
       // Check if user is already logged in
       if (this.isAuthenticated) {
-        console.log('User already authenticated, showing message');
         this.showAuthMessage('You are already logged in. Please logout first if you want to create a different account.', false);
         return;
       }
       
       // Basic validation
       if (!firstName || !lastName || !email || !password) {
-        console.log('Validation failed: missing fields');
         this.showAuthMessage('Please fill in all fields', false);
         return;
       }
       
       if (password.length < 6) {
-        console.log('Validation failed: password too short');
         this.showAuthMessage('Password must be at least 6 characters long', false);
         return;
       }
@@ -484,29 +470,23 @@ class AuthSystem {
       // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        console.log('Validation failed: invalid email format');
         this.showAuthMessage('Please enter a valid email address', false);
         return;
       }
       
-      console.log('Validation passed, checking guest information...');
       // Show loading state
       this.showAuthMessage('Checking guest information...', true);
       
       // First check if guest exists
-      console.log('Calling checkGuest...');
       const guestCheck = await this.checkGuest(firstName, lastName);
-      console.log('Guest check result:', guestCheck);
       
       if (!guestCheck.success) {
-        console.log('Guest check failed:', guestCheck.message);
         this.showAuthMessage(guestCheck.message, false);
         return;
       }
       
       // Check if guest already has a user account
       if (guestCheck.data.has_user_account) {
-        console.log('Guest already has user account:', guestCheck.data.user_email);
         this.showAuthMessage(`This guest already has an account registered with email: ${guestCheck.data.user_email}. Please try logging in instead.`, false);
         return;
       }
