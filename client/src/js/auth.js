@@ -48,6 +48,7 @@ class AuthSystem {
       if (response.ok) {
         const data = await response.json();
         this.isAuthenticated = data.authenticated;
+        console.log('🔐 Auth status check result:', this.isAuthenticated);
         
         if (this.isAuthenticated) {
           // Get user details
@@ -56,6 +57,7 @@ class AuthSystem {
       } else {
         this.isAuthenticated = false;
         this.currentUser = null;
+        console.log('🔐 Auth status check failed, user not authenticated');
       }
     } catch (error) {
       console.error('Auth status check failed:', error);
@@ -234,14 +236,19 @@ class AuthSystem {
         e.preventDefault();
         const pageId = newLink.getAttribute('data-page');
         
+        console.log('🔐 Navigation clicked:', pageId, 'Authenticated:', this.isAuthenticated);
+        
         if (pageId === 'home') {
           // Home page is always accessible
+          console.log('🔐 Navigating to home page');
           this.navigateToPage(pageId);
         } else {
           // Other pages require authentication
           if (this.isAuthenticated) {
+            console.log('🔐 User authenticated, navigating to:', pageId);
             this.navigateToPage(pageId);
           } else {
+            console.log('🔐 User not authenticated, showing login modal');
             this.showLoginModal(pageId);
           }
         }
@@ -555,15 +562,18 @@ class AuthSystem {
    * Navigate to a page with error handling
    */
   navigateToPage(pageId) {
+    console.log('🔐 navigateToPage called with:', pageId);
     try {
       if (typeof window.showPage === 'function') {
+        console.log('🔐 Using window.showPage for navigation');
         window.showPage(pageId);
       } else {
+        console.log('🔐 showPage not available, using hash navigation');
         // Fallback navigation
         window.location.hash = pageId;
       }
     } catch (error) {
-      console.warn('Error navigating to page:', pageId, error);
+      console.warn('🔐 Error navigating to page:', pageId, error);
       // Fallback to hash navigation
       window.location.hash = pageId;
     }
