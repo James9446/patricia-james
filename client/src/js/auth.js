@@ -236,22 +236,11 @@ class AuthSystem {
         
         if (pageId === 'home') {
           // Home page is always accessible
-          if (typeof window.showPage === 'function') {
-            window.showPage(pageId);
-          } else {
-            // Fallback if showPage isn't ready yet
-            console.warn('showPage function not ready, using fallback navigation');
-            window.location.hash = pageId;
-          }
+          this.navigateToPage(pageId);
         } else {
           // Other pages require authentication
           if (this.isAuthenticated) {
-            if (typeof window.showPage === 'function') {
-              window.showPage(pageId);
-            } else {
-              console.warn('showPage function not ready, using fallback navigation');
-              window.location.hash = pageId;
-            }
+            this.navigateToPage(pageId);
           } else {
             this.showLoginModal(pageId);
           }
@@ -407,11 +396,7 @@ class AuthSystem {
       if (result.success) {
         modal.style.display = 'none';
         if (this.intendedPage) {
-          if (typeof window.showPage === 'function') {
-            window.showPage(this.intendedPage);
-          } else {
-            window.location.hash = this.intendedPage;
-          }
+          this.navigateToPage(this.intendedPage);
           this.intendedPage = null;
         }
       }
@@ -471,11 +456,7 @@ class AuthSystem {
       if (result.success) {
         modal.style.display = 'none';
         if (this.intendedPage) {
-          if (typeof window.showPage === 'function') {
-            window.showPage(this.intendedPage);
-          } else {
-            window.location.hash = this.intendedPage;
-          }
+          this.navigateToPage(this.intendedPage);
           this.intendedPage = null;
         }
       }
@@ -551,11 +532,7 @@ class AuthSystem {
         const confirmed = confirm('Are you sure you want to logout?');
         if (confirmed) {
           await this.logout();
-          if (typeof window.showPage === 'function') {
-            window.showPage('home');
-          } else {
-            window.location.hash = 'home';
-          }
+          this.navigateToPage('home');
         }
       });
     } else {
@@ -575,12 +552,28 @@ class AuthSystem {
   }
 
   /**
+   * Navigate to a page with error handling
+   */
+  navigateToPage(pageId) {
+    try {
+      if (typeof window.showPage === 'function') {
+        window.showPage(pageId);
+      } else {
+        // Fallback navigation
+        window.location.hash = pageId;
+      }
+    } catch (error) {
+      console.warn('Error navigating to page:', pageId, error);
+      // Fallback to hash navigation
+      window.location.hash = pageId;
+    }
+  }
+
+  /**
    * Show a specific page (wrapper for existing showPage function)
    */
   showPage(pageId) {
-    if (typeof window.showPage === 'function') {
-      window.showPage(pageId);
-    }
+    this.navigateToPage(pageId);
   }
 }
 
@@ -588,19 +581,9 @@ class AuthSystem {
 window.addEventListener('load', () => {
   console.log('🔐 Initializing authentication system...');
   
-  // Wait for showPage function to be available
-  const waitForShowPage = () => {
-    if (typeof window.showPage === 'function') {
-      window.authSystem = new AuthSystem();
-      console.log('🔐 Authentication system initialized');
-    } else {
-      console.log('🔐 Waiting for main.js to initialize showPage...');
-      setTimeout(waitForShowPage, 50);
-    }
-  };
-  
-  // Start checking after a short delay
-  setTimeout(waitForShowPage, 100);
+  // Initialize immediately - the auth system will handle showPage errors gracefully
+  window.authSystem = new AuthSystem();
+  console.log('🔐 Authentication system initialized');
 });
 
 // Export for use in other scripts
