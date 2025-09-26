@@ -40,12 +40,34 @@ A modern, interactive wedding website with guest authentication, RSVP system, an
    # Create PostgreSQL database
    createdb patricia_james_wedding_dev
    
-   # Initialize the database schema
+   # Initialize the database schema (v4 - current)
    node src/database/migrate.js reset
    
    # Create admin user
    node src/admin/create-admin.js create
+   
+   # NOTE: Schema v5 redesign is planned - see PROJECT_PLAN.md for details
    ```
+
+## ⚠️ IMPORTANT: Schema Redesign Planned
+
+**The current system (Schema v4) has critical design flaws that are causing authentication and RSVP issues. A complete schema redesign (Schema v5) is planned to address:**
+
+### Current Issues:
+- **Data Duplication**: Email stored in both `guests` and `users` tables
+- **Missing Core Concepts**: No invitation codes, party size management
+- **Complex Relationships**: Circular references and confusing partner logic
+- **Authentication Problems**: State management chaos, timing issues
+- **RSVP System Issues**: Hardcoded data, no user type detection
+
+### Planned Solution (Schema v5):
+- **Invitation-centric design**: Master invitation list with unique codes
+- **Simplified guest management**: No `is_primary` column, equal partner treatment
+- **Clean user authentication**: Email-only authentication, no redundant fields
+- **Streamlined RSVP system**: Single RSVP per invitation, plus-one details inline
+- **Better user experience**: User type detection, dynamic forms, guided flow
+
+**See `PROJECT_PLAN.md` for complete details on the redesign plan.**
 
 ## 🔍 Development Startup Sequence
 
@@ -175,7 +197,7 @@ SELECT COUNT(*) as total_guests FROM guests;
 SELECT COUNT(*) as total_rsvps FROM rsvps;
 ```
 
-#### View Guest Data
+#### View Guest Data (Current Schema v4)
 ```sql
 -- View all guests
 SELECT id, first_name, last_name, full_name, plus_one_allowed, admin_notes 
@@ -202,7 +224,34 @@ LEFT JOIN guests p ON g.partner_id = p.id
 ORDER BY g.last_name, g.first_name;
 ```
 
-#### View RSVP Data
+#### View Invitation Data (Planned Schema v5)
+```sql
+-- View all invitations with guest counts
+SELECT 
+  i.invitation_code,
+  i.primary_guest_name,
+  i.party_size,
+  i.plus_one_allowed,
+  COUNT(g.id) as guest_count
+FROM invitations i
+LEFT JOIN guests g ON i.id = g.invitation_id
+GROUP BY i.id, i.invitation_code, i.primary_guest_name, i.party_size, i.plus_one_allowed
+ORDER BY i.invitation_code;
+
+-- View guests by invitation
+SELECT 
+  i.invitation_code,
+  i.primary_guest_name,
+  g.first_name,
+  g.last_name,
+  u.email
+FROM invitations i
+JOIN guests g ON i.id = g.invitation_id
+LEFT JOIN users u ON g.id = u.guest_id
+ORDER BY i.invitation_code, g.first_name;
+```
+
+#### View RSVP Data (Current Schema v4)
 ```sql
 -- View all RSVPs with guest information
 SELECT 
@@ -229,6 +278,44 @@ WHERE r.id IS NULL
 ORDER BY g.last_name, g.first_name;
 ```
 
+#### View RSVP Data (Planned Schema v5)
+```sql
+-- View all RSVPs with invitation information
+SELECT 
+  i.invitation_code,
+  i.primary_guest_name,
+  r.response_status,
+  r.attending_count,
+  r.plus_one_name,
+  r.dietary_restrictions,
+  r.responded_at
+FROM rsvps r
+JOIN invitations i ON r.invitation_id = i.id
+ORDER BY r.responded_at DESC;
+
+-- View RSVP statistics by invitation
+SELECT 
+  i.invitation_code,
+  i.primary_guest_name,
+  r.response_status,
+  r.attending_count,
+  CASE WHEN r.plus_one_name IS NOT NULL THEN 'Yes' ELSE 'No' END as bringing_plus_one
+FROM rsvps r
+JOIN invitations i ON r.invitation_id = i.id
+ORDER BY i.invitation_code;
+
+-- View invitations without RSVPs
+SELECT 
+  i.invitation_code,
+  i.primary_guest_name,
+  i.party_size,
+  i.plus_one_allowed
+FROM invitations i
+LEFT JOIN rsvps r ON i.id = r.invitation_id
+WHERE r.id IS NULL
+ORDER BY i.invitation_code;
+```
+
 #### Database Maintenance
 ```sql
 -- Reset all RSVPs (WARNING: This deletes all RSVP data)
@@ -248,6 +335,35 @@ FROM users
 WHERE is_admin = true
 ORDER BY created_at DESC;
 ```
+
+## 🔄 Schema Migration Plan (v4 → v5)
+
+### Migration Strategy
+The current system (Schema v4) has critical design flaws that are causing authentication and RSVP issues. A complete schema redesign (Schema v5) is planned to address these issues.
+
+#### Phase 1: Create New Schema
+1. **Create new tables** alongside existing ones
+2. **Migrate data** from old schema to new schema
+3. **Update APIs** to use new schema
+4. **Test thoroughly** before removing old tables
+
+#### Phase 2: Update Frontend
+1. **Update authentication** to use invitation codes
+2. **Update RSVP forms** to use new data structure
+3. **Update admin interfaces** for invitation management
+4. **Test user flows** end-to-end
+
+#### Phase 3: Cleanup
+1. **Remove old tables** after successful migration
+2. **Update documentation** to reflect new schema
+3. **Deploy to production** with new schema
+
+### Benefits of Schema v5
+- **Single source of truth** - No data duplication
+- **Clear relationships** - Easy to understand and query
+- **Wedding-specific** - Designed for wedding RSVP workflows
+- **Simple logic** - Easy to understand and maintain
+- **Better UX** - User type detection, dynamic forms, guided flow
 
 ## 📁 CSV Guest List Management
 
@@ -568,5 +684,5 @@ This project is for personal use only.
 
 ---
 
-*Last Updated: September 16, 2025*
-*Version: 1.0.0*
+*Last Updated: December 20, 2024*
+*Version: 1.0.0 - Schema v5 Redesign Planned*

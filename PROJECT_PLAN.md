@@ -27,104 +27,116 @@ Frontend (Static) → Backend API (Node.js/Express) → PostgreSQL Database
 - **Guest list validation**: Only invited guests can register
 - **Duplicate prevention**: Can't register twice with same name
 
-## 📊 Database Schema (v4 - Streamlined)
+## 📊 Database Schema (v5 - Redesigned)
 
 ### Core Tables
 ```sql
--- Guest list management (streamlined)
-guests (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  first_name VARCHAR(100) NOT NULL,
-  last_name VARCHAR(100) NOT NULL,
-  full_name VARCHAR(200) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED,
-  email VARCHAR(255) UNIQUE, -- Optional initially, added during RSVP
-  phone VARCHAR(20),
-  partner_id UUID REFERENCES guests(id) ON DELETE SET NULL, -- Link to partner if applicable
-  plus_one_allowed BOOLEAN DEFAULT false, -- Can this guest bring a plus-one?
-  admin_notes TEXT, -- Internal notes for admin use
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(first_name, last_name) -- For name-based authentication
+-- ========================================
+-- INVITATIONS Table (Master invitation list)
+-- ========================================
+CREATE TABLE invitations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    invitation_code VARCHAR(20) UNIQUE NOT NULL, -- e.g., "SMITH001", "JONES002"
+    primary_guest_name VARCHAR(200) NOT NULL, -- "John & Jane Smith"
+    party_size INTEGER NOT NULL DEFAULT 2, -- How many people can attend
+    plus_one_allowed BOOLEAN DEFAULT false,
+    invitation_sent BOOLEAN DEFAULT false,
+    rsvp_deadline DATE,
+    admin_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- User accounts (for photo uploads and interactions)
-users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
-  email VARCHAR(255) UNIQUE NOT NULL, -- Email serves as username
-  password_hash VARCHAR(255) NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  last_name VARCHAR(100) NOT NULL,
-  is_admin BOOLEAN DEFAULT false, -- Admin privileges
-  is_active BOOLEAN DEFAULT true,
-  last_login TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- ========================================
+-- GUESTS Table (Individual people)
+-- ========================================
+CREATE TABLE guests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    invitation_id UUID REFERENCES invitations(id) ON DELETE CASCADE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    admin_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- RSVP responses (enhanced for flexible couple RSVPs)
-rsvps (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  response_status VARCHAR(20) NOT NULL CHECK (response_status IN ('attending', 'not_attending', 'pending')),
-  rsvp_for_self BOOLEAN DEFAULT true, -- Is this RSVP for the guest themselves?
-  rsvp_for_partner BOOLEAN DEFAULT false, -- Is this RSVP also for their partner?
-  partner_attending BOOLEAN, -- Is partner attending? (NULL if not RSVPing for partner)
-  partner_guest_id UUID REFERENCES guests(id) ON DELETE SET NULL, -- Reference to partner
-  plus_one_attending BOOLEAN DEFAULT false,
-  dietary_restrictions TEXT, -- Moved from guests table
-  song_requests TEXT,
-  message TEXT,
-  responded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- ========================================
+-- USERS Table (Authentication only)
+-- ========================================
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    is_admin BOOLEAN DEFAULT false,
+    last_login TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE -- Soft delete instead of is_active
 );
 
--- Photo uploads
-photos (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  filename VARCHAR(255) NOT NULL,
-  original_filename VARCHAR(255) NOT NULL,
-  file_path VARCHAR(500) NOT NULL,
-  file_size INTEGER NOT NULL,
-  mime_type VARCHAR(100) NOT NULL,
-  caption TEXT,
-  is_approved BOOLEAN DEFAULT false,
-  is_featured BOOLEAN DEFAULT false,
-  upload_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- ========================================
+-- RSVPs Table (Simplified)
+-- ========================================
+CREATE TABLE rsvps (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    invitation_id UUID REFERENCES invitations(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
+    
+    -- RSVP details
+    response_status VARCHAR(20) NOT NULL CHECK (response_status IN ('attending', 'not_attending', 'pending')),
+    attending_count INTEGER NOT NULL DEFAULT 1, -- How many people are attending
+    
+    -- Plus-one details (if applicable)
+    plus_one_name VARCHAR(200), -- Name of plus-one if bringing one
+    plus_one_email VARCHAR(255), -- Email of plus-one if provided
+    
+    -- Additional information
+    dietary_restrictions TEXT,
+    song_requests TEXT,
+    message TEXT,
+    
+    -- Metadata
+    responded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Photo comments
-photo_comments (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  photo_id UUID REFERENCES photos(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  comment TEXT NOT NULL,
-  is_approved BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- ========================================
+-- USER_SESSIONS Table (Session storage)
+-- ========================================
+CREATE TABLE user_sessions (
+    sid VARCHAR NOT NULL,
+    sess JSON NOT NULL,
+    expire TIMESTAMP(6) NOT NULL,
+    PRIMARY KEY (sid)
 );
 
--- Photo upvotes (prevents duplicate votes)
-photo_upvotes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  photo_id UUID REFERENCES photos(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(photo_id, user_id)
+-- ========================================
+-- PHOTOS Table (Future feature)
+-- ========================================
+CREATE TABLE photos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    filename VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size INTEGER NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    caption TEXT,
+    is_approved BOOLEAN DEFAULT false,
+    is_featured BOOLEAN DEFAULT false,
+    upload_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-### Key Schema Changes (v4)
-- **Streamlined guests table**: Removed `is_invited`, `is_primary_guest`, `invitation_sent`, `dietary_restrictions`
-- **Enhanced RSVP system**: Added partner RSVP support, moved dietary restrictions to RSVP table
-- **UUID primary keys**: Better for distributed systems and security
-- **Computed columns**: `full_name` automatically generated from first/last name
-- **Flexible relationships**: Partners linked via `partner_id`, plus-ones handled dynamically
+### Key Schema Changes (v5)
+- **Invitation-centric design**: Master invitation list with unique codes
+- **Simplified guest management**: No `is_primary` column, equal partner treatment
+- **Clean user authentication**: Email-only authentication, no redundant name fields
+- **Streamlined RSVP system**: Single RSVP per invitation, plus-one details stored inline
+- **Session management**: Proper `user_sessions` table for `express-session`
+- **Soft delete**: `deleted_at` instead of `is_active` for better data integrity
 
 ## 🚀 Deployment Strategy
 
@@ -144,35 +156,40 @@ photo_upvotes (
 
 ## 📋 Development Phases
 
-### Phase 1: Backend Foundation ✅ COMPLETED
-- [x] Set up Node.js/Express server
-- [x] Design and create PostgreSQL schema (v4 - streamlined)
-- [x] Implement basic API endpoints (guests, RSVPs)
-- [x] Database migration system
-- [x] CSV import functionality for guest list
-- [ ] Deploy backend to Render
+### Phase 1: Schema Redesign & Migration 🚧 CRITICAL
+- [ ] **Design new schema (v5)** - Invitation-centric, simplified structure
+- [ ] **Create migration scripts** - From v4 to v5 schema
+- [ ] **Update all API endpoints** - Align with new schema
+- [ ] **Test migration process** - Ensure data integrity
+- [ ] **Update documentation** - Reflect new schema design
 
-### Phase 2: Authentication System 🚧 IN PROGRESS
-- [x] Implement user registration with guest list validation
-- [x] Build login/logout functionality
-- [x] Create session management with cookies
-- [x] Update frontend navigation logic
-- [ ] **COMPREHENSIVE AUTHENTICATION IMPROVEMENTS** (See detailed plan below)
+### Phase 2: Authentication System Redesign 🚧 CRITICAL
+- [ ] **Centralized AuthManager** - Single source of truth for auth state
+- [ ] **Event-driven updates** - Components subscribe to auth changes
+- [ ] **Proper session handling** - Server/client synchronization
+- [ ] **Error boundary** - Graceful failure handling
+- [ ] **User type detection** - Individual/partner/plus-one logic
 
-### Phase 3: RSVP System ✅ COMPLETED
-- [x] Build RSVP form with guest list integration
-- [x] Implement RSVP status tracking
-- [x] Test RSVP API endpoints (create, update, retrieve)
-- [x] Frontend RSVP form integration
-- [ ] Create admin dashboard for guest management
+### Phase 3: RSVP System Redesign 🚧 CRITICAL
+- [ ] **User type detection** - Based on database relationships
+- [ ] **Dynamic form generation** - Based on user type
+- [ ] **State management** - Track RSVP status and updates
+- [ ] **API integration** - Proper error handling and loading states
+- [ ] **User experience flow** - Clear guidance for each user type
 
-### Phase 4: Photo System
+### Phase 4: API & Database Enhancements
+- [ ] **New API endpoints** - Invitation lookup, user type detection
+- [ ] **Plus-one registration** - Allow plus-ones to create accounts
+- [ ] **Partner RSVP logic** - Either partner can RSVP for both
+- [ ] **Admin dashboard** - Manage invitations and guests
+
+### Phase 5: Photo System
 - [ ] Implement photo upload functionality
 - [ ] Add photo gallery display with attribution
 - [ ] Build comments and upvoting system
 - [ ] Set up file storage solution
 
-### Phase 5: Integration & Polish
+### Phase 6: Integration & Polish
 - [ ] Connect frontend to backend APIs
 - [ ] Add error handling and validation
 - [ ] Performance optimization and testing
@@ -470,20 +487,22 @@ function handleNavigation(pageId) {
 - **Guest Management**: CSV import, partner linking, plus-one handling
 - **API Testing**: All endpoints tested and functional
 - **Database Admin**: Secure admin user with full privileges created
+- **Authentication**: Basic login/register functionality (needs redesign)
 
-### 🚧 In Progress
-- **Authentication System**: Basic implementation complete, needs comprehensive improvements (Phase 2.5)
-- **Admin Dashboard**: RSVP management interface
+### 🚧 Critical Issues Identified
+- **Schema Design Flaws**: Data duplication, missing core concepts, complex relationships
+- **Authentication System Problems**: State management chaos, timing issues, poor UX
+- **RSVP System Issues**: Hardcoded data, no user type detection, poor error handling
+- **User Experience**: No guided flow, poor error messages, confusing navigation
 
-### 📋 Next Steps
-1. **CRITICAL**: Implement authentication system improvements (Phase 2.5)
-   - Add login status indicator and logout functionality
-   - Implement proper error handling for common scenarios
-   - Add password validation and security measures
-2. Create admin dashboard for RSVP management
-3. Build photo upload and sharing system (Phase 4)
-4. Implement security measures (Phase 6)
-5. Deploy to Render.com with production security
+### 📋 Next Steps - COMPLETE SYSTEM REDESIGN
+1. **CRITICAL**: Implement new schema (v5) - Invitation-centric design
+2. **CRITICAL**: Redesign authentication system - Centralized state management
+3. **CRITICAL**: Redesign RSVP system - User type detection and dynamic forms
+4. **HIGH**: Create migration scripts from v4 to v5
+5. **HIGH**: Update all API endpoints for new schema
+6. **MEDIUM**: Build admin dashboard for invitation management
+7. **LOW**: Implement photo system and advanced features
 
 ### 🔒 Security Status
 - ✅ **Database Admin User**: Created with proper privileges
@@ -494,5 +513,5 @@ function handleNavigation(pageId) {
 
 ---
 
-*Last Updated: September 16, 2025*
-*Status: Phase 1 & 3 Complete - Security Plan Added - Ready for Authentication Implementation*
+*Last Updated: December 20, 2024*
+*Status: Schema v5 Redesign Planned - Critical Issues Identified - Complete System Redesign Required*
