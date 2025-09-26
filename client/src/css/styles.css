@@ -2012,7 +2012,7 @@ body:not(.home-page) .full-screen-background {
 
 .form-group label {
   display: block;
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   color: var(--charcoal);
   margin-bottom: 8px;
@@ -2045,7 +2045,7 @@ body:not(.home-page) .full-screen-background {
   border: none;
   border-radius: 10px;
   font-size: 18px;
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -2067,7 +2067,7 @@ body:not(.home-page) .full-screen-background {
   padding: 15px;
   border-radius: 10px;
   text-align: center;
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   transition: all 0.3s ease;
   position: sticky;
@@ -2109,7 +2109,7 @@ body:not(.home-page) .full-screen-background {
   border: none;
   border-radius: 8px;
   font-size: 14px;
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -2126,7 +2126,7 @@ body:not(.home-page) .full-screen-background {
   border: none;
   border-radius: 8px;
   font-size: 14px;
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
 }

@@ -581,7 +581,6 @@ class AuthSystem {
       const userInfo = document.createElement('div');
       userInfo.className = 'user-info';
       userInfo.innerHTML = `
-        <span class="user-name">Welcome, ${this.currentUser.first_name}!</span>
         <button id="logoutBtn" class="logout-btn">Logout</button>
       `;
       nav.appendChild(userInfo);
