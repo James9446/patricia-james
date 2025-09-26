@@ -594,6 +594,9 @@ body.home-page {
   border-radius: var(--radius-lg);
   text-align: center;
   font-weight: 500;
+  transition: all 0.3s ease-in-out;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .rsvp-status.status-info {
@@ -615,7 +618,9 @@ body.home-page {
 }
 
 .rsvp-status.hidden {
-  display: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
 }
 
 /* ========================================

@@ -29,8 +29,8 @@ class RSVPManagerV5 {
       // Wait a bit more for auth system to complete its check
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Load user data
-      await this.loadUserData();
+      // Load user data without showing status messages initially
+      await this.loadUserData(true);
       
       this.isInitialized = true;
       console.log('📝 RSVP Manager v5 initialized');
@@ -118,7 +118,7 @@ class RSVPManagerV5 {
   /**
    * Load user data and RSVP information
    */
-  async loadUserData() {
+  async loadUserData(silent = false) {
     console.log('📝 RSVP Manager: Loading user data...');
     
     // Check authentication status from the auth system
@@ -139,7 +139,10 @@ class RSVPManagerV5 {
     }
 
     try {
-      this.showStatus('Loading your RSVP information...', 'info');
+      // Only show loading message if not in silent mode
+      if (!silent) {
+        this.showStatus('Loading your RSVP information...', 'info');
+      }
       
       // Get RSVP data from the new API
       const response = await fetch(`${this.apiBaseUrl}/rsvps`, {
@@ -360,26 +363,35 @@ class RSVPManagerV5 {
     const statusText = document.getElementById('status-text');
     
     if (statusDiv && statusText) {
+      // Reset display and remove hidden class for smooth transition
+      statusDiv.style.display = 'block';
+      statusDiv.classList.remove('hidden');
+      
       statusText.textContent = message;
       statusDiv.className = `rsvp-status status-${type}`;
-      statusDiv.classList.remove('hidden');
       
       // Auto-hide success messages after 5 seconds
       if (type === 'success') {
         setTimeout(() => {
-          statusDiv.classList.add('hidden');
+          this.hideStatus();
         }, 5000);
       }
     }
   }
 
   /**
-   * Hide status message
+   * Hide status message with smooth transition
    */
   hideStatus() {
     const statusDiv = document.getElementById('rsvp-status');
     if (statusDiv) {
       statusDiv.classList.add('hidden');
+      // Remove from DOM after transition completes
+      setTimeout(() => {
+        if (statusDiv.classList.contains('hidden')) {
+          statusDiv.style.display = 'none';
+        }
+      }, 300);
     }
   }
 
