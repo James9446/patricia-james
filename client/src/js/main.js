@@ -110,6 +110,9 @@ document.addEventListener('DOMContentLoaded', function() {
         history.pushState({ page: pageId }, '', `#${pageId}`);
     }
 
+    // Make showPage available globally for authentication system
+    window.showPage = showPage;
+
     // Add click event listeners to navigation links
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
