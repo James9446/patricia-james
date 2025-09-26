@@ -502,6 +502,7 @@ class AuthSystem {
         lastName
       );
       
+      console.log('Registration result:', result);
       this.showAuthMessage(result.message, result.success);
       
       if (result.success) {
@@ -519,6 +520,12 @@ class AuthSystem {
    */
   showAuthMessage(message, isSuccess) {
     const messageEl = document.getElementById('authMessage');
+    if (!messageEl) {
+      console.error('Auth message element not found! Modal may not be created.');
+      return;
+    }
+    
+    console.log('Showing auth message:', message, 'Success:', isSuccess);
     messageEl.textContent = message;
     messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
     
