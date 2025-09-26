@@ -487,7 +487,8 @@ class AuthSystem {
       
       // Check if guest already has a user account
       if (guestCheck.data.has_user_account) {
-        this.showAuthMessage(`This guest already has an account registered with email: ${guestCheck.data.user_email}. Please try logging in instead.`, false);
+        const errorMessage = `This guest already has an account registered with email: ${guestCheck.data.user_email}. Please try logging in instead.`;
+        this.showAuthMessage(errorMessage, false);
         return;
       }
       

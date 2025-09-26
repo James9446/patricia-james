@@ -1928,9 +1928,12 @@ body:not(.home-page) .full-screen-background {
   border-radius: 20px;
   width: 90%;
   max-width: 500px;
+  max-height: 90vh;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .auth-close {
@@ -2060,13 +2063,16 @@ body:not(.home-page) .full-screen-background {
 
 /* Authentication Messages */
 .auth-message {
-  margin-top: 20px;
+  margin: 20px;
   padding: 15px;
   border-radius: 10px;
   text-align: center;
   font-family: 'Lucy Said OK', cursive;
   font-size: 16px;
   transition: all 0.3s ease;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .auth-message.success {
