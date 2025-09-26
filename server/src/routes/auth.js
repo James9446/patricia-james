@@ -45,6 +45,15 @@ router.post('/check-guest', async (req, res) => {
 
     const guest = result.rows[0];
 
+    // Check if user account already exists for this guest
+    const userAccount = await query(
+      'SELECT id, email FROM users WHERE guest_id = $1',
+      [guest.id]
+    );
+
+    const hasUserAccount = userAccount.rows.length > 0;
+    const userEmail = hasUserAccount ? userAccount.rows[0].email : null;
+
     res.json({
       success: true,
       data: {
@@ -61,7 +70,9 @@ router.post('/check-guest', async (req, res) => {
           email: guest.partner_email
         } : null,
         plus_one_allowed: guest.plus_one_allowed,
-        needs_email: !guest.email
+        needs_email: !guest.email,
+        has_user_account: hasUserAccount,
+        user_email: userEmail
       }
     });
 
@@ -110,16 +121,29 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = await query(
-      'SELECT id FROM users WHERE email = $1 OR guest_id = $2',
-      [email, guest_id]
+    // Check if user already exists for this specific guest
+    const existingUserForGuest = await query(
+      'SELECT id, email FROM users WHERE guest_id = $1',
+      [guest_id]
     );
 
-    if (existingUser.rows.length > 0) {
+    if (existingUserForGuest.rows.length > 0) {
       return res.status(409).json({
         success: false,
-        message: 'User account already exists for this guest or email'
+        message: 'An account already exists for this guest. Please try logging in instead.'
+      });
+    }
+
+    // Check if email is already used by another user
+    const existingUserWithEmail = await query(
+      'SELECT id, guest_id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingUserWithEmail.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'This email address is already registered. Please use a different email or try logging in.'
       });
     }
 

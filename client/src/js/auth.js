@@ -145,8 +145,8 @@ class AuthSystem {
       } else {
         // Handle specific error cases
         if (response.status === 409) {
-          // Duplicate registration
-          data.message = 'An account already exists for this guest or email address. Please try logging in instead.';
+          // Duplicate registration - use server message for specificity
+          data.message = data.message || 'An account already exists for this guest or email address. Please try logging in instead.';
         } else if (response.status === 404) {
           // Guest not found
           data.message = 'Guest information not found. Please check your name spelling or contact us.';
@@ -484,9 +484,9 @@ class AuthSystem {
         return;
       }
       
-      // Check if guest already has an account
-      if (guestCheck.data.email && guestCheck.data.email !== '') {
-        this.showAuthMessage('This guest already has an account. Please try logging in instead.', false);
+      // Check if guest already has a user account
+      if (guestCheck.data.has_user_account) {
+        this.showAuthMessage(`This guest already has an account registered with email: ${guestCheck.data.user_email}. Please try logging in instead.`, false);
         return;
       }
       
