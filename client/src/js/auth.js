@@ -142,6 +142,18 @@ class AuthSystem {
       if (data.success) {
         // Auto-login after successful registration
         await this.login(email, password);
+      } else {
+        // Handle specific error cases
+        if (response.status === 409) {
+          // Duplicate registration
+          data.message = 'An account already exists for this guest or email address. Please try logging in instead.';
+        } else if (response.status === 404) {
+          // Guest not found
+          data.message = 'Guest information not found. Please check your name spelling or contact us.';
+        } else if (response.status === 400) {
+          // Validation error
+          data.message = data.message || 'Please check your information and try again.';
+        }
       }
       
       return data;
@@ -177,6 +189,18 @@ class AuthSystem {
         this.currentUser = data.data;
         this.isAuthenticated = true;
         this.updateUI();
+      } else {
+        // Handle specific error cases
+        if (response.status === 401) {
+          // Invalid credentials
+          data.message = 'Invalid email or password. Please try again.';
+        } else if (response.status === 404) {
+          // User not found
+          data.message = 'No account found with this email address.';
+        } else if (response.status === 400) {
+          // Validation error
+          data.message = data.message || 'Please check your information and try again.';
+        }
       }
       
       return data;
@@ -381,9 +405,23 @@ class AuthSystem {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       
+      // Check if user is already logged in
+      if (this.isAuthenticated) {
+        this.showAuthMessage('You are already logged in!', true);
+        modal.style.display = 'none';
+        return;
+      }
+      
       // Basic validation
       if (!email || !password) {
         this.showAuthMessage('Please enter both email and password', false);
+        return;
+      }
+      
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        this.showAuthMessage('Please enter a valid email address', false);
         return;
       }
       
@@ -411,6 +449,12 @@ class AuthSystem {
       const email = document.getElementById('registerEmail').value.trim();
       const password = document.getElementById('registerPassword').value;
       
+      // Check if user is already logged in
+      if (this.isAuthenticated) {
+        this.showAuthMessage('You are already logged in. Please logout first if you want to create a different account.', false);
+        return;
+      }
+      
       // Basic validation
       if (!firstName || !lastName || !email || !password) {
         this.showAuthMessage('Please fill in all fields', false);
@@ -419,6 +463,13 @@ class AuthSystem {
       
       if (password.length < 6) {
         this.showAuthMessage('Password must be at least 6 characters long', false);
+        return;
+      }
+      
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        this.showAuthMessage('Please enter a valid email address', false);
         return;
       }
       
