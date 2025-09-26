@@ -383,15 +383,6 @@ class AuthSystem {
       }
     });
 
-    // Close modal when clicking on navigation links (but let them navigate)
-    document.addEventListener('click', (e) => {
-      // Close modal if clicking on navigation links while modal is open
-      if (modal.style.display === 'block' && e.target.closest('[data-page]')) {
-        modal.style.display = 'none';
-        // Let the navigation happen naturally
-      }
-    });
-
     // Tab switching
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
