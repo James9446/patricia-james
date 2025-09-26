@@ -42,20 +42,29 @@ class RSVPManager {
   }
 
   async getCurrentUser() {
-    // TODO: Replace with actual authentication check
-    // For now, simulate a logged-in user with a real guest ID
-    return {
-      id: 'user-1',
-      guest_id: 'fa220be9-a9f9-4f26-9d43-7603af3e1b39', // Cordelia Reynolds
-      email: 'cordelia@example.com',
-      first_name: 'Cordelia',
-      last_name: 'Reynolds'
-    };
+    // Get the current authenticated user from the auth system
+    if (window.authSystem && window.authSystem.isAuthenticated && window.authSystem.currentUser) {
+      return window.authSystem.currentUser;
+    }
+    
+    // If not authenticated, redirect to login
+    if (window.authSystem) {
+      window.authSystem.showLoginModal('rsvp');
+      return null;
+    }
+    
+    throw new Error('Authentication system not available');
   }
 
   async loadGuestData() {
     try {
       this.showStatus('Loading your invitation details...', 'info');
+      
+      // Get current user first
+      this.currentUser = await this.getCurrentUser();
+      if (!this.currentUser) {
+        return; // User will be redirected to login
+      }
       
       const response = await fetch(`${this.apiBaseUrl}/guests`);
       const data = await response.json();
