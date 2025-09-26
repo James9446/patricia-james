@@ -375,10 +375,20 @@ class AuthSystem {
       modal.style.display = 'none';
     });
 
-    // Close modal when clicking outside
+    // Close modal when clicking outside the modal content
     modal.addEventListener('click', (e) => {
+      // Close if clicking on the modal backdrop (not on the content)
       if (e.target === modal) {
         modal.style.display = 'none';
+      }
+    });
+
+    // Close modal when clicking on navigation links (but let them navigate)
+    document.addEventListener('click', (e) => {
+      // Close modal if clicking on navigation links while modal is open
+      if (modal.style.display === 'block' && e.target.closest('[data-page]')) {
+        modal.style.display = 'none';
+        // Let the navigation happen naturally
       }
     });
 
