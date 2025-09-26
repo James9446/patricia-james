@@ -30,7 +30,7 @@ class RSVPManagerV5 {
       await this.waitForAuthCheck();
       
       // Additional wait to ensure auth system is fully ready
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Double-check auth status before loading
       if (window.authSystem) {
@@ -38,19 +38,17 @@ class RSVPManagerV5 {
         console.log('📝 RSVP Manager: Final auth check:', authData);
         if (!authData.isAuthenticated || !authData.user) {
           console.log('📝 RSVP Manager: User not authenticated after wait');
-          this.showStatus('Please log in to access the RSVP page', 'error');
           return;
         }
       }
       
-      // Load user data without showing status messages initially
-      await this.loadUserData(true);
+      // Load user data
+      await this.loadUserData();
       
       this.isInitialized = true;
       console.log('📝 RSVP Manager v5 initialized');
     } catch (error) {
       console.error('RSVP Manager initialization failed:', error);
-      this.showStatus('Failed to initialize RSVP system. Please refresh the page.', 'error');
     }
   }
 
@@ -146,7 +144,6 @@ class RSVPManagerV5 {
       this.currentUser = null;
       this.userRsvp = null;
       this.partnerRsvp = null;
-      this.showStatus('Please log in to access the RSVP page', 'error');
     }
   }
 
@@ -165,14 +162,13 @@ class RSVPManagerV5 {
     this.currentUser = null;
     this.userRsvp = null;
     this.partnerRsvp = null;
-    this.showStatus('Please log in to access the RSVP page', 'error');
   }
 
   /**
    * Load user data and RSVP information
    */
-  async loadUserData(silent = false) {
-    console.log('📝 RSVP Manager: Loading user data (silent:', silent, ')');
+  async loadUserData() {
+    console.log('📝 RSVP Manager: Loading user data...');
     
     // Check authentication status from the auth system
     if (window.authSystem) {
@@ -182,25 +178,14 @@ class RSVPManagerV5 {
       
       if (!authData.isAuthenticated || !authData.user) {
         console.log('📝 RSVP Manager: User not authenticated');
-        if (!silent) {
-          this.showStatus('Please log in to access the RSVP page', 'error');
-        }
         return;
       }
     } else {
       console.log('📝 RSVP Manager: Auth system not available');
-      if (!silent) {
-        this.showStatus('Authentication system not available. Please refresh the page.', 'error');
-      }
       return;
     }
 
     try {
-      // Only show loading message if not in silent mode
-      if (!silent) {
-        this.showStatus('Loading your RSVP information...', 'info');
-      }
-      
       // Get RSVP data from the new API
       const response = await fetch(`${this.apiBaseUrl}/rsvps`, {
         method: 'GET',
@@ -216,9 +201,6 @@ class RSVPManagerV5 {
           
           // Populate the form with existing data
           this.populateForm();
-          if (!silent) {
-            this.hideStatus();
-          }
         } else {
           throw new Error(data.message || 'Failed to load RSVP data');
         }
@@ -227,9 +209,6 @@ class RSVPManagerV5 {
       }
     } catch (error) {
       console.error('Error loading RSVP data:', error);
-      if (!silent) {
-        this.showStatus('Error loading your RSVP information. Please try again.', 'error');
-      }
     }
   }
 
@@ -357,7 +336,7 @@ class RSVPManagerV5 {
     event.preventDefault();
     
     if (!this.currentUser) {
-      this.showStatus('Please log in to submit your RSVP', 'error');
+      console.log('📝 RSVP Manager: User not authenticated');
       return;
     }
 
@@ -370,7 +349,7 @@ class RSVPManagerV5 {
 
     // Validate required fields
     if (!rsvpData.response_status) {
-      this.showStatus('Please select whether you will be attending', 'error');
+      console.log('📝 RSVP Manager: No response status selected');
       return;
     }
 
@@ -385,7 +364,7 @@ class RSVPManagerV5 {
     }
 
     try {
-      this.showStatus('Submitting your RSVP...', 'info');
+      console.log('📝 RSVP Manager: Submitting RSVP...');
       
       const response = await fetch(`${this.apiBaseUrl}/rsvps`, {
         method: 'POST',
@@ -399,7 +378,7 @@ class RSVPManagerV5 {
       const data = await response.json();
 
       if (data.success) {
-        this.showStatus('Thank you! Your RSVP has been submitted successfully.', 'success');
+        console.log('📝 RSVP Manager: RSVP submitted successfully');
         
         // Update local state
         this.userRsvp = data.data.user_rsvp;
@@ -412,49 +391,9 @@ class RSVPManagerV5 {
       }
     } catch (error) {
       console.error('RSVP submission error:', error);
-      this.showStatus('Sorry, there was an error submitting your RSVP. Please try again.', 'error');
     }
   }
 
-  /**
-   * Show status message
-   */
-  showStatus(message, type = 'info') {
-    const statusDiv = document.getElementById('rsvp-status');
-    const statusText = document.getElementById('status-text');
-    
-    if (statusDiv && statusText) {
-      // Reset display and remove hidden class for smooth transition
-      statusDiv.style.display = 'block';
-      statusDiv.classList.remove('hidden');
-      
-      statusText.textContent = message;
-      statusDiv.className = `rsvp-status status-${type}`;
-      
-      // Auto-hide success messages after 5 seconds
-      if (type === 'success') {
-        setTimeout(() => {
-          this.hideStatus();
-        }, 5000);
-      }
-    }
-  }
-
-  /**
-   * Hide status message with smooth transition
-   */
-  hideStatus() {
-    const statusDiv = document.getElementById('rsvp-status');
-    if (statusDiv) {
-      statusDiv.classList.add('hidden');
-      // Remove from DOM after transition completes
-      setTimeout(() => {
-        if (statusDiv.classList.contains('hidden')) {
-          statusDiv.style.display = 'none';
-        }
-      }, 300);
-    }
-  }
 
   /**
    * Get user type for form customization
