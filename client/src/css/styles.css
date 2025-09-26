@@ -1964,7 +1964,7 @@ body:not(.home-page) .full-screen-background {
   padding: 20px;
   background: none;
   border: none;
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 18px;
   color: var(--slate-gray);
   cursor: pointer;
@@ -1994,7 +1994,7 @@ body:not(.home-page) .full-screen-background {
 }
 
 .auth-form h2 {
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 28px;
   color: var(--charcoal);
   text-align: center;
@@ -2092,18 +2092,17 @@ body:not(.home-page) .full-screen-background {
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-left: auto;
 }
 
 .user-name {
-  font-family: 'Lucy Said OK', cursive;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
   color: var(--charcoal);
   font-weight: 500;
 }
 
 .logout-btn {
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-md);
   background: linear-gradient(135deg, var(--lavender-haze), var(--blush-pink));
   color: var(--pure-white);
   border: none;
@@ -2120,7 +2119,7 @@ body:not(.home-page) .full-screen-background {
 }
 
 .login-btn {
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-md);
   background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
   color: var(--pure-white);
   border: none;
