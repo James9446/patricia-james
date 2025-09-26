@@ -186,8 +186,8 @@ class AuthSystem {
       const data = await response.json();
       
       if (data.success) {
-        this.currentUser = data.data;
-        this.isAuthenticated = true;
+        // After successful login, get the full user information
+        await this.getCurrentUser();
         this.updateUI();
       } else {
         // Handle specific error cases
