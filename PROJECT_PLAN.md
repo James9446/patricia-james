@@ -27,74 +27,40 @@ Frontend (Static) → Backend API (Node.js/Express) → PostgreSQL Database
 - **Guest list validation**: Only invited guests can register
 - **Duplicate prevention**: Can't register twice with same name
 
-## 📊 Database Schema (v5 - Redesigned)
+## 📊 Database Schema (v5 - Combined Table Approach)
 
 ### Core Tables
 ```sql
 -- ========================================
--- INVITATIONS Table (Master invitation list)
--- ========================================
-CREATE TABLE invitations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    invitation_code VARCHAR(20) UNIQUE NOT NULL, -- e.g., "SMITH001", "JONES002"
-    primary_guest_name VARCHAR(200) NOT NULL, -- "John & Jane Smith"
-    party_size INTEGER NOT NULL DEFAULT 2, -- How many people can attend
-    plus_one_allowed BOOLEAN DEFAULT false,
-    invitation_sent BOOLEAN DEFAULT false,
-    rsvp_deadline DATE,
-    admin_notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ========================================
--- GUESTS Table (Individual people)
--- ========================================
-CREATE TABLE guests (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    invitation_id UUID REFERENCES invitations(id) ON DELETE CASCADE,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    admin_notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ========================================
--- USERS Table (Authentication only)
+-- USERS Table (Combined guest and user data)
 -- ========================================
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    full_name VARCHAR(200) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED,
+    partner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    plus_one_allowed BOOLEAN DEFAULT false,
+    email VARCHAR(255) UNIQUE, -- NULL until registered
+    password_hash VARCHAR(255), -- NULL until registered
     is_admin BOOLEAN DEFAULT false,
-    last_login TIMESTAMP WITH TIME ZONE,
+    account_status VARCHAR(20) DEFAULT 'guest' CHECK (account_status IN ('guest', 'registered', 'deleted')),
+    admin_notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE -- Soft delete instead of is_active
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- ========================================
--- RSVPs Table (Simplified)
+-- RSVPs Table (Individual RSVP records)
 -- ========================================
 CREATE TABLE rsvps (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    invitation_id UUID REFERENCES invitations(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    guest_id UUID REFERENCES guests(id) ON DELETE CASCADE,
-    
-    -- RSVP details
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- Who this RSVP is for
+    partner_id UUID REFERENCES users(id) ON DELETE SET NULL, -- If RSVPing for partner
     response_status VARCHAR(20) NOT NULL CHECK (response_status IN ('attending', 'not_attending', 'pending')),
-    attending_count INTEGER NOT NULL DEFAULT 1, -- How many people are attending
-    
-    -- Plus-one details (if applicable)
-    plus_one_name VARCHAR(200), -- Name of plus-one if bringing one
-    plus_one_email VARCHAR(255), -- Email of plus-one if provided
-    
-    -- Additional information
-    dietary_restrictions TEXT,
-    song_requests TEXT,
-    message TEXT,
-    
-    -- Metadata
+    dietary_restrictions TEXT, -- Specific to this user
+    message TEXT, -- Specific to this user
     responded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -131,12 +97,118 @@ CREATE TABLE photos (
 ```
 
 ### Key Schema Changes (v5)
-- **Invitation-centric design**: Master invitation list with unique codes
-- **Simplified guest management**: No `is_primary` column, equal partner treatment
-- **Clean user authentication**: Email-only authentication, no redundant name fields
-- **Streamlined RSVP system**: Single RSVP per invitation, plus-one details stored inline
-- **Session management**: Proper `user_sessions` table for `express-session`
+- **Combined table approach**: Single `users` table for both guest and user data
+- **Seeding workflow**: Add names and partner relationships first, email added on registration
+- **Individual RSVP records**: Each user gets their own RSVP with specific dietary restrictions
+- **Partner RSVP logic**: Either partner can RSVP for both, creating separate records
+- **Plus-one handling**: Plus-ones become real users with full account capabilities
+- **No data duplication**: Email only stored once, no redundant fields
 - **Soft delete**: `deleted_at` instead of `is_active` for better data integrity
+
+## 📋 Detailed Table Breakdown
+
+### USERS Table - Combined Guest and User Data
+
+| Column | Type | Purpose | Usage | Example |
+|--------|------|---------|-------|---------|
+| `id` | UUID | Primary key | Unique identifier for each user/guest | `550e8400-e29b-41d4-a716-446655440000` |
+| `first_name` | VARCHAR(100) | Guest's first name | Required for identification and display | `"John"` |
+| `last_name` | VARCHAR(100) | Guest's last name | Required for identification and display | `"Smith"` |
+| `full_name` | VARCHAR(200) | Computed full name | Auto-generated for display purposes | `"John Smith"` |
+| `partner_id` | UUID | Link to partner | Creates couple relationships, bidirectional | References another user's ID |
+| `plus_one_allowed` | BOOLEAN | Plus-one permission | Determines if guest can bring a plus-one | `true` or `false` |
+| `email` | VARCHAR(255) | Login credential | NULL until user registers, then becomes unique | `"john@example.com"` |
+| `password_hash` | VARCHAR(255) | Secure password | NULL until user registers, then stores bcrypt hash | `"$2b$12$..."` |
+| `is_admin` | BOOLEAN | Admin privileges | Determines if user has admin access | `true` or `false` |
+| `account_status` | VARCHAR(20) | Account state | Tracks user registration status | `'guest'`, `'registered'`, `'deleted'` |
+| `admin_notes` | TEXT | Internal notes | Admin-only notes for guest management | `"College friend"` |
+| `created_at` | TIMESTAMP | Record creation | Audit trail for when record was created | `2024-12-20 10:30:00` |
+| `updated_at` | TIMESTAMP | Last modification | Audit trail for when record was last updated | `2024-12-20 15:45:00` |
+| `deleted_at` | TIMESTAMP | Soft delete | NULL for active users, timestamp when deleted | `NULL` or `2024-12-20 16:00:00` |
+
+**Usage Patterns:**
+- **Seeding**: Create records with names and partner relationships, email/password NULL
+- **Registration**: Update email, password_hash, and account_status to 'registered'
+- **Partner RSVP**: Either partner can RSVP for both using partner_id reference
+- **Plus-one creation**: Create new user record when plus-one is added
+
+### RSVPs Table - Individual RSVP Records
+
+| Column | Type | Purpose | Usage | Example |
+|--------|------|---------|-------|---------|
+| `id` | UUID | Primary key | Unique identifier for each RSVP | `550e8400-e29b-41d4-a716-446655440001` |
+| `user_id` | UUID | RSVP owner | Who this RSVP record belongs to | References users.id |
+| `partner_id` | UUID | Partner reference | If RSVPing for partner, who the partner is | References users.id |
+| `response_status` | VARCHAR(20) | Attending status | Core RSVP response | `'attending'`, `'not_attending'`, `'pending'` |
+| `dietary_restrictions` | TEXT | Food requirements | Specific to this user | `"Vegetarian, no nuts"` |
+| `message` | TEXT | Additional notes | User's message to wedding couple | `"So excited to celebrate!"` |
+| `responded_at` | TIMESTAMP | Response time | When the RSVP was submitted | `2024-12-20 14:30:00` |
+| `created_at` | TIMESTAMP | Record creation | When the RSVP record was created | `2024-12-20 14:30:00` |
+| `updated_at` | TIMESTAMP | Last modification | When the RSVP was last updated | `2024-12-20 16:45:00` |
+
+**Usage Patterns:**
+- **Individual RSVP**: user_id = guest, partner_id = NULL
+- **Partner RSVP**: user_id = guest, partner_id = partner (creates 2 records)
+- **Dietary restrictions**: Each user has their own specific requirements
+- **Audit trail**: Track who submitted and when
+
+### USER_SESSIONS Table - Session Management
+
+| Column | Type | Purpose | Usage | Example |
+|--------|------|---------|-------|---------|
+| `sid` | VARCHAR | Session ID | Unique session identifier | `"sess_1234567890"` |
+| `sess` | JSON | Session data | Stores session information | `{"userId": "uuid", "isAuthenticated": true}` |
+| `expire` | TIMESTAMP(6) | Expiration time | When session expires for cleanup | `2024-12-27 14:30:00.123456` |
+
+**Usage Patterns:**
+- **Session creation**: When user logs in, create session record
+- **Session validation**: Check if session exists and hasn't expired
+- **Session cleanup**: Remove expired sessions automatically
+
+### PHOTOS Table - Future Photo System
+
+| Column | Type | Purpose | Usage | Example |
+|--------|------|---------|-------|---------|
+| `id` | UUID | Primary key | Unique identifier for each photo | `550e8400-e29b-41d4-a716-446655440002` |
+| `user_id` | UUID | Photo owner | Who uploaded the photo | References users.id |
+| `filename` | VARCHAR(255) | Stored filename | System-generated filename | `"photo_1234567890.jpg"` |
+| `original_filename` | VARCHAR(255) | Original name | User's original filename | `"wedding_photo.jpg"` |
+| `file_path` | VARCHAR(500) | Storage location | Path to file on server | `"/uploads/photos/photo_1234567890.jpg"` |
+| `file_size` | INTEGER | File size | Size in bytes for storage management | `2048576` |
+| `mime_type` | VARCHAR(100) | File type | MIME type for validation | `"image/jpeg"` |
+| `caption` | TEXT | User description | User's caption for the photo | `"Beautiful ceremony moment"` |
+| `is_approved` | BOOLEAN | Moderation status | Whether photo is approved for display | `true` or `false` |
+| `is_featured` | BOOLEAN | Featured status | Whether photo is featured | `true` or `false` |
+| `upload_date` | TIMESTAMP | Upload time | When photo was uploaded | `2024-12-20 15:30:00` |
+| `created_at` | TIMESTAMP | Record creation | When record was created | `2024-12-20 15:30:00` |
+| `updated_at` | TIMESTAMP | Last modification | When record was last updated | `2024-12-20 16:00:00` |
+
+## 🔄 Data Flow and Relationships
+
+### Seeding Process
+1. **Create user records** with names and partner relationships
+2. **Set account_status** to 'guest' (not registered yet)
+3. **Link partners** using partner_id references
+4. **Set plus_one_allowed** based on invitation permissions
+
+### Registration Process
+1. **User visits website** and enters their name
+2. **System finds matching user** record by name
+3. **User provides email/password** for registration
+4. **Update user record** with email, password_hash, account_status = 'registered'
+
+### RSVP Process
+1. **User logs in** and navigates to RSVP page
+2. **System detects user type** (individual, partner, plus-one)
+3. **User submits RSVP** with dietary restrictions and message
+4. **System creates RSVP record(s)** for user and partner if applicable
+5. **Partner can later view/edit** the same RSVP data
+
+### Plus-One Process
+1. **Guest with plus_one_allowed** submits RSVP with plus-one details
+2. **System creates new user record** for plus-one
+3. **Plus-one can later register** and manage their own account
+4. **Plus-one treated as regular user** with full capabilities
 
 ## 🚀 Deployment Strategy
 
