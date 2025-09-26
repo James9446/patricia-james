@@ -277,8 +277,11 @@ class AuthSystem {
    * Show login/register modal
    */
   showLoginModal(intendedPage = null) {
+    console.log('Showing login modal...');
+    
     // Create modal if it doesn't exist
     if (!document.getElementById('authModal')) {
+      console.log('Creating auth modal...');
       this.createAuthModal();
     }
 
@@ -287,6 +290,7 @@ class AuthSystem {
 
     // Show modal
     const modal = document.getElementById('authModal');
+    console.log('Modal element:', modal);
     modal.style.display = 'block';
     
     // Focus on first name input
@@ -369,6 +373,11 @@ class AuthSystem {
     const loginForm = document.getElementById('loginFormElement');
     const registerForm = document.getElementById('registerFormElement');
 
+    console.log('Setting up auth modal events...');
+    console.log('Modal:', modal);
+    console.log('Login form:', loginForm);
+    console.log('Register form:', registerForm);
+
     // Close modal
     closeBtn.addEventListener('click', () => {
       modal.style.display = 'none';
@@ -442,6 +451,7 @@ class AuthSystem {
 
     // Register form submission
     registerForm.addEventListener('submit', async (e) => {
+      console.log('Register form submitted!');
       e.preventDefault();
       
       const firstName = document.getElementById('firstName').value.trim();
