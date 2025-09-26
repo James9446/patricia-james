@@ -7,7 +7,7 @@ const { query } = require('./config/db');
 
 // Import routes
 const guestsRouter = require('./routes/guests');
-const rsvpsRouter = require('./routes/rsvps');
+const rsvpsRouter = require('./routes/rsvps-v5'); // Use schema v5 RSVP routes
 const authRouter = require('./routes/auth');
 
 const app = express();
@@ -90,9 +90,9 @@ async function startServer() {
       const result = await query('SELECT NOW() as current_time');
       console.log('✅ Database connected successfully:', result.rows[0].current_time);
       
-      // Check if we have any guests
-      const guestCount = await query('SELECT COUNT(*) as count FROM guests');
-      console.log(`📊 Current guest count: ${guestCount.rows[0].count}`);
+      // Check if we have any users (schema v5: combined users table)
+      const userCount = await query('SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL');
+      console.log(`📊 Current user count: ${userCount.rows[0].count}`);
     } catch (dbError) {
       console.warn('⚠️  Database connection failed:', dbError.message);
       console.log('📝 Server will start without database (development mode)');

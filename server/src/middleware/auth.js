@@ -22,29 +22,25 @@ const requireAuth = async (req, res, next) => {
       });
     }
 
-    // Get user details from database
+    // Get user details from database (schema v5: combined users table)
     const result = await query(`
       SELECT 
         u.id,
         u.email,
         u.first_name,
         u.last_name,
-        u.guest_id,
+        u.full_name,
+        u.partner_id,
+        u.plus_one_allowed,
         u.is_admin,
-        u.is_active,
-        g.first_name as guest_first_name,
-        g.last_name as guest_last_name,
-        g.full_name as guest_full_name,
-        g.partner_id,
-        g.plus_one_allowed,
+        u.account_status,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
         p.full_name as partner_full_name,
         p.email as partner_email
       FROM users u
-      JOIN guests g ON u.guest_id = g.id
-      LEFT JOIN guests p ON g.partner_id = p.id
-      WHERE u.id = $1 AND u.is_active = true
+      LEFT JOIN users p ON u.partner_id = p.id
+      WHERE u.id = $1 AND u.account_status = 'registered' AND u.deleted_at IS NULL
     `, [req.session.userId]);
 
     if (result.rows.length === 0) {
@@ -59,21 +55,17 @@ const requireAuth = async (req, res, next) => {
 
     const user = result.rows[0];
 
-    // Attach user to request object
+    // Attach user to request object (schema v5: combined users table)
     req.user = {
       id: user.id,
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
-      guest_id: user.guest_id,
+      full_name: user.full_name,
+      partner_id: user.partner_id,
+      plus_one_allowed: user.plus_one_allowed,
       is_admin: user.is_admin,
-      is_active: user.is_active,
-      guest: {
-        first_name: user.guest_first_name,
-        last_name: user.guest_last_name,
-        full_name: user.guest_full_name,
-        plus_one_allowed: user.plus_one_allowed
-      },
+      account_status: user.account_status,
       partner: user.partner_id ? {
         first_name: user.partner_first_name,
         last_name: user.partner_last_name,
@@ -124,24 +116,20 @@ const requireAdmin = (req, res, next) => {
 const optionalAuth = async (req, res, next) => {
   try {
     if (req.session && req.session.userId) {
-      // Try to get user details
+      // Try to get user details (schema v5: combined users table)
       const result = await query(`
         SELECT 
           u.id,
           u.email,
           u.first_name,
           u.last_name,
-          u.guest_id,
+          u.full_name,
+          u.partner_id,
+          u.plus_one_allowed,
           u.is_admin,
-          u.is_active,
-          g.first_name as guest_first_name,
-          g.last_name as guest_last_name,
-          g.full_name as guest_full_name,
-          g.partner_id,
-          g.plus_one_allowed
+          u.account_status
         FROM users u
-        JOIN guests g ON u.guest_id = g.id
-        WHERE u.id = $1 AND u.is_active = true
+        WHERE u.id = $1 AND u.account_status = 'registered' AND u.deleted_at IS NULL
       `, [req.session.userId]);
 
       if (result.rows.length > 0) {
@@ -151,15 +139,11 @@ const optionalAuth = async (req, res, next) => {
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
-          guest_id: user.guest_id,
+          full_name: user.full_name,
+          partner_id: user.partner_id,
+          plus_one_allowed: user.plus_one_allowed,
           is_admin: user.is_admin,
-          is_active: user.is_active,
-          guest: {
-            first_name: user.guest_first_name,
-            last_name: user.guest_last_name,
-            full_name: user.guest_full_name,
-            plus_one_allowed: user.plus_one_allowed
-          }
+          account_status: user.account_status
         };
       } else {
         // User not found, clear session
@@ -193,13 +177,13 @@ const requireGuestAccess = (req, res, next) => {
     return next();
   }
 
-  // Check if user is trying to access their own guest data
-  const requestedGuestId = req.params.guestId || req.body.guest_id;
+  // Check if user is trying to access their own data or their partner's data
+  const requestedUserId = req.params.userId || req.body.user_id;
   
-  if (requestedGuestId && requestedGuestId !== req.user.guest_id) {
+  if (requestedUserId && requestedUserId !== req.user.id && requestedUserId !== req.user.partner_id) {
     return res.status(403).json({
       success: false,
-      message: 'Access denied: You can only access your own data',
+      message: 'Access denied: You can only access your own data or your partner\'s data',
       code: 'ACCESS_DENIED'
     });
   }

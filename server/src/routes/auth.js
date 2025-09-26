@@ -17,23 +17,25 @@ router.post('/check-guest', async (req, res) => {
       });
     }
 
-    // Look up guest by name
+    // Look up user by name (schema v5: combined users table)
     const result = await query(`
       SELECT 
-        g.id,
-        g.first_name,
-        g.last_name,
-        g.full_name,
-        g.email,
-        g.partner_id,
-        g.plus_one_allowed,
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.full_name,
+        u.email,
+        u.partner_id,
+        u.plus_one_allowed,
+        u.account_status,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
         p.full_name as partner_full_name,
         p.email as partner_email
-      FROM guests g
-      LEFT JOIN guests p ON g.partner_id = p.id
-      WHERE g.first_name ILIKE $1 AND g.last_name ILIKE $2
+      FROM users u
+      LEFT JOIN users p ON u.partner_id = p.id
+      WHERE u.first_name ILIKE $1 AND u.last_name ILIKE $2
+      AND u.deleted_at IS NULL
     `, [first_name.trim(), last_name.trim()]);
 
     if (result.rows.length === 0) {
@@ -43,34 +45,29 @@ router.post('/check-guest', async (req, res) => {
       });
     }
 
-    const guest = result.rows[0];
+    const user = result.rows[0];
 
-    // Check if user account already exists for this guest
-    const userAccount = await query(
-      'SELECT id, email FROM users WHERE guest_id = $1',
-      [guest.id]
-    );
-
-    const hasUserAccount = userAccount.rows.length > 0;
-    const userEmail = hasUserAccount ? userAccount.rows[0].email : null;
+    // Check if user account is already registered (has email and password)
+    const hasUserAccount = user.email !== null && user.account_status === 'registered';
+    const userEmail = hasUserAccount ? user.email : null;
 
     res.json({
       success: true,
       data: {
-        guest_id: guest.id,
-        first_name: guest.first_name,
-        last_name: guest.last_name,
-        full_name: guest.full_name,
-        email: guest.email,
-        has_partner: !!guest.partner_id,
-        partner: guest.partner_id ? {
-          first_name: guest.partner_first_name,
-          last_name: guest.partner_last_name,
-          full_name: guest.partner_full_name,
-          email: guest.partner_email
+        user_id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        full_name: user.full_name,
+        email: user.email,
+        has_partner: !!user.partner_id,
+        partner: user.partner_id ? {
+          first_name: user.partner_first_name,
+          last_name: user.partner_last_name,
+          full_name: user.partner_full_name,
+          email: user.partner_email
         } : null,
-        plus_one_allowed: guest.plus_one_allowed,
-        needs_email: !guest.email,
+        plus_one_allowed: user.plus_one_allowed,
+        needs_email: !user.email,
         has_user_account: hasUserAccount,
         user_email: userEmail
       }
@@ -93,7 +90,7 @@ router.post('/check-guest', async (req, res) => {
 router.post('/register', async (req, res) => {
   try {
     const { 
-      guest_id, 
+      user_id, 
       email, 
       password, 
       first_name, 
@@ -101,42 +98,37 @@ router.post('/register', async (req, res) => {
     } = req.body;
 
     // Basic validation
-    if (!guest_id || !email || !password || !first_name || !last_name) {
+    if (!user_id || !email || !password || !first_name || !last_name) {
       return res.status(400).json({
         success: false,
         message: 'All fields are required'
       });
     }
 
-    // Check if guest exists
-    const guestResult = await query(
-      'SELECT * FROM guests WHERE id = $1',
-      [guest_id]
+    // Check if user exists (schema v5: combined users table)
+    const userResult = await query(
+      'SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL',
+      [user_id]
     );
 
-    if (guestResult.rows.length === 0) {
+    if (userResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Guest not found'
+        message: 'User not found'
       });
     }
 
-    // Check if user already exists for this specific guest
-    const existingUserForGuest = await query(
-      'SELECT id, email FROM users WHERE guest_id = $1',
-      [guest_id]
-    );
-
-    if (existingUserForGuest.rows.length > 0) {
+    // Check if user already has an account (email and password set)
+    if (userResult.rows[0].email !== null && userResult.rows[0].account_status === 'registered') {
       return res.status(409).json({
         success: false,
-        message: 'An account already exists for this guest. Please try logging in instead.'
+        message: 'An account already exists for this user. Please try logging in instead.'
       });
     }
 
     // Check if email is already used by another user
     const existingUserWithEmail = await query(
-      'SELECT id, guest_id FROM users WHERE email = $1',
+      'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
       [email]
     );
 
@@ -151,37 +143,27 @@ router.post('/register', async (req, res) => {
     // In production, use bcrypt or similar
     const password_hash = Buffer.from(password).toString('base64'); // Simple encoding for demo
 
-    // Create user account
-    const userResult = await query(`
-      INSERT INTO users (
-        guest_id, email, password_hash, 
-        first_name, last_name
-      ) VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, email, first_name, last_name, created_at
-    `, [
-      guest_id,
-      email,
-      password_hash,
-      first_name,
-      last_name
-    ]);
-
-    // Update guest email if not already set
-    if (!guestResult.rows[0].email) {
-      await query(
-        'UPDATE guests SET email = $1 WHERE id = $2',
-        [email, guest_id]
-      );
-    }
+    // Update user account with email and password (schema v5: update existing user)
+    const updatedUser = await query(`
+      UPDATE users 
+      SET 
+        email = $1,
+        password_hash = $2,
+        account_status = 'registered',
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3
+      RETURNING id, email, first_name, last_name, account_status, created_at
+    `, [email, password_hash, user_id]);
 
     res.status(201).json({
       success: true,
       message: 'User account created successfully',
       data: {
-        user_id: userResult.rows[0].id,
-        email: userResult.rows[0].email,
-        first_name: userResult.rows[0].first_name,
-        last_name: userResult.rows[0].last_name
+        user_id: updatedUser.rows[0].id,
+        email: updatedUser.rows[0].email,
+        first_name: updatedUser.rows[0].first_name,
+        last_name: updatedUser.rows[0].last_name,
+        account_status: updatedUser.rows[0].account_status
       }
     });
 
@@ -219,20 +201,17 @@ router.post('/login', async (req, res) => {
         u.email,
         u.first_name,
         u.last_name,
-        u.guest_id,
-        g.first_name as guest_first_name,
-        g.last_name as guest_last_name,
-        g.full_name as guest_full_name,
-        g.partner_id,
-        g.plus_one_allowed,
+        u.full_name,
+        u.partner_id,
+        u.plus_one_allowed,
+        u.account_status,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
         p.full_name as partner_full_name,
         p.email as partner_email
       FROM users u
-      JOIN guests g ON u.guest_id = g.id
-      LEFT JOIN guests p ON g.partner_id = p.id
-      WHERE u.email = $1 AND u.password_hash = $2 AND u.is_active = true
+      LEFT JOIN users p ON u.partner_id = p.id
+      WHERE u.email = $1 AND u.password_hash = $2 AND u.account_status = 'registered' AND u.deleted_at IS NULL
     `, [email, password_hash]);
 
     if (result.rows.length === 0) {
@@ -246,7 +225,7 @@ router.post('/login', async (req, res) => {
 
     // Update last login
     await query(
-      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+      'UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
       [user.id]
     );
 
@@ -270,13 +249,8 @@ router.post('/login', async (req, res) => {
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
-          guest_id: user.guest_id,
-          guest: {
-            first_name: user.guest_first_name,
-            last_name: user.guest_last_name,
-            full_name: user.guest_full_name,
-            plus_one_allowed: user.plus_one_allowed
-          },
+          full_name: user.full_name,
+          plus_one_allowed: user.plus_one_allowed,
           partner: user.partner_id ? {
             first_name: user.partner_first_name,
             last_name: user.partner_last_name,
@@ -318,20 +292,17 @@ router.get('/me', async (req, res) => {
         u.email,
         u.first_name,
         u.last_name,
-        u.guest_id,
-        g.first_name as guest_first_name,
-        g.last_name as guest_last_name,
-        g.full_name as guest_full_name,
-        g.partner_id,
-        g.plus_one_allowed,
+        u.full_name,
+        u.partner_id,
+        u.plus_one_allowed,
+        u.account_status,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
         p.full_name as partner_full_name,
         p.email as partner_email
       FROM users u
-      JOIN guests g ON u.guest_id = g.id
-      LEFT JOIN guests p ON g.partner_id = p.id
-      WHERE u.id = $1 AND u.is_active = true
+      LEFT JOIN users p ON u.partner_id = p.id
+      WHERE u.id = $1 AND u.deleted_at IS NULL
     `, [req.session.userId]);
 
     if (result.rows.length === 0) {
@@ -350,13 +321,9 @@ router.get('/me', async (req, res) => {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
-        guest_id: user.guest_id,
-        guest: {
-          first_name: user.guest_first_name,
-          last_name: user.guest_last_name,
-          full_name: user.guest_full_name,
-          plus_one_allowed: user.plus_one_allowed
-        },
+        full_name: user.full_name,
+        plus_one_allowed: user.plus_one_allowed,
+        account_status: user.account_status,
         partner: user.partner_id ? {
           first_name: user.partner_first_name,
           last_name: user.partner_last_name,
