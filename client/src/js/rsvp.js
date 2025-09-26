@@ -42,18 +42,28 @@ class RSVPManager {
   }
 
   async getCurrentUser() {
-    // Get the current authenticated user from the auth system
-    if (window.authSystem && window.authSystem.isAuthenticated && window.authSystem.currentUser) {
-      return window.authSystem.currentUser;
+    // Wait for auth system to be available
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
+    while (attempts < maxAttempts) {
+      if (window.authSystem) {
+        // Auth system is available, check authentication status
+        if (window.authSystem.isAuthenticated && window.authSystem.currentUser) {
+          return window.authSystem.currentUser;
+        }
+        
+        // If not authenticated, redirect to login
+        window.authSystem.showLoginModal('rsvp');
+        return null;
+      }
+      
+      // Wait 100ms before trying again
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
     }
     
-    // If not authenticated, redirect to login
-    if (window.authSystem) {
-      window.authSystem.showLoginModal('rsvp');
-      return null;
-    }
-    
-    throw new Error('Authentication system not available');
+    throw new Error('Authentication system not available after waiting');
   }
 
   async loadGuestData() {
@@ -219,9 +229,24 @@ class RSVPManager {
 }
 
 // Initialize RSVP manager when the page loads
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Only initialize on the RSVP page
   if (document.getElementById('rsvp')) {
-    new RSVPManager();
+    // Wait for auth system to be available
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
+    while (attempts < maxAttempts) {
+      if (window.authSystem) {
+        new RSVPManager();
+        return;
+      }
+      
+      // Wait 100ms before trying again
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    
+    console.error('RSVP Manager: Authentication system not available');
   }
 });
