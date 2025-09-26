@@ -26,8 +26,18 @@ class RSVPManagerV5 {
       // Set up event listeners
       this.setupEventListeners();
       
-      // Wait a bit more for auth system to complete its check
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for auth system to complete its user check
+      await this.waitForAuthCheck();
+      
+      // Double-check auth status before loading
+      if (window.authSystem) {
+        const authData = window.authSystem.getUserData();
+        if (!authData.isAuthenticated || !authData.user) {
+          console.log('📝 RSVP Manager: User not authenticated after wait');
+          this.showStatus('Please log in to access the RSVP page', 'error');
+          return;
+        }
+      }
       
       // Load user data without showing status messages initially
       await this.loadUserData(true);
@@ -49,14 +59,53 @@ class RSVPManagerV5 {
     }
     
     return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max
+      
       const checkAuth = () => {
+        attempts++;
         if (window.authSystem && window.authSystem.isInitialized) {
+          console.log('📝 RSVP Manager: Auth system ready');
+          resolve();
+        } else if (attempts >= maxAttempts) {
+          console.log('📝 RSVP Manager: Auth system timeout, proceeding anyway');
           resolve();
         } else {
           setTimeout(checkAuth, 100);
         }
       };
       checkAuth();
+    });
+  }
+
+  /**
+   * Wait for authentication system to complete its user check
+   */
+  async waitForAuthCheck() {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 100; // 10 seconds max
+      
+      const checkAuthStatus = () => {
+        attempts++;
+        if (window.authSystem) {
+          const authData = window.authSystem.getUserData();
+          // Check if auth system has completed its check (either authenticated or not)
+          if (authData.isAuthenticated !== undefined) {
+            console.log('📝 RSVP Manager: Auth check completed');
+            resolve();
+            return;
+          }
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.log('📝 RSVP Manager: Auth check timeout, proceeding anyway');
+          resolve();
+        } else {
+          setTimeout(checkAuthStatus, 100);
+        }
+      };
+      checkAuthStatus();
     });
   }
 
