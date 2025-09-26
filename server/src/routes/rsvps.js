@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
+const { requireAuth, requireGuestAccess } = require('../middleware/auth');
 
 /**
  * POST /api/rsvps
  * Submit a new RSVP with dynamic plus-one creation
  */
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, requireGuestAccess, async (req, res) => {
   const { 
     guest_id, 
     user_id, 
@@ -126,7 +127,7 @@ router.post('/', async (req, res) => {
  * GET /api/rsvps/:guest_id
  * Get RSVP details for a specific guest
  */
-router.get('/:guest_id', async (req, res) => {
+router.get('/:guest_id', requireAuth, requireGuestAccess, async (req, res) => {
   try {
     const { guest_id } = req.params;
 
@@ -177,7 +178,7 @@ router.get('/:guest_id', async (req, res) => {
  * GET /api/rsvps/summary
  * Get RSVP summary for admin (requires authentication in production)
  */
-router.get('/summary', async (req, res) => {
+router.get('/summary', requireAuth, async (req, res) => {
   try {
     const result = await query(`
       SELECT 

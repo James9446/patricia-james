@@ -97,6 +97,14 @@ async function checkDatabase() {
   logSection('DATABASE CHECK');
   
   try {
+    // Test basic database connection first
+    logInfo('Testing basic database connection...');
+    const { query } = require('../src/config/db');
+    
+    const connectionTest = await query('SELECT NOW() as current_time, current_database() as db_name');
+    logSuccess(`Connected to database: ${connectionTest.rows[0].db_name}`);
+    logSuccess(`Connection time: ${connectionTest.rows[0].current_time}`);
+    
     // Test admin database connection
     logInfo('Testing admin database connection...');
     const { execSync } = require('child_process');
@@ -110,6 +118,28 @@ async function checkDatabase() {
       logSuccess('Admin database access verified');
     } else {
       throw new Error('Admin database access test failed');
+    }
+    
+    // Test session table exists
+    logInfo('Checking session table...');
+    const sessionTableCheck = await query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = 'user_sessions'
+    `);
+    
+    if (sessionTableCheck.rows.length > 0) {
+      logSuccess('Session table exists');
+    } else {
+      logWarning('Session table missing - creating it...');
+      await query(`
+        CREATE TABLE user_sessions (
+          sid varchar NOT NULL, 
+          sess json NOT NULL, 
+          expire timestamp(6) NOT NULL, 
+          PRIMARY KEY (sid)
+        )
+      `);
+      logSuccess('Session table created');
     }
     
     return true;
@@ -211,6 +241,41 @@ async function checkServer() {
       logWarning('Could not test API endpoint (curl not available or server not responding)');
     }
     
+    // Test authentication endpoints
+    logInfo('Testing authentication endpoints...');
+    try {
+      // Test guest lookup
+      const guestCheck = execSync('curl -s -X POST http://localhost:5001/api/auth/check-guest -H "Content-Type: application/json" -d \'{"first_name":"Cordelia","last_name":"Reynolds"}\'', {
+        encoding: 'utf8',
+        timeout: 5000
+      });
+      
+      if (guestCheck.includes('"success":true')) {
+        logSuccess('Authentication endpoints responding');
+      } else {
+        logWarning('Authentication endpoints may have issues');
+      }
+    } catch (authError) {
+      logWarning('Could not test authentication endpoints');
+    }
+    
+    // Test database integration with server
+    logInfo('Testing database integration...');
+    try {
+      const dbTest = execSync('curl -s http://localhost:5001/api/guests', {
+        encoding: 'utf8',
+        timeout: 5000
+      });
+      
+      if (dbTest.includes('"success":true') || dbTest.includes('guests')) {
+        logSuccess('Database integration working');
+      } else {
+        logWarning('Database integration may have issues');
+      }
+    } catch (dbError) {
+      logWarning('Could not test database integration');
+    }
+    
     // Kill server
     serverProcess.kill();
     logSuccess('Server stopped cleanly');
@@ -301,6 +366,7 @@ async function main() {
   if (passed === total) {
     log(`🎉 ALL CHECKS PASSED (${passed}/${total})`, 'green');
     log('✅ System is ready for development!', 'green');
+    log('🔐 Authentication system is available', 'green');
     process.exit(0);
   } else {
     log(`⚠️  SOME CHECKS FAILED (${passed}/${total})`, 'yellow');

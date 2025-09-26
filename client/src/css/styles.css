@@ -1904,3 +1904,291 @@ body:not(.home-page) .full-screen-background {
   }
 }
 
+/* ========================================
+   Authentication System Styles
+   ======================================== */
+
+/* Authentication Modal */
+.auth-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+.auth-modal-content {
+  background-color: var(--pure-white);
+  margin: 5% auto;
+  padding: 0;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--slate-gray);
+  cursor: pointer;
+  z-index: 1001;
+  transition: color 0.3s ease;
+}
+
+.auth-close:hover {
+  color: var(--charcoal);
+}
+
+/* Authentication Tabs */
+.auth-tabs {
+  display: flex;
+  background-color: var(--cultured-white);
+  border-radius: 20px 20px 0 0;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 20px;
+  background: none;
+  border: none;
+  font-family: 'Lucy Said OK', cursive;
+  font-size: 18px;
+  color: var(--slate-gray);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.auth-tab.active {
+  color: var(--solstice-blue);
+  border-bottom-color: var(--solstice-blue);
+  background-color: var(--pure-white);
+}
+
+.auth-tab:hover {
+  color: var(--solstice-blue);
+  background-color: var(--blush-pink-light);
+}
+
+/* Authentication Forms */
+.auth-form {
+  display: none;
+  padding: 40px;
+}
+
+.auth-form.active {
+  display: block;
+}
+
+.auth-form h2 {
+  font-family: 'Lucy Said OK', cursive;
+  font-size: 28px;
+  color: var(--charcoal);
+  text-align: center;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  font-family: 'Lucy Said OK', cursive;
+  font-size: 16px;
+  color: var(--charcoal);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid var(--light-gray);
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--solstice-blue);
+  box-shadow: 0 0 0 3px rgba(77, 197, 227, 0.1);
+}
+
+/* Authentication Button */
+.auth-button {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  color: var(--pure-white);
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-family: 'Lucy Said OK', cursive;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.auth-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(77, 197, 227, 0.3);
+}
+
+.auth-button:active {
+  transform: translateY(0);
+}
+
+/* Authentication Messages */
+.auth-message {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  font-family: 'Lucy Said OK', cursive;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.auth-message.success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #059669;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.auth-message.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* User Info in Navigation */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: auto;
+}
+
+.user-name {
+  font-family: 'Lucy Said OK', cursive;
+  font-size: 16px;
+  color: var(--charcoal);
+  font-weight: 500;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--lavender-haze), var(--blush-pink));
+  color: var(--pure-white);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Lucy Said OK', cursive;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(237, 159, 227, 0.3);
+}
+
+.login-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  color: var(--pure-white);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Lucy Said OK', cursive;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(77, 197, 227, 0.3);
+}
+
+/* Responsive Authentication */
+@media (max-width: 768px) {
+  .auth-modal-content {
+    margin: 10% auto;
+    width: 95%;
+    border-radius: 15px;
+  }
+  
+  .auth-form {
+    padding: 30px 20px;
+  }
+  
+  .auth-form h2 {
+    font-size: 24px;
+  }
+  
+  .auth-tab {
+    padding: 15px;
+    font-size: 16px;
+  }
+  
+  .user-info {
+    flex-direction: column;
+    gap: 10px;
+    margin-left: 0;
+  }
+  
+  .user-name {
+    font-size: 14px;
+  }
+  
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-modal-content {
+    margin: 5% auto;
+    width: 98%;
+  }
+  
+  .auth-form {
+    padding: 20px 15px;
+  }
+  
+  .auth-form h2 {
+    font-size: 20px;
+  }
+  
+  .form-group input {
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .auth-button {
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+

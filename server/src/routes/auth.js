@@ -130,13 +130,12 @@ router.post('/register', async (req, res) => {
     // Create user account
     const userResult = await query(`
       INSERT INTO users (
-        guest_id, username, email, password_hash, 
+        guest_id, email, password_hash, 
         first_name, last_name
-      ) VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, username, email, first_name, last_name, created_at
+      ) VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, email, first_name, last_name, created_at
     `, [
       guest_id,
-      `${first_name} ${last_name}`, // Username is full name
       email,
       password_hash,
       first_name,
@@ -156,7 +155,6 @@ router.post('/register', async (req, res) => {
       message: 'User account created successfully',
       data: {
         user_id: userResult.rows[0].id,
-        username: userResult.rows[0].username,
         email: userResult.rows[0].email,
         first_name: userResult.rows[0].first_name,
         last_name: userResult.rows[0].last_name
@@ -194,7 +192,6 @@ router.post('/login', async (req, res) => {
     const result = await query(`
       SELECT 
         u.id,
-        u.username,
         u.email,
         u.first_name,
         u.last_name,
@@ -229,29 +226,41 @@ router.post('/login', async (req, res) => {
       [user.id]
     );
 
-    res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        user_id: user.id,
-        username: user.username,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        guest_id: user.guest_id,
-        guest: {
-          first_name: user.guest_first_name,
-          last_name: user.guest_last_name,
-          full_name: user.guest_full_name,
-          plus_one_allowed: user.plus_one_allowed
-        },
-        partner: user.partner_id ? {
-          first_name: user.partner_first_name,
-          last_name: user.partner_last_name,
-          full_name: user.partner_full_name,
-          email: user.partner_email
-        } : null
+    // Create session
+    req.session.userId = user.id;
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create session',
+          error: err.message
+        });
       }
+
+      res.json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          user_id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          guest_id: user.guest_id,
+          guest: {
+            first_name: user.guest_first_name,
+            last_name: user.guest_last_name,
+            full_name: user.guest_full_name,
+            plus_one_allowed: user.plus_one_allowed
+          },
+          partner: user.partner_id ? {
+            first_name: user.partner_first_name,
+            last_name: user.partner_last_name,
+            full_name: user.partner_full_name,
+            email: user.partner_email
+          } : null
+        }
+      });
     });
 
   } catch (error) {
@@ -266,25 +275,22 @@ router.post('/login', async (req, res) => {
 
 /**
  * GET /api/auth/me
- * Get current user information (requires authentication middleware in production)
+ * Get current user information from session
  */
 router.get('/me', async (req, res) => {
   try {
-    // In production, this would use authentication middleware
-    // For now, we'll accept a user_id parameter
-    const { user_id } = req.query;
-
-    if (!user_id) {
-      return res.status(400).json({
+    // Check if user is in session
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({
         success: false,
-        message: 'User ID is required'
+        message: 'Not authenticated',
+        code: 'NOT_AUTHENTICATED'
       });
     }
 
     const result = await query(`
       SELECT 
         u.id,
-        u.username,
         u.email,
         u.first_name,
         u.last_name,
@@ -302,7 +308,7 @@ router.get('/me', async (req, res) => {
       JOIN guests g ON u.guest_id = g.id
       LEFT JOIN guests p ON g.partner_id = p.id
       WHERE u.id = $1 AND u.is_active = true
-    `, [user_id]);
+    `, [req.session.userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -317,7 +323,6 @@ router.get('/me', async (req, res) => {
       success: true,
       data: {
         user_id: user.id,
-        username: user.username,
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
@@ -342,6 +347,73 @@ router.get('/me', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch user information',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/auth/logout
+ * Logout and destroy session
+ */
+router.post('/logout', (req, res) => {
+  try {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to logout',
+            error: err.message
+          });
+        }
+        
+        res.clearCookie('connect.sid'); // Clear the session cookie
+        res.json({
+          success: true,
+          message: 'Logout successful'
+        });
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'Already logged out'
+      });
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Logout failed',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/auth/status
+ * Check authentication status
+ */
+router.get('/status', (req, res) => {
+  try {
+    if (req.session && req.session.userId) {
+      res.json({
+        success: true,
+        authenticated: true,
+        userId: req.session.userId
+      });
+    } else {
+      res.json({
+        success: true,
+        authenticated: false
+      });
+    }
+  } catch (error) {
+    console.error('Auth status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check authentication status',
       error: error.message
     });
   }
