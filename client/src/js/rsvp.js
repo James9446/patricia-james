@@ -48,12 +48,18 @@ class RSVPManager {
     
     while (attempts < maxAttempts) {
       if (window.authSystem) {
+        console.log('🔐 Auth system found, checking authentication...');
+        console.log('🔐 isAuthenticated:', window.authSystem.isAuthenticated);
+        console.log('🔐 currentUser:', window.authSystem.currentUser);
+        
         // Auth system is available, check authentication status
         if (window.authSystem.isAuthenticated && window.authSystem.currentUser) {
+          console.log('🔐 User authenticated, returning user data');
           return window.authSystem.currentUser;
         }
         
         // If not authenticated, redirect to login
+        console.log('🔐 User not authenticated, showing login modal');
         window.authSystem.showLoginModal('rsvp');
         return null;
       }
@@ -63,6 +69,7 @@ class RSVPManager {
       attempts++;
     }
     
+    console.error('🔐 Authentication system not available after waiting');
     throw new Error('Authentication system not available after waiting');
   }
 

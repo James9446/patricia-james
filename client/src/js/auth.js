@@ -69,16 +69,23 @@ class AuthSystem {
    */
   async getCurrentUser() {
     try {
+      console.log('🔐 Getting current user from server...');
       const response = await fetch(`${this.apiBase}/auth/me`, {
         method: 'GET',
         credentials: 'include'
       });
 
+      console.log('🔐 Auth/me response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('🔐 User data received:', data);
         this.currentUser = data.data;
         this.isAuthenticated = true;
+        console.log('🔐 User authenticated:', this.isAuthenticated);
+        console.log('🔐 Current user:', this.currentUser);
       } else {
+        console.log('🔐 Auth/me failed, user not authenticated');
         this.currentUser = null;
         this.isAuthenticated = false;
       }
