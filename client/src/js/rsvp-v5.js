@@ -26,6 +26,9 @@ class RSVPManagerV5 {
       // Set up event listeners
       this.setupEventListeners();
       
+      // Wait a bit more for auth system to complete its check
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Load user data
       await this.loadUserData();
       
@@ -116,8 +119,22 @@ class RSVPManagerV5 {
    * Load user data and RSVP information
    */
   async loadUserData() {
-    if (!this.currentUser) {
-      this.showStatus('Please log in to access the RSVP page', 'error');
+    console.log('📝 RSVP Manager: Loading user data...');
+    
+    // Check authentication status from the auth system
+    if (window.authSystem) {
+      const authData = window.authSystem.getUserData();
+      console.log('📝 RSVP Manager: Auth data:', authData);
+      this.currentUser = authData.user;
+      
+      if (!authData.isAuthenticated || !authData.user) {
+        console.log('📝 RSVP Manager: User not authenticated');
+        this.showStatus('Please log in to access the RSVP page', 'error');
+        return;
+      }
+    } else {
+      console.log('📝 RSVP Manager: Auth system not available');
+      this.showStatus('Authentication system not available. Please refresh the page.', 'error');
       return;
     }
 
@@ -400,7 +417,17 @@ class RSVPManagerV5 {
 document.addEventListener('DOMContentLoaded', () => {
   // Only initialize on the RSVP page
   if (document.getElementById('rsvp')) {
-    new RSVPManagerV5();
+    // Wait for auth system to be available
+    const initRSVP = () => {
+      if (window.authSystem) {
+        new RSVPManagerV5();
+      } else {
+        // Wait a bit and try again
+        setTimeout(initRSVP, 100);
+      }
+    };
+    
+    initRSVP();
   }
 });
 
