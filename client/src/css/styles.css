@@ -502,6 +502,176 @@ body.home-page {
 /* ========================================
    RSVP Form Styles
    ======================================== */
+
+/* Dynamic Form Styles */
+.login-required-message {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--cultured-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--light-gray);
+}
+
+.login-required-message p {
+  margin-bottom: var(--spacing-lg);
+  color: var(--slate-gray);
+  font-size: var(--text-lg);
+}
+
+/* Radio Group Styles */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--cultured-white);
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radio-label:hover {
+  border-color: var(--solstice-blue);
+  background: var(--solstice-blue-light);
+}
+
+.radio-label input[type="radio"] {
+  margin-right: var(--spacing-md);
+  accent-color: var(--solstice-blue);
+}
+
+.radio-label input[type="radio"]:checked + span {
+  font-weight: 600;
+  color: var(--solstice-blue-dark);
+}
+
+/* Plus-One Section */
+.plus-one-section {
+  background: var(--blush-pink-light);
+  border: 1px solid var(--blush-pink);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+}
+
+.plus-one-section h3 {
+  color: var(--lavender-haze-dark);
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-heading);
+}
+
+/* Couple RSVP Sections */
+.couple-rsvp-section,
+.partner-rsvp-section {
+  background: var(--cultured-white);
+  border: 1px solid var(--light-gray);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.couple-rsvp-section h3,
+.partner-rsvp-section h3 {
+  color: var(--solstice-blue-dark);
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-heading);
+  border-bottom: 2px solid var(--solstice-blue-light);
+  padding-bottom: var(--spacing-sm);
+}
+
+/* Admin Options */
+.admin-notice {
+  background: var(--solstice-blue-light);
+  border: 1px solid var(--solstice-blue);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+.admin-notice p {
+  margin: 0;
+  color: var(--solstice-blue-dark);
+  font-weight: 600;
+}
+
+.admin-options {
+  background: var(--lavender-haze-light);
+  border: 1px solid var(--lavender-haze);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.admin-options h3 {
+  color: var(--lavender-haze-dark);
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-heading);
+}
+
+/* Form Group Enhancements */
+.form-group label {
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: var(--spacing-sm);
+  display: block;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  transition: border-color 0.3s ease;
+}
+
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: var(--solstice-blue);
+  box-shadow: 0 0 0 3px rgba(77, 197, 227, 0.1);
+}
+
+/* Button Enhancements */
+.btn {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--solstice-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--solstice-blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(77, 197, 227, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
 .rsvp-form {
   max-width: 600px;
   margin: 0 auto;
