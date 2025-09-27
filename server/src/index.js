@@ -7,7 +7,7 @@ const { query } = require('./config/db');
 
 // Import routes
 const guestsRouter = require('./routes/guests');
-const rsvpsRouter = require('./routes/rsvps-v5'); // Use schema v5 RSVP routes
+const rsvpsRouter = require('./routes/rsvps'); // Use schema v5 RSVP routes
 const authRouter = require('./routes/auth');
 
 const app = express();
