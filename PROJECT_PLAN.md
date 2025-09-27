@@ -247,6 +247,12 @@ CREATE TABLE photos (
 - [ ] **Dynamic form generation** - Based on user type
 - [ ] **State management** - Track RSVP status and updates
 - [ ] **API integration** - Proper error handling and loading states
+- [ ] **Form validation fixes** - Ensure RSVP submission works correctly
+
+### Phase 4: UI/UX Improvements 📋 PENDING
+- [ ] **RSVP form styling** - Improve visual design and layout
+- [ ] **Responsive design** - Mobile-friendly interface
+- [ ] **User experience** - Smooth interactions and feedback
 - [ ] **User experience flow** - Clear guidance for each user type
 
 ### Phase 4: API & Database Enhancements

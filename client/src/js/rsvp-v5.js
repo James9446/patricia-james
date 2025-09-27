@@ -207,6 +207,13 @@ class RSVPManagerV5 {
             partnerInfo: this.partnerInfo
           });
           
+          // Debug partner information
+          if (this.partnerInfo) {
+            console.log('📝 RSVP Manager: Partner info found:', this.partnerInfo);
+          } else {
+            console.log('📝 RSVP Manager: No partner info found');
+          }
+          
           // Populate the form with existing data
           this.populateForm();
         } else {
@@ -349,25 +356,42 @@ class RSVPManagerV5 {
     }
 
     const formData = new FormData(event.target);
+    
+    // Debug: Log all form data
+    console.log('📝 RSVP Manager: Form data entries:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`  ${key}: ${value}`);
+    }
+    
     const rsvpData = {
       response_status: formData.get('response_status'),
       dietary_restrictions: formData.get('dietary_restrictions') || null,
       message: formData.get('message') || null
     };
 
+    console.log('📝 RSVP Manager: Extracted RSVP data:', rsvpData);
+
     // Validate required fields
     if (!rsvpData.response_status) {
       console.log('📝 RSVP Manager: No response status selected');
+      alert('Please select whether you will be attending.');
       return;
     }
 
     // Handle partner RSVP if user has a partner
-    if (this.currentUser.partner_id) {
+    if (this.currentUser.partner_id || this.partnerInfo) {
       const partnerResponseStatus = formData.get('partner_response_status');
       if (partnerResponseStatus) {
         rsvpData.partner_response_status = partnerResponseStatus;
         rsvpData.partner_dietary_restrictions = formData.get('partner_dietary_restrictions') || null;
         rsvpData.partner_message = formData.get('partner_message') || null;
+        console.log('📝 RSVP Manager: Partner RSVP data:', {
+          partner_response_status: partnerResponseStatus,
+          partner_dietary_restrictions: rsvpData.partner_dietary_restrictions,
+          partner_message: rsvpData.partner_message
+        });
+      } else {
+        console.log('📝 RSVP Manager: No partner response status found');
       }
     }
 
@@ -387,13 +411,17 @@ class RSVPManagerV5 {
 
       if (data.success) {
         console.log('📝 RSVP Manager: RSVP submitted successfully');
+        console.log('📝 RSVP Manager: Response data:', data.data);
         
         // Update local state
         this.userRsvp = data.data.user_rsvp;
         this.partnerRsvp = data.data.partner_rsvp;
         
-        // Reset form with new data
-        this.populateRsvpForm();
+        // Show success message
+        this.showSuccessMessage('RSVP submitted successfully! Thank you for responding.');
+        
+        // Update form to show submitted state
+        this.updateFormToSubmittedState();
       } else {
         throw new Error(data.message || 'Failed to submit RSVP');
       }
@@ -409,13 +437,17 @@ class RSVPManagerV5 {
   getUserType() {
     if (!this.currentUser) return 'unauthenticated';
     
+    console.log('📝 RSVP Manager: getUserType - currentUser:', this.currentUser);
+    console.log('📝 RSVP Manager: getUserType - partnerInfo:', this.partnerInfo);
+    
     // Check if user is admin
     if (this.currentUser.is_admin) {
       return 'admin';
     }
     
-    // Check if user has a partner (couple)
-    if (this.currentUser.partner_id) {
+    // Check if user has a partner (couple) - use partnerInfo as fallback
+    if (this.currentUser.partner_id || this.partnerInfo) {
+      console.log('📝 RSVP Manager: Detected as couple');
       return 'couple';
     }
     
@@ -533,7 +565,7 @@ class RSVPManagerV5 {
    * Generate form for unauthenticated users
    */
   generateLoginRequiredForm() {
-    const formContainer = document.getElementById('rsvp-form');
+    const formContainer = document.querySelector('.rsvp-form');
     if (!formContainer) return;
     
     formContainer.innerHTML = `
@@ -550,7 +582,7 @@ class RSVPManagerV5 {
    * Generate form for individual users
    */
   generateIndividualForm() {
-    const formContainer = document.getElementById('rsvp-form');
+    const formContainer = document.querySelector('.rsvp-form');
     if (!formContainer) return;
     
     formContainer.innerHTML = `
@@ -585,14 +617,17 @@ class RSVPManagerV5 {
       </form>
     `;
     
-    this.setupFormEventListeners();
+    // Wait for DOM to update before setting up event listeners
+    setTimeout(() => {
+      this.setupFormEventListeners();
+    }, 10);
   }
 
   /**
    * Generate form for individual users with plus-one option
    */
   generateIndividualWithPlusOneForm() {
-    const formContainer = document.getElementById('rsvp-form');
+    const formContainer = document.querySelector('.rsvp-form');
     if (!formContainer) return;
     
     formContainer.innerHTML = `
@@ -654,7 +689,7 @@ class RSVPManagerV5 {
    * Generate form for couples
    */
   generateCoupleForm() {
-    const formContainer = document.getElementById('rsvp-form');
+    const formContainer = document.querySelector('.rsvp-form');
     if (!formContainer) return;
     
     // Get partner information from the loaded data
@@ -726,14 +761,17 @@ class RSVPManagerV5 {
       </form>
     `;
     
-    this.setupFormEventListeners();
+    // Wait for DOM to update before setting up event listeners
+    setTimeout(() => {
+      this.setupFormEventListeners();
+    }, 10);
   }
 
   /**
    * Generate form for admin users
    */
   generateAdminForm() {
-    const formContainer = document.getElementById('rsvp-form');
+    const formContainer = document.querySelector('.rsvp-form');
     if (!formContainer) return;
     
     formContainer.innerHTML = `
@@ -781,7 +819,10 @@ class RSVPManagerV5 {
       </form>
     `;
     
-    this.setupFormEventListeners();
+    // Wait for DOM to update before setting up event listeners
+    setTimeout(() => {
+      this.setupFormEventListeners();
+    }, 10);
   }
 
   /**
@@ -789,8 +830,80 @@ class RSVPManagerV5 {
    */
   setupFormEventListeners() {
     const form = document.getElementById('rsvp-form-element');
+    console.log('📝 RSVP Manager: Setting up form event listeners...');
+    console.log('📝 RSVP Manager: Form element found:', form);
+    
+    // Debug: Check what's actually in the rsvp-form container
+    const formContainer = document.querySelector('.rsvp-form');
+    console.log('📝 RSVP Manager: Form container:', formContainer);
+    if (formContainer) {
+      console.log('📝 RSVP Manager: Form container innerHTML:', formContainer.innerHTML.substring(0, 200) + '...');
+    }
+    
     if (form) {
-      form.addEventListener('submit', (e) => this.submitRSVP(e));
+      form.addEventListener('submit', (e) => {
+        console.log('📝 RSVP Manager: Form submit event triggered!');
+        this.submitRSVP(e);
+      });
+      console.log('📝 RSVP Manager: Event listener attached to form');
+    } else {
+      console.log('📝 RSVP Manager: ERROR - Form element not found!');
+    }
+  }
+
+  /**
+   * Show success message
+   */
+  showSuccessMessage(message) {
+    const statusElement = document.getElementById('rsvp-status');
+    if (statusElement) {
+      statusElement.innerHTML = `
+        <div class="alert alert-success">
+          <strong>Success!</strong> ${message}
+        </div>
+      `;
+      statusElement.style.display = 'block';
+      
+      // Hide message after 5 seconds
+      setTimeout(() => {
+        statusElement.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  /**
+   * Update form to show submitted state
+   */
+  updateFormToSubmittedState() {
+    const formContainer = document.querySelector('.rsvp-form');
+    if (!formContainer) return;
+
+    // Disable all form inputs
+    const inputs = formContainer.querySelectorAll('input, textarea, button');
+    inputs.forEach(input => {
+      input.disabled = true;
+    });
+
+    // Add a "submitted" indicator
+    const submitButton = formContainer.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.textContent = 'RSVP Submitted ✓';
+      submitButton.classList.add('btn-success');
+      submitButton.classList.remove('btn-primary');
+    }
+
+    // Show a message about editing
+    const editMessage = document.createElement('div');
+    editMessage.className = 'alert alert-info';
+    editMessage.innerHTML = `
+      <strong>RSVP Submitted!</strong> 
+      You can refresh the page to edit your response if needed.
+    `;
+    
+    // Insert after the form
+    const form = formContainer.querySelector('form');
+    if (form) {
+      form.insertAdjacentElement('afterend', editMessage);
     }
   }
 

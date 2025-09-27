@@ -14,6 +14,21 @@ class RSVPManager {
   init() {
     this.bindEvents();
     this.loadUserData();
+    
+    // Listen for authentication changes
+    this.setupAuthListener();
+  }
+  
+  setupAuthListener() {
+    // Check for auth changes every 500ms
+    setInterval(() => {
+      if (window.authSystem && window.authSystem.isAuthenticated && window.authSystem.currentUser) {
+        if (!this.currentUser) {
+          // User just logged in, reload data
+          this.loadUserData();
+        }
+      }
+    }, 500);
   }
 
   bindEvents() {
@@ -25,52 +40,32 @@ class RSVPManager {
   }
 
   async loadUserData() {
-    try {
-      // In a real implementation, this would get the current user from authentication
-      // For now, we'll simulate getting the current user
-      this.currentUser = await this.getCurrentUser();
-      
-      if (this.currentUser) {
-        await this.loadGuestData();
-      } else {
-        this.showStatus('Please log in to access the RSVP page', 'error');
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      this.showStatus('Error loading your information. Please try again.', 'error');
+    // Check if user is authenticated first
+    if (window.authSystem && window.authSystem.isAuthenticated && window.authSystem.currentUser) {
+      this.currentUser = window.authSystem.currentUser;
+      await this.loadGuestData();
+    } else {
+      // User is not authenticated, show login message
+      this.showStatus('Please log in to access the RSVP page', 'error');
     }
   }
 
   async getCurrentUser() {
-    // Wait for auth system to be available
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
-    
-    while (attempts < maxAttempts) {
-      if (window.authSystem) {
-        console.log('🔐 Auth system found, checking authentication...');
-        console.log('🔐 isAuthenticated:', window.authSystem.isAuthenticated);
-        console.log('🔐 currentUser:', window.authSystem.currentUser);
-        
-        // Auth system is available, check authentication status
-        if (window.authSystem.isAuthenticated && window.authSystem.currentUser) {
-          console.log('🔐 User authenticated, returning user data');
-          return window.authSystem.currentUser;
-        }
-        
-        // If not authenticated, redirect to login
-        console.log('🔐 User not authenticated, showing login modal');
-        window.authSystem.showLoginModal('rsvp');
-        return null;
-      }
+    try {
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include'
+      });
       
-      // Wait 100ms before trying again
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
+      if (response.ok) {
+        const data = await response.json();
+        return data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return null;
     }
-    
-    console.error('🔐 Authentication system not available after waiting');
-    throw new Error('Authentication system not available after waiting');
   }
 
   async loadGuestData() {
@@ -236,24 +231,9 @@ class RSVPManager {
 }
 
 // Initialize RSVP manager when the page loads
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   // Only initialize on the RSVP page
   if (document.getElementById('rsvp')) {
-    // Wait for auth system to be available
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
-    
-    while (attempts < maxAttempts) {
-      if (window.authSystem) {
-        new RSVPManager();
-        return;
-      }
-      
-      // Wait 100ms before trying again
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
-    
-    console.error('RSVP Manager: Authentication system not available');
+    new RSVPManager();
   }
 });
