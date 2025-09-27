@@ -649,10 +649,18 @@ class RSVPManagerV5 {
     const formContainer = document.getElementById('rsvp-form');
     if (!formContainer) return;
     
+    // Get partner information
+    const partnerName = this.currentUser.partner_name || 'Your Partner';
+    
     formContainer.innerHTML = `
       <form id="rsvp-form-element">
+        <div class="couple-info-header">
+          <h3>RSVP for You and ${partnerName}</h3>
+          <p>You can RSVP for both yourself and your partner. Each person can have different dietary restrictions.</p>
+        </div>
+        
         <div class="couple-rsvp-section">
-          <h3>Your RSVP</h3>
+          <h4>${this.currentUser.first_name} ${this.currentUser.last_name}</h4>
           <div class="form-group">
             <label>Will you be attending?</label>
             <div class="radio-group">
@@ -675,9 +683,9 @@ class RSVPManagerV5 {
         </div>
         
         <div class="partner-rsvp-section">
-          <h3>Partner RSVP</h3>
+          <h4>${partnerName}</h4>
           <div class="form-group">
-            <label>Will your partner be attending?</label>
+            <label>Will ${partnerName} be attending?</label>
             <div class="radio-group">
               <label class="radio-label">
                 <input type="radio" name="partner_response_status" value="attending">
@@ -691,9 +699,9 @@ class RSVPManagerV5 {
           </div>
           
           <div class="form-group">
-            <label for="partner_dietary_restrictions">Partner's Dietary Restrictions (optional)</label>
+            <label for="partner_dietary_restrictions">${partnerName}'s Dietary Restrictions (optional)</label>
             <textarea id="partner_dietary_restrictions" name="partner_dietary_restrictions" 
-                      placeholder="Any dietary restrictions for your partner..."></textarea>
+                      placeholder="Any dietary restrictions for ${partnerName}..."></textarea>
           </div>
         </div>
         
@@ -703,7 +711,7 @@ class RSVPManagerV5 {
                     placeholder="Any additional message for the couple..."></textarea>
         </div>
         
-        <button type="submit" class="btn btn-primary">Submit RSVP</button>
+        <button type="submit" class="btn btn-primary">Submit RSVP for Both</button>
       </form>
     `;
     

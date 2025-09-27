@@ -63,9 +63,9 @@ async function resetUsers() {
       {
         first_name: 'Cordelia',
         last_name: 'Reynolds',
-        plus_one_allowed: true,
+        plus_one_allowed: false,
         account_status: 'guest',
-        admin_notes: 'College friend - can bring plus one'
+        admin_notes: 'College friend - part of couple'
       },
       {
         first_name: 'Marcus',

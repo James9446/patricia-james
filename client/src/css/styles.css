@@ -567,6 +567,28 @@ body.home-page {
   font-family: var(--font-heading);
 }
 
+/* Couple Info Header */
+.couple-info-header {
+  text-align: center;
+  background: var(--solstice-blue-light);
+  border: 1px solid var(--solstice-blue);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.couple-info-header h3 {
+  color: var(--solstice-blue-dark);
+  margin-bottom: var(--spacing-sm);
+  font-family: var(--font-heading);
+}
+
+.couple-info-header p {
+  color: var(--slate-gray);
+  margin: 0;
+  font-size: var(--text-base);
+}
+
 /* Couple RSVP Sections */
 .couple-rsvp-section,
 .partner-rsvp-section {
@@ -577,13 +599,22 @@ body.home-page {
   margin: var(--spacing-md) 0;
 }
 
-.couple-rsvp-section h3,
-.partner-rsvp-section h3 {
+.couple-rsvp-section h4,
+.partner-rsvp-section h4 {
   color: var(--solstice-blue-dark);
   margin-bottom: var(--spacing-md);
   font-family: var(--font-heading);
   border-bottom: 2px solid var(--solstice-blue-light);
   padding-bottom: var(--spacing-sm);
+  font-size: var(--text-lg);
+}
+
+.couple-rsvp-section {
+  border-left: 4px solid var(--solstice-blue);
+}
+
+.partner-rsvp-section {
+  border-left: 4px solid var(--lavender-haze);
 }
 
 /* Admin Options */
