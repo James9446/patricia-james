@@ -395,6 +395,29 @@ class RSVPManagerV5 {
       }
     }
 
+    // Handle plus-one if user is bringing one
+    const bringPlusOne = formData.get('bring_plus_one');
+    if (bringPlusOne === 'on') {
+      const plusOneFirstName = formData.get('plus_one_first_name');
+      const plusOneLastName = formData.get('plus_one_last_name');
+      const plusOneEmail = formData.get('plus_one_email');
+      const plusOneDietary = formData.get('plus_one_dietary_restrictions');
+      
+      if (plusOneFirstName && plusOneLastName && plusOneEmail) {
+        rsvpData.plus_one = {
+          first_name: plusOneFirstName,
+          last_name: plusOneLastName,
+          email: plusOneEmail,
+          dietary_restrictions: plusOneDietary || null
+        };
+        console.log('📝 RSVP Manager: Plus-one data:', rsvpData.plus_one);
+      } else {
+        console.log('📝 RSVP Manager: Plus-one selected but missing required fields');
+        alert('Please fill in all required plus-one information.');
+        return;
+      }
+    }
+
     try {
       console.log('📝 RSVP Manager: Submitting RSVP...');
       
@@ -646,17 +669,29 @@ class RSVPManagerV5 {
           </div>
         </div>
         
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="bring_plus_one" name="bring_plus_one">
+            I will bring a plus-one
+          </label>
+        </div>
+        
         <div class="plus-one-section" id="plus-one-section" style="display: none;">
           <h3>Plus-One Information</h3>
           <div class="form-group">
-            <label for="plus_one_first_name">Plus-One First Name</label>
+            <label for="plus_one_first_name">Plus-One First Name *</label>
             <input type="text" id="plus_one_first_name" name="plus_one_first_name" 
-                   placeholder="Enter plus-one's first name">
+                   placeholder="Enter plus-one's first name" required>
           </div>
           <div class="form-group">
-            <label for="plus_one_last_name">Plus-One Last Name</label>
+            <label for="plus_one_last_name">Plus-One Last Name *</label>
             <input type="text" id="plus_one_last_name" name="plus_one_last_name" 
-                   placeholder="Enter plus-one's last name">
+                   placeholder="Enter plus-one's last name" required>
+          </div>
+          <div class="form-group">
+            <label for="plus_one_email">Plus-One Email *</label>
+            <input type="email" id="plus_one_email" name="plus_one_email" 
+                   placeholder="Enter plus-one's email address" required>
           </div>
           <div class="form-group">
             <label for="plus_one_dietary_restrictions">Plus-One Dietary Restrictions (optional)</label>
@@ -911,17 +946,37 @@ class RSVPManagerV5 {
    * Setup plus-one toggle functionality
    */
   setupPlusOneToggle() {
-    const attendingRadio = document.querySelector('input[name="response_status"][value="attending"]');
+    const bringPlusOneCheckbox = document.getElementById('bring_plus_one');
     const plusOneSection = document.getElementById('plus-one-section');
     
-    if (attendingRadio && plusOneSection) {
-      attendingRadio.addEventListener('change', () => {
-        if (attendingRadio.checked) {
+    console.log('📝 RSVP Manager: Setting up plus-one toggle...');
+    console.log('📝 RSVP Manager: Plus-one checkbox found:', bringPlusOneCheckbox);
+    console.log('📝 RSVP Manager: Plus-one section found:', plusOneSection);
+    
+    if (bringPlusOneCheckbox && plusOneSection) {
+      bringPlusOneCheckbox.addEventListener('change', () => {
+        console.log('📝 RSVP Manager: Plus-one checkbox changed:', bringPlusOneCheckbox.checked);
+        if (bringPlusOneCheckbox.checked) {
           plusOneSection.style.display = 'block';
+          console.log('📝 RSVP Manager: Plus-one section shown');
+          // Make plus-one fields required
+          const plusOneFields = plusOneSection.querySelectorAll('input[required]');
+          plusOneFields.forEach(field => {
+            field.required = true;
+          });
         } else {
           plusOneSection.style.display = 'none';
+          console.log('📝 RSVP Manager: Plus-one section hidden');
+          // Clear plus-one fields and make them not required
+          const plusOneFields = plusOneSection.querySelectorAll('input, textarea');
+          plusOneFields.forEach(field => {
+            field.value = '';
+            field.required = false;
+          });
         }
       });
+    } else {
+      console.log('📝 RSVP Manager: ERROR - Plus-one elements not found');
     }
   }
 

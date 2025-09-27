@@ -206,9 +206,15 @@ CREATE TABLE photos (
 
 ### Plus-One Process
 1. **Guest with plus_one_allowed** submits RSVP with plus-one details
-2. **System creates new user record** for plus-one
+2. **System creates new user record** for plus-one with `account_status: 'guest'`
 3. **Plus-one can later register** and manage their own account
 4. **Plus-one treated as regular user** with full capabilities
+
+### Plus-One Account Status Issue 🚧 CRITICAL
+- **Problem**: Plus-one users created with `account_status: 'registered'` but no password
+- **Solution**: Set `account_status: 'guest'` for plus-one users until they register
+- **Impact**: Prevents plus-ones from logging in until they complete registration
+- **Implementation**: Update plus-one creation logic in RSVP API
 
 ## 🚀 Deployment Strategy
 

@@ -9,13 +9,14 @@ const { requireAuth } = require('../middleware/auth');
  */
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { 
-      response_status, 
-      dietary_restrictions, 
+    const {
+      response_status,
+      dietary_restrictions,
       message,
       partner_response_status,
       partner_dietary_restrictions,
-      partner_message
+      partner_message,
+      plus_one
     } = req.body;
 
     const userId = req.user.id;
@@ -98,6 +99,60 @@ router.post('/', requireAuth, async (req, res) => {
         }
       }
 
+      // Handle plus-one creation if user is bringing one
+      let plusOneRsvpResult = null;
+      if (plus_one && plus_one.first_name && plus_one.last_name && plus_one.email) {
+        console.log('📝 RSVP API: Creating plus-one user and RSVP:', plus_one);
+        
+        // Create plus-one user
+        const plusOneUserResult = await query(`
+          INSERT INTO users (
+            first_name, last_name, email, account_status, plus_one_allowed
+          )
+          VALUES ($1, $2, $3, 'registered', false)
+          RETURNING *;
+        `, [plus_one.first_name, plus_one.last_name, plus_one.email]);
+        
+        const plusOneUserId = plusOneUserResult.rows[0].id;
+        
+        // Create RSVP for plus-one
+        plusOneRsvpResult = await query(`
+          INSERT INTO rsvps (
+            user_id, partner_id, response_status, dietary_restrictions, message
+          )
+          VALUES ($1, $2, 'attending', $3, $4)
+          RETURNING *;
+        `, [plusOneUserId, userId, plus_one.dietary_restrictions, `Plus-one for ${user.first_name} ${user.last_name}`]);
+        
+        console.log('📝 RSVP API: Plus-one user and RSVP created:', {
+          user_id: plusOneUserId,
+          rsvp_id: plusOneRsvpResult.rows[0].id
+        });
+        
+        // Update the main user's RSVP to include the plus-one's partner_id
+        await query(`
+          UPDATE rsvps
+          SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = $2
+        `, [plusOneUserId, userId]);
+        
+        // Update the users table to establish the partner relationship
+        await query(`
+          UPDATE users
+          SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2
+        `, [plusOneUserId, userId]);
+        
+        // Update the plus-one user to have the main user as partner
+        await query(`
+          UPDATE users
+          SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2
+        `, [userId, plusOneUserId]);
+        
+        console.log('📝 RSVP API: Updated both users and RSVPs with partner relationships');
+      }
+
       // Commit transaction
       await query('COMMIT');
       
@@ -106,7 +161,8 @@ router.post('/', requireAuth, async (req, res) => {
         message: 'RSVP submitted successfully!',
         data: {
           user_rsvp: rsvpResult.rows[0],
-          partner_rsvp: partnerRsvpResult ? partnerRsvpResult.rows[0] : null
+          partner_rsvp: partnerRsvpResult ? partnerRsvpResult.rows[0] : null,
+          plus_one_rsvp: plusOneRsvpResult ? plusOneRsvpResult.rows[0] : null
         }
       });
 
