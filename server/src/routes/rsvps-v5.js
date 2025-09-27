@@ -147,8 +147,9 @@ router.get('/', requireAuth, async (req, res) => {
       WHERE r.user_id = $1
     `, [userId]);
 
-    // Get partner's RSVP if user has a partner
+    // Get partner's RSVP and info if user has a partner
     let partnerRsvp = null;
+    let partnerInfo = null;
     if (user.partner_id) {
       const partnerRsvpResult = await query(`
         SELECT 
@@ -163,6 +164,20 @@ router.get('/', requireAuth, async (req, res) => {
       `, [user.partner_id]);
       
       partnerRsvp = partnerRsvpResult.rows.length > 0 ? partnerRsvpResult.rows[0] : null;
+      
+      // Get partner basic info
+      const partnerInfoResult = await query(`
+        SELECT 
+          id,
+          first_name,
+          last_name,
+          full_name,
+          email
+        FROM users
+        WHERE id = $1
+      `, [user.partner_id]);
+      
+      partnerInfo = partnerInfoResult.rows.length > 0 ? partnerInfoResult.rows[0] : null;
     }
 
     res.json({
@@ -170,6 +185,7 @@ router.get('/', requireAuth, async (req, res) => {
       data: {
         user_rsvp: userRsvp.rows.length > 0 ? userRsvp.rows[0] : null,
         partner_rsvp: partnerRsvp,
+        partner_info: partnerInfo,
         user_info: {
           id: user.id,
           first_name: user.first_name,

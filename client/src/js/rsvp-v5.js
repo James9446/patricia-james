@@ -10,6 +10,7 @@ class RSVPManagerV5 {
     this.currentUser = null;
     this.userRsvp = null;
     this.partnerRsvp = null;
+    this.partnerInfo = null;
     this.apiBaseUrl = '/api';
     this.isInitialized = false;
     
@@ -198,6 +199,13 @@ class RSVPManagerV5 {
         if (data.success) {
           this.userRsvp = data.data.user_rsvp;
           this.partnerRsvp = data.data.partner_rsvp;
+          this.partnerInfo = data.data.partner_info;
+          
+          console.log('📝 RSVP Manager: Loaded data:', {
+            userRsvp: this.userRsvp,
+            partnerRsvp: this.partnerRsvp,
+            partnerInfo: this.partnerInfo
+          });
           
           // Populate the form with existing data
           this.populateForm();
@@ -649,8 +657,11 @@ class RSVPManagerV5 {
     const formContainer = document.getElementById('rsvp-form');
     if (!formContainer) return;
     
-    // Get partner information
-    const partnerName = this.currentUser.partner_name || 'Your Partner';
+    // Get partner information from the loaded data
+    let partnerName = 'Your Partner';
+    if (this.partnerInfo) {
+      partnerName = `${this.partnerInfo.first_name} ${this.partnerInfo.last_name}`;
+    }
     
     formContainer.innerHTML = `
       <form id="rsvp-form-element">
