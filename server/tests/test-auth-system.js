@@ -122,7 +122,7 @@ async function testUserRegistration(guestData) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      guest_id: guestData.guest_id,
+      user_id: guestData.user_id,
       email: testEmail,
       password: testPassword,
       first_name: guestData.first_name,
