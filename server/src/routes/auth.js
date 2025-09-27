@@ -41,7 +41,7 @@ router.post('/check-guest', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Guest not found. Please check your name spelling or contact us.'
+        message: 'Guest record not found. Please check your name spelling or contact James.'
       });
     }
 

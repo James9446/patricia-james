@@ -109,7 +109,7 @@ router.post('/', requireAuth, async (req, res) => {
           INSERT INTO users (
             first_name, last_name, email, account_status, plus_one_allowed
           )
-          VALUES ($1, $2, $3, 'registered', false)
+          VALUES ($1, $2, $3, 'guest', false)
           RETURNING *;
         `, [plus_one.first_name, plus_one.last_name, plus_one.email]);
         
