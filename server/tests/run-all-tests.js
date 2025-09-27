@@ -11,7 +11,7 @@ const path = require('path');
 class TestRunner {
   constructor() {
     this.testSuites = [
-      'comprehensive-test-suite.js',
+      'test-basic-functionality.js',
       'test-auth-system.js',
       'test-rsvp-system.js',
       'test-api.js',
