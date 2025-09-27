@@ -4,6 +4,18 @@ A modern, interactive wedding website with guest authentication, RSVP system, an
 
 ## 🚀 Quick Start
 
+### 🛡️ Database Tools Quick Reference
+```bash
+# Most common commands
+./db stats          # Database statistics
+./db users          # View all users
+./db rsvps          # View all RSVPs
+./db help           # Show all commands
+
+# Custom queries
+./db sql "SELECT * FROM users WHERE account_status = 'registered';"
+```
+
 ### Prerequisites
 - Node.js (v18 or higher)
 - PostgreSQL (v12 or higher)
@@ -123,6 +135,60 @@ cd server && node scripts/startup-check.js
 ```
 
 ### Database Management
+
+#### 🛡️ Safe Database Tools (Recommended)
+```bash
+# Database statistics
+./db stats
+
+# View all users
+./db users
+
+# View all RSVPs
+./db rsvps
+
+# Run custom SQL queries
+./db sql "SELECT * FROM users WHERE account_status = 'registered';"
+
+# Reset database (with confirmation)
+./db reset
+
+# Show help
+./db help
+```
+
+### 🛠️ Database Tools Details
+
+The project includes three database management tools:
+
+1. **`./db`** - Simple command-line interface (recommended for daily use)
+2. **`server/db-helper.js`** - Direct SQL query execution
+3. **`server/db-manager.js`** - High-level database operations
+
+#### Security Features
+- ✅ **No credential exposure** - Uses environment variables from `.env`
+- ✅ **Consistent connection** - Same logic as the server
+- ✅ **Error handling** - Graceful failure with helpful messages
+- ✅ **Safe for production** - No hardcoded credentials
+
+#### Common Use Cases
+```bash
+# Check system health
+./db stats
+
+# Debug user issues
+./db users
+./db sql "SELECT * FROM users WHERE email = 'user@example.com';"
+
+# Debug RSVP issues  
+./db rsvps
+./db sql "SELECT * FROM rsvps WHERE response_status = 'attending';"
+
+# Reset for testing
+./db reset
+```
+
+#### 🔧 Advanced Database Operations
 ```bash
 # Reset database (WARNING: deletes all data)
 cd server && node src/database/migrate.js reset
@@ -167,15 +233,100 @@ curl http://localhost:5001/api/guests
 
 ## 📊 Database Management
 
-### Connecting to the Database
+### 🛡️ Safe Database Access (Recommended)
 
-#### From Terminal (psql)
+The project includes safe database management tools that automatically load environment variables and avoid credential exposure:
+
 ```bash
+# Quick database statistics
+./db stats
+
+# View all users with partner information
+./db users
+
+# View all RSVPs with user details
+./db rsvps
+
+# Run custom SQL queries safely
+./db sql "SELECT first_name, last_name, account_status FROM users;"
+./db sql "SELECT COUNT(*) FROM rsvps WHERE response_status = 'attending';"
+
+# Reset database with confirmation
+./db reset
+
+# Show all available commands
+./db help
+```
+
+### 🔧 Direct Database Access (Advanced)
+
+#### From Terminal (psql) - Use with Caution
+```bash
+# ⚠️ WARNING: These commands expose credentials in shell history
+# Use the safe ./db tools instead when possible
+
 # Connect to your local database
-psql postgresql://localhost:5432/patricia_james_wedding_dev
+psql postgresql://patricia_james_admin:WeddingAdmin2024!@localhost:5432/patricia_james_wedding_dev
 
 # Or with explicit parameters
-psql -h localhost -p 5432 -U your_username -d patricia_james_wedding_dev
+psql -h localhost -p 5432 -U patricia_james_admin -d patricia_james_wedding_dev
+```
+
+### 🚨 Troubleshooting Database Connection Issues
+
+#### "database James does not exist" Error
+This error occurs when PostgreSQL tries to connect to a database named after your system username instead of the correct database. This happens when:
+
+1. **Environment variables not loaded** - The shell doesn't have access to `DATABASE_URL`
+2. **Incorrect connection string** - Missing or malformed database URL
+3. **Wrong working directory** - Running commands from wrong location
+
+**Solution**: Use the safe database tools instead:
+```bash
+# ✅ CORRECT - Use safe database tools
+./db stats
+./db users
+
+# ❌ AVOID - Direct psql commands that expose credentials
+psql $DATABASE_URL -c "SELECT * FROM users;"
+```
+
+### 🛡️ Best Practices for Database Access
+
+#### ✅ DO Use Safe Database Tools
+```bash
+# Use the project's safe database tools
+./db stats
+./db users
+./db sql "SELECT * FROM users;"
+```
+
+#### ❌ DON'T Expose Credentials
+```bash
+# ❌ AVOID - Credentials in shell history
+psql postgresql://user:password@localhost:5432/db
+
+# ❌ AVOID - Environment variables not loaded
+psql $DATABASE_URL -c "SELECT * FROM users;"
+
+# ❌ AVOID - Hardcoded credentials in scripts
+echo "password123" | psql -U user -d db
+```
+
+#### 🔧 Creating New Shell Scripts
+When creating new shell scripts that need database access:
+
+1. **Use Node.js scripts** that load environment variables with `dotenv`
+2. **Call the safe database tools** instead of direct database commands
+3. **Avoid hardcoded credentials** in shell scripts
+4. **Use the existing patterns** from `reset-users.sh` and `check-system.sh`
+
+Example safe shell script:
+```bash
+#!/bin/bash
+# Safe database operations using project tools
+./db stats
+./db sql "SELECT COUNT(*) FROM users;"
 ```
 
 #### From Application
