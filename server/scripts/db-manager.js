@@ -7,7 +7,7 @@
  */
 
 require('dotenv').config();
-const { query } = require('./src/config/db');
+const { query } = require('../src/config/db');
 
 const commands = {
   'users': () => showUsers(),

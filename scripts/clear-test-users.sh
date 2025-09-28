@@ -7,8 +7,8 @@ echo "🧹 Clearing test users..."
 echo ""
 
 # Use the database helper to clear test users
-cd "$(dirname "$0")/server"
-node db-helper.js "DELETE FROM users WHERE email LIKE '%test%' OR email LIKE '%example.com%' OR account_status = 'guest';"
+cd "$(dirname "$0")/../server"
+node scripts/db-helper.js "DELETE FROM users WHERE email LIKE '%test%' OR email LIKE '%example.com%' OR account_status = 'guest';"
 
 echo ""
 echo "✅ Test users cleared! Ready for testing."
