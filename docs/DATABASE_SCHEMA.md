@@ -1,65 +1,82 @@
-# Database Schema - Patricia & James Wedding
+# Database Schema - Patricia & James Wedding (v5)
 
-## 🎯 **Key Improvements Based on Your Requirements**
+## 🎯 **Current Schema Design (v5 - Combined Table Approach)**
 
-### ✅ **Name-Based Authentication**
-- **No email required initially** - Guests authenticate with first name + last name
-- **Email collected during registration** - When they create an account
-- **Unique name constraint** - Prevents duplicate guest records
+### ✅ **Combined Table Architecture**
+- **Single `users` table** - Contains both guest and user data
+- **No data duplication** - Email and password only stored once
+- **Simplified relationships** - Direct partner references
+- **Flexible account status** - Tracks registration state
+
+### ✅ **Individual RSVP Records**
+- **Each user gets their own RSVP** - Specific dietary restrictions
+- **Partner RSVP logic** - Either partner can RSVP for both
+- **Plus-one handling** - Plus-ones become real users with RSVPs
+- **Audit trail** - Track who submitted and when
 
 ### ✅ **Dynamic Plus-One Creation**
-- **Plus-ones become real guest records** - Full database entries
+- **Plus-ones become real users** - Full database entries with accounts
 - **Automatic partner linking** - Plus-one linked to the guest who brought them
-- **No approval needed** - Plus-ones added immediately during RSVP
-
-### ✅ **Flexible Couple RSVP**
-- **Either partner can RSVP** - Independent or together
-- **RSVP for self, partner, or both** - Clear options in the form
-- **Partner details shown** - Name and email displayed in UI
+- **Account status tracking** - Plus-ones start as 'guest' until registered
 
 ### ✅ **CSV Import System**
-- **Easy guest list population** - Import from spreadsheet
+- **Easy guest list population** - Import from `test-guests.csv`
 - **Automatic relationship linking** - Partners connected automatically
-- **Deployment-friendly** - Works with local and remote databases
+- **Database tool integration** - Use `./db reset --confirm` for seeding
 
-## 📊 **Database Schema Overview**
+## 📊 **Current Database Schema (v5)**
 
-### **Guests Table**
+### **Users Table (Combined Guest and User Data)**
 ```sql
--- Core guest information
-first_name, last_name, full_name (computed)
-email (nullable initially)
-partner_id (links to partner)
-is_primary_guest (true for main guests)
-plus_one_allowed (permission flag)
-admin_notes (internal notes)
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    full_name VARCHAR(200) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED,
+    partner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    plus_one_allowed BOOLEAN DEFAULT false,
+    email VARCHAR(255) UNIQUE, -- NULL until registered
+    password_hash VARCHAR(255), -- NULL until registered
+    is_admin BOOLEAN DEFAULT false,
+    account_status VARCHAR(20) DEFAULT 'guest' CHECK (account_status IN ('guest', 'registered', 'deleted')),
+    admin_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
 ```
 
-### **RSVPs Table**
+### **RSVPs Table (Individual RSVP Records)**
 ```sql
--- Flexible RSVP handling
-rsvp_for_self (boolean)
-rsvp_for_partner (boolean)
-partner_attending (boolean)
-plus_one_attending (boolean)
-plus_one_name, plus_one_email (collected during RSVP)
+CREATE TABLE rsvps (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    partner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    response_status VARCHAR(20) NOT NULL CHECK (response_status IN ('attending', 'not_attending', 'pending')),
+    dietary_restrictions TEXT,
+    message TEXT,
+    responded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
-### **Users Table**
+### **User Sessions Table (Session Management)**
 ```sql
--- Account information
-guest_id (links to guest record)
-username (full name)
-email, password_hash
-first_name, last_name
+CREATE TABLE user_sessions (
+    sid VARCHAR NOT NULL,
+    sess JSON NOT NULL,
+    expire TIMESTAMP(6) NOT NULL,
+    PRIMARY KEY (sid)
+);
 ```
 
-## 🔄 **User Flow**
+## 🔄 **Current User Flow (v5)**
 
 ### **1. Guest Authentication**
 ```
 Guest enters first name + last name
-→ System checks if guest exists
+→ System checks if guest exists in users table
 → If found: Show guest details + partner info
 → If not found: Show error message
 ```
@@ -67,9 +84,9 @@ Guest enters first name + last name
 ### **2. Account Creation**
 ```
 Guest creates account with email + password
-→ System creates user record
-→ Links user to guest record
-→ Updates guest email if needed
+→ System updates existing user record
+→ Sets email, password_hash, account_status = 'registered'
+→ No new records created (uses existing user)
 ```
 
 ### **3. RSVP Process**
@@ -78,129 +95,141 @@ Logged-in guest sees RSVP form
 → Shows their info + partner info (if applicable)
 → Options: RSVP for self, partner, or both
 → If plus-one allowed: Collect plus-one details
-→ Submit RSVP → Create plus-one guest record if needed
+→ Submit RSVP → Create individual RSVP records
 ```
 
 ### **4. Plus-One Handling**
 ```
 Guest selects "bringing plus-one"
 → Provides plus-one name + email
-→ System creates new guest record for plus-one
+→ System creates new user record for plus-one
 → Links plus-one to original guest as partner
 → Plus-one can later create their own account
 ```
 
-## 📁 **Files Created**
+## 📁 **Current File Structure**
 
-### **Database Schema**
-- **`schema.sql`** - Current database schema
-- **`migrate.js`** - Database migration and initialization
-
-### **Admin Tools**
-- **`import-guests-csv.js`** - CSV import script
-- **`ADMIN_GUIDE.md`** - Comprehensive admin documentation
+### **Database Management**
+- **`server/db`** - Main database management tool
+- **`./db`** - Wrapper script for easy access
+- **`server/test-guests.csv`** - Guest data for seeding
 
 ### **API Routes**
-- **`auth.js`** - Name-based authentication
-- **`rsvps.js`** - Enhanced RSVP handling
+- **`server/src/routes/auth.js`** - Authentication endpoints
+- **`server/src/routes/rsvps.js`** - RSVP handling
+- **`server/src/middleware/auth.js`** - Authentication middleware
 
 ### **Documentation**
-- **`DATABASE_SCHEMA.md`** - This summary
+- **`docs/DATABASE_SCHEMA.md`** - This schema documentation
+- **`docs/DATABASE_USAGE_GUIDE.md`** - Database tool usage guide
+- **`docs/ADMIN_GUIDE.md`** - Admin workflow guide
 
 ## 🚀 **Getting Started**
 
-### **1. Test the New Schema**
+### **1. Database Management**
 ```bash
-# Initialize with current schema
-node src/database/migrate.js reset
+# View database statistics
+./db stats
 
-# Create sample CSV
-node src/admin/import-guests-csv.js sample
+# View all users
+./db users
 
-# Import your guest list
-node src/admin/import-guests-csv.js import your-guests.csv
+# Reset to seeded state
+./db reset --confirm
 ```
 
 ### **2. CSV Format**
 ```csv
-first_name,last_name,plus_one_allowed,partner_first_name,partner_last_name,admin_notes
-Cordelia,Reynolds,false,,,Individual guest, no plus-one
-Tara,Folenta,false,Brenda,Bedell,Partner of Brenda Bedell
-Brenda,Bedell,false,Tara,Folenta,Partner of Tara Folenta
-Alfredo,Lopez,true,,,Individual guest, plus-one allowed
+first_name,last_name,plus_one_allowed,partner_first,partner_last,admin_notes
+Mike,Jones,false,,,Individual guest no plus-one
+John,Smith,false,Jane,Smith,Partner of Jane Smith
+Jane,Smith,false,John,Smith,Partner of John Smith
+Jack,Blue,true,,,Individual guest plus-one allowed
 ```
 
-### **3. API Endpoints**
+### **3. Current API Endpoints**
 
 #### **Authentication**
 - `POST /api/auth/check-guest` - Check guest by name
 - `POST /api/auth/register` - Create user account
 - `POST /api/auth/login` - Login with email/password
 - `GET /api/auth/me` - Get current user info
+- `POST /api/auth/logout` - Logout user
 
 #### **RSVPs**
+- `GET /api/rsvps` - Get user's RSVP data
 - `POST /api/rsvps` - Submit RSVP (creates plus-ones)
-- `GET /api/rsvps/:guest_id` - Get RSVP details
-- `GET /api/rsvps/summary` - Admin RSVP summary
+- `PUT /api/rsvps/:id` - Update RSVP
 
-## 🎯 **Perfect for Your Use Case**
+## 🎯 **Current System Status (v5)**
 
-### **Your Examples Work Perfectly**
-- ✅ **Cordelia Reynolds** - Individual, no plus-one
-- ✅ **Tara Folenta + Brenda Bedell** - Couple, no plus-one
-- ✅ **Alfredo Lopez** - Individual with plus-one permission
+### **✅ Working Features**
+- **Combined table architecture** - Single users table for all data
+- **Individual RSVP records** - Each user gets their own RSVP
+- **Partner RSVP logic** - Either partner can RSVP for both
+- **Plus-one creation** - Plus-ones become real users
+- **Database management** - Comprehensive `./db` tool
+- **CSV seeding** - Easy guest list import
+- **Authentication system** - Login/logout with session management
 
-### **Real-World Scenarios**
-- ✅ **Couples** - Either can RSVP for both
-- ✅ **Individuals** - Can bring plus-ones if allowed
-- ✅ **Plus-ones** - Become real guests with accounts
-- ✅ **Admin** - Easy CSV import and RSVP summaries
+### **✅ Real-World Scenarios**
+- **Individual guests** - Can RSVP with dietary restrictions
+- **Couples** - Either partner can RSVP for both
+- **Plus-ones** - Become real users with full capabilities
+- **Admin management** - Easy database operations
 
-### **Deployment Ready**
-- ✅ **Local development** - CSV import works locally
-- ✅ **Production deployment** - Can import via admin interface
-- ✅ **Database migration** - Safe upgrade from v1 to v3
-- ✅ **No data loss** - Preserves existing guest data
+### **✅ Production Ready**
+- **Database tool** - `./db` for all database operations
+- **CSV import** - Automatic seeding from `test-guests.csv`
+- **Session management** - Secure cookie-based authentication
+- **Error handling** - Comprehensive error management
 
-## 🔧 **Next Steps**
+## 🔧 **Current Usage**
 
-### **1. Test the Schema**
+### **1. Database Management**
 ```bash
-# Test with your actual guest list
-node src/admin/import-guests-csv.js sample
-# Edit the sample CSV with your real data
-node src/admin/import-guests-csv.js import sample-guests.csv
+# View current state
+./db stats
+./db users
+./db rsvps
+
+# Reset to seeded state
+./db reset --confirm
+
+# Clean test data
+./db clean
 ```
 
-### **2. Update Frontend**
-- Modify RSVP form for new fields
-- Add name-based authentication
-- Handle partner information display
-- Implement plus-one collection
+### **2. Development Workflow**
+```bash
+# Start server
+npm run dev
 
-### **3. Test RSVP Flow**
-- Test individual guest RSVP
-- Test couple RSVP (both partners)
-- Test plus-one creation
-- Test account creation
+# Check database
+./db stats
 
-### **4. Deploy**
-- Set up production database
-- Import guest list
-- Deploy frontend and backend
-- Test with real guests
+# Test with sample data
+./db reset --confirm
+```
 
-## 🎉 **Ready to Go!**
+### **3. Production Deployment**
+```bash
+# Set up production database
+./db reset --confirm
 
-The refined schema v3 perfectly matches your requirements:
-- ✅ **Name-based authentication**
-- ✅ **Dynamic plus-one creation**
-- ✅ **Flexible couple RSVPs**
-- ✅ **CSV import system**
-- ✅ **Admin-friendly workflow**
+# Verify deployment
+./db stats
+./db users
+```
 
-**What would you like to do next?**
-1. Test the new schema with your guest list?
-2. Update the frontend to work with the new API?
-3. Set up the admin interface?
-4. Deploy to production?
+## 🎉 **System Status: PRODUCTION READY**
+
+The current schema v5 provides:
+- ✅ **Combined table architecture** - Simplified data model
+- ✅ **Individual RSVP records** - Specific dietary restrictions
+- ✅ **Partner RSVP logic** - Flexible couple management
+- ✅ **Plus-one handling** - Real user creation
+- ✅ **Database management** - Comprehensive tooling
+- ✅ **CSV import system** - Easy guest list management
+
+**The system is ready for production use!**

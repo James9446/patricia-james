@@ -3,7 +3,7 @@
 ## Guest List Management
 
 ### Overview
-This guide explains how to populate and manage the guest list for the wedding website. The system is designed to handle complex relationships including couples, plus-ones, and individual guests.
+This guide explains how to populate and manage the guest list for the wedding website. The system uses a combined table approach where all guest and user data is stored in a single `users` table.
 
 ### Guest Types
 
@@ -12,111 +12,89 @@ This guide explains how to populate and manage the guest list for the wedding we
 - May or may not be allowed a plus-one
 - Example: Single friends, colleagues
 
-#### 2. Couples (Primary + Partner)
-- **Primary guest**: The main person who will receive the invitation
-- **Partner**: Linked to the primary guest
-- Both can RSVP, but only the primary guest needs to create an account
+#### 2. Couples (Partners)
+- **Both partners** are equal users in the system
+- **Either partner** can RSVP for both
+- Both can create accounts and manage their own information
 - Example: Married couples, long-term partners
 
 #### 3. Plus-Ones
 - Additional guests that primary guests can bring
-- Name and email collected during RSVP process
-- Added to database when RSVP is submitted
+- **Become real users** in the system when added
+- Can create their own accounts after being added
+- Treated as regular users with full capabilities
 
 ### Database Schema for Guest Relationships
 
 ```sql
--- Primary guest (receives invitation)
-INSERT INTO guests (first_name, last_name, email, plus_one_allowed) 
-VALUES ('Maria', 'Garcia', 'maria@example.com', true);
+-- Individual guest (no partner)
+INSERT INTO users (first_name, last_name, plus_one_allowed, account_status) 
+VALUES ('Maria', 'Garcia', true, 'guest');
 
--- Partner (linked to primary guest)
-INSERT INTO guests (first_name, last_name, email, plus_one_allowed) 
-VALUES ('John', 'Doe', 'john@example.com', false);
+-- Couple (both partners)
+INSERT INTO users (first_name, last_name, plus_one_allowed, account_status) 
+VALUES ('John', 'Doe', false, 'guest');
+
+INSERT INTO users (first_name, last_name, plus_one_allowed, account_status) 
+VALUES ('Jane', 'Doe', false, 'guest');
 
 -- Link them as partners
-UPDATE guests 
-SET partner_id = (SELECT id FROM guests WHERE email = 'john@example.com')
-WHERE email = 'maria@example.com';
+UPDATE users 
+SET partner_id = (SELECT id FROM users WHERE first_name = 'Jane' AND last_name = 'Doe')
+WHERE first_name = 'John' AND last_name = 'Doe';
 
-UPDATE guests 
-SET partner_id = (SELECT id FROM guests WHERE email = 'maria@example.com')
-WHERE email = 'john@example.com';
+UPDATE users 
+SET partner_id = (SELECT id FROM users WHERE first_name = 'John' AND last_name = 'Doe')
+WHERE first_name = 'Jane' AND last_name = 'Doe';
 ```
 
 ### Admin Workflow
 
 #### Step 1: Prepare Your Guest List
-Create a spreadsheet with the following columns:
+Create a CSV file with the following columns:
 - `first_name`
 - `last_name` 
-- `email`
-- `phone` (optional)
-- `guest_type` (individual, primary, partner)
-- `partner_email` (if applicable)
 - `plus_one_allowed` (true/false)
+- `partner_first` (if applicable)
+- `partner_last` (if applicable)
 - `admin_notes` (internal notes)
 
-#### Step 2: Categorize Your Guests
+#### Step 2: CSV Format Example
 
 **Individual Guests:**
-```
-John Smith, john@example.com, individual, false
-Sarah Johnson, sarah@example.com, individual, true
-```
-
-**Couples (Primary Guest):**
-```
-Maria Garcia, maria@example.com, primary, true
-John Doe, john@example.com, partner, false
+```csv
+first_name,last_name,plus_one_allowed,partner_first,partner_last,admin_notes
+John,Smith,false,,,Individual guest no plus-one
+Sarah,Johnson,true,,,Individual guest plus-one allowed
 ```
 
-#### Step 3: Database Population Script
-
-Create a script to populate the database:
-
-```javascript
-// Example admin script for populating guests
-const guestData = [
-  // Individual guests
-  {
-    first_name: 'John',
-    last_name: 'Smith',
-    email: 'john@example.com',
-    plus_one_allowed: false
-  },
-  
-  // Couples
-  {
-    first_name: 'Maria',
-    last_name: 'Garcia', 
-    email: 'maria@example.com',
-    plus_one_allowed: true,
-    partner: {
-      first_name: 'John',
-      last_name: 'Doe',
-      email: 'john@example.com'
-    }
-  }
-];
-
-// Insert guests and create relationships
-for (const guest of guestData) {
-  // Insert primary guest
-  const primaryGuest = await insertGuest(guest);
-  
-  // Insert partner if exists
-  if (guest.partner) {
-    const partnerGuest = await insertGuest({
-      ...guest.partner,
-      plus_one_allowed: false
-    });
-    
-    // Link them as partners
-    await linkPartners(primaryGuest.id, partnerGuest.id);
-  }
-}
+**Couples:**
+```csv
+first_name,last_name,plus_one_allowed,partner_first,partner_last,admin_notes
+Maria,Garcia,false,John,Doe,Partner of John Doe
+John,Doe,false,Maria,Garcia,Partner of Maria Garcia
 ```
+
+#### Step 3: Database Population
+
+Use the built-in database tool to populate the database:
+
+```bash
+# Reset database to seeded state
+./db reset --confirm
+
+# Check current users
+./db users
+
+# View database statistics
+./db stats
+```
+
+The database tool automatically:
+- Reads from `server/test-guests.csv`
+- Creates user records with proper attributes
+- Sets up partner relationships
+- Handles all the complex linking logic
 
 ### RSVP Flow for Different Guest Types
 
@@ -172,35 +150,46 @@ SELECT * FROM rsvp_summary;
 -- Shows RSVP status for all primary guests
 ```
 
-### API Endpoints for Admin
+### Database Management Commands
 
-#### Get All Guests
-```
-GET /api/admin/guests
-```
-
-#### Get Guest Relationships
-```
-GET /api/admin/guests/relationships
+#### View All Users
+```bash
+./db users
 ```
 
-#### Get RSVP Summary
-```
-GET /api/admin/rsvps/summary
+#### View All RSVPs
+```bash
+./db rsvps
 ```
 
-#### Update Guest Information
+#### View Database Statistics
+```bash
+./db stats
 ```
-PUT /api/admin/guests/:id
+
+#### Reset Database to Seeded State
+```bash
+./db reset --confirm
+```
+
+#### Clean Test Data
+```bash
+./db clean
+```
+
+#### Get Help
+```bash
+./db help
 ```
 
 ### Best Practices
 
-1. **Always set primary guests first** - Partners reference primary guests
-2. **Use consistent email addresses** - These are used for login
+1. **Use CSV format for guest import** - Easier to manage and update
+2. **Set partner relationships correctly** - Both partners must reference each other
 3. **Set plus_one_allowed carefully** - Controls who can bring additional guests
 4. **Use admin_notes** - Track special requirements or notes
 5. **Test with sample data** - Verify relationships work correctly
+6. **Use database tool for management** - Avoid manual SQL operations
 
 ### Common Scenarios
 
