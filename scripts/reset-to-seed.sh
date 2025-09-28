@@ -8,7 +8,7 @@ echo ""
 
 # Use the database manager to reset
 cd "$(dirname "$0")/../server"
-node scripts/db-manager.js reset --confirm
+node db-manager.js reset --confirm
 
 echo ""
 echo "✅ Database reset to seeded state! Ready for testing."

@@ -7,7 +7,7 @@
  */
 
 require('dotenv').config();
-const { query } = require('../src/config/db');
+const { query } = require('./src/config/db');
 
 const commands = {
   'users': () => showUsers(),
@@ -119,87 +119,57 @@ async function resetDatabase() {
     console.log('✅ Database cleared.');
     console.log('🌱 Re-seeding with initial data...');
     
-    // Re-seed with initial data
-    console.log('🌱 Seeding initial users...');
+    // Re-seed with initial data from CSV
+    console.log('🌱 Seeding initial users from CSV...');
     
-    // Insert initial seeded users
-    const initialUsers = [
-      // Individual users
-      {
-        first_name: 'Michael',
-        last_name: 'Chen',
-        plus_one_allowed: true,
-        account_status: 'guest',
-        admin_notes: 'College friend - can bring plus-one'
-      },
-      {
-        first_name: 'Sarah',
-        last_name: 'Johnson',
-        plus_one_allowed: false,
-        account_status: 'guest',
-        admin_notes: 'Work colleague'
-      },
-      // Couple 1: Tara & Alfredo
-      {
-        first_name: 'Tara',
-        last_name: 'Folenta',
-        plus_one_allowed: false,
-        account_status: 'guest',
-        admin_notes: 'College friend - part of couple'
-      },
-      {
-        first_name: 'Alfredo',
-        last_name: 'Lopez',
-        plus_one_allowed: false,
-        account_status: 'guest',
-        admin_notes: 'Tara\'s partner'
-      },
-      // Couple 2: Cordelia & Marcus
-      {
-        first_name: 'Cordelia',
-        last_name: 'Reynolds',
-        plus_one_allowed: false,
-        account_status: 'guest',
-        admin_notes: 'College friend - part of couple'
-      },
-      {
-        first_name: 'Marcus',
-        last_name: 'Reynolds',
-        plus_one_allowed: false,
-        account_status: 'guest',
-        admin_notes: 'Cordelia\'s partner'
-      }
-    ];
+    const fs = require('fs');
+    const path = require('path');
     
-    // Insert users
-    for (const user of initialUsers) {
-      await query(`
+    // Read CSV file
+    const csvPath = path.join(__dirname, 'test-guests.csv');
+    const csvContent = fs.readFileSync(csvPath, 'utf8');
+    const lines = csvContent.trim().split('\n').filter(line => line.trim());
+    
+    console.log(`📄 Found ${lines.length} guests in CSV file`);
+    
+    // Parse CSV and insert users
+    const userIds = new Map(); // Store user IDs for partner relationships
+    
+    for (const line of lines) {
+      const [first_name, last_name, plus_one_allowed, partner_first, partner_last, admin_notes] = line.split(',');
+      
+      if (!first_name || !last_name) continue; // Skip empty lines
+      
+      const plusOne = plus_one_allowed === 'true';
+      const notes = admin_notes || '';
+      
+      // Insert user
+      const result = await query(`
         INSERT INTO users (first_name, last_name, plus_one_allowed, account_status, admin_notes)
         VALUES ($1, $2, $3, $4, $5)
-      `, [
-        user.first_name,
-        user.last_name,
-        user.plus_one_allowed,
-        user.account_status,
-        user.admin_notes
-      ]);
+        RETURNING id
+      `, [first_name, last_name, plusOne, 'guest', notes]);
+      
+      const userId = result.rows[0].id;
+      userIds.set(`${first_name},${last_name}`, userId);
+      
+      console.log(`  ✅ Added: ${first_name} ${last_name} (ID: ${userId})`);
     }
     
     // Set up partner relationships
-    const couples = [
-      ['Tara', 'Folenta', 'Alfredo', 'Lopez'],
-      ['Alfredo', 'Lopez', 'Tara', 'Folenta'],
-      ['Cordelia', 'Reynolds', 'Marcus', 'Reynolds'],
-      ['Marcus', 'Reynolds', 'Cordelia', 'Reynolds']
-    ];
+    console.log('🔗 Setting up partner relationships...');
     
-    for (const [first1, last1, first2, last2] of couples) {
-      // Get user IDs
-      const user1 = await query('SELECT id FROM users WHERE first_name = $1 AND last_name = $2', [first1, last1]);
-      const user2 = await query('SELECT id FROM users WHERE first_name = $1 AND last_name = $2', [first2, last2]);
+    for (const line of lines) {
+      const [first_name, last_name, plus_one_allowed, partner_first, partner_last, admin_notes] = line.split(',');
       
-      if (user1.rows.length > 0 && user2.rows.length > 0) {
-        await query('UPDATE users SET partner_id = $1 WHERE id = $2', [user2.rows[0].id, user1.rows[0].id]);
+      if (partner_first && partner_last) {
+        const userId = userIds.get(`${first_name},${last_name}`);
+        const partnerId = userIds.get(`${partner_first},${partner_last}`);
+        
+        if (userId && partnerId) {
+          await query('UPDATE users SET partner_id = $1 WHERE id = $2', [partnerId, userId]);
+          console.log(`  🔗 Linked: ${first_name} ${last_name} ↔ ${partner_first} ${partner_last}`);
+        }
       }
     }
     

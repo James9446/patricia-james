@@ -7,19 +7,19 @@ cd "$(dirname "$0")/server"
 
 case "$1" in
   "users")
-    node scripts/db-manager.js users
+    node db-manager.js users
     ;;
   "rsvps")
-    node scripts/db-manager.js rsvps
+    node db-manager.js rsvps
     ;;
   "stats")
-    node scripts/db-manager.js stats
+    node db-manager.js stats
     ;;
   "reset")
-    node scripts/db-manager.js reset
+    node db-manager.js reset
     ;;
   "help")
-    node scripts/db-manager.js help
+    node db-manager.js help
     ;;
   "sql")
     if [ -z "$2" ]; then
@@ -27,7 +27,7 @@ case "$1" in
       echo "Usage: ./db sql \"SELECT * FROM users;\""
       exit 1
     fi
-    node scripts/db-helper.js "$2"
+    node db-helper.js "$2"
     ;;
   *)
     echo "📖 Database Management Tool"

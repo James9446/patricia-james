@@ -8,7 +8,7 @@ echo ""
 
 # Use the database helper to clear RSVPs
 cd "$(dirname "$0")/../server"
-node scripts/db-helper.js "DELETE FROM rsvps;"
+node db-helper.js "DELETE FROM rsvps;"
 
 echo ""
 echo "✅ RSVPs cleared! Ready for testing."
