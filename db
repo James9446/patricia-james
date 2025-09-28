@@ -1,51 +1,7 @@
 #!/bin/bash
 
-# Database Management Script
-# Safe database operations with proper environment loading
+# Database Management Wrapper
+# Runs the database tool from the server directory
 
 cd "$(dirname "$0")/server"
-
-case "$1" in
-  "users")
-    node db-manager.js users
-    ;;
-  "rsvps")
-    node db-manager.js rsvps
-    ;;
-  "stats")
-    node db-manager.js stats
-    ;;
-  "reset")
-    node db-manager.js reset
-    ;;
-  "help")
-    node db-manager.js help
-    ;;
-  "sql")
-    if [ -z "$2" ]; then
-      echo "❌ Please provide a SQL query"
-      echo "Usage: ./db sql \"SELECT * FROM users;\""
-      exit 1
-    fi
-    node db-helper.js "$2"
-    ;;
-  *)
-    echo "📖 Database Management Tool"
-    echo "=========================="
-    echo ""
-    echo "Usage: ./db [command]"
-    echo ""
-    echo "Commands:"
-    echo "  users    - Show all users"
-    echo "  rsvps    - Show all RSVPs" 
-    echo "  stats    - Show database statistics"
-    echo "  reset    - Reset database (with confirmation)"
-    echo "  sql      - Run custom SQL query"
-    echo "  help     - Show detailed help"
-    echo ""
-    echo "Examples:"
-    echo "  ./db users"
-    echo "  ./db stats"
-    echo "  ./db sql \"SELECT COUNT(*) FROM users;\""
-    ;;
-esac
+node db "$@"

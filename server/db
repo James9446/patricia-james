@@ -1,0 +1,203 @@
+#!/usr/bin/env node
+
+/**
+ * Database Management Tool
+ * Single script for all database operations
+ */
+
+require('dotenv').config();
+const { query } = require('./src/config/db');
+const fs = require('fs');
+const path = require('path');
+
+const commands = {
+  'stats': showStats,
+  'users': showUsers,
+  'rsvps': showRsvps,
+  'reset': resetDatabase,
+  'clean': cleanDatabase,
+  'help': showHelp
+};
+
+async function showStats() {
+  try {
+    const [userCount, rsvpCount, attendingCount] = await Promise.all([
+      query('SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL'),
+      query('SELECT COUNT(*) as count FROM rsvps'),
+      query("SELECT COUNT(*) as count FROM rsvps WHERE response_status = 'attending'")
+    ]);
+
+    console.log('📊 Database Statistics');
+    console.log('====================');
+    console.log(`👥 Total Users: ${userCount.rows[0].count}`);
+    console.log(`📝 Total RSVPs: ${rsvpCount.rows[0].count}`);
+    console.log(`🎉 Attending: ${attendingCount.rows[0].count}`);
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  }
+}
+
+async function showUsers() {
+  try {
+    const result = await query(`
+      SELECT 
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.account_status,
+        u.plus_one_allowed,
+        p.first_name as partner_first_name,
+        p.last_name as partner_last_name
+      FROM users u
+      LEFT JOIN users p ON u.partner_id = p.id
+      WHERE u.deleted_at IS NULL
+      ORDER BY u.last_name, u.first_name
+    `);
+    
+    console.log('👥 Users in Database');
+    console.log('===================');
+    console.table(result.rows);
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  }
+}
+
+async function showRsvps() {
+  try {
+    const result = await query(`
+      SELECT 
+        r.id,
+        u.first_name,
+        u.last_name,
+        r.response_status,
+        r.dietary_restrictions,
+        r.responded_at
+      FROM rsvps r
+      JOIN users u ON r.user_id = u.id
+      ORDER BY r.responded_at DESC
+    `);
+    
+    console.log('📝 RSVPs in Database');
+    console.log('==================');
+    console.table(result.rows);
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+  }
+}
+
+async function resetDatabase() {
+  const confirmFlag = process.argv.includes('--confirm');
+  
+  if (!confirmFlag) {
+    console.log('⚠️  WARNING: This will reset the database to initial seeded state!');
+    console.log('This action cannot be undone.');
+    console.log('To proceed, run: ./db reset --confirm');
+    return;
+  }
+  
+  try {
+    console.log('🔄 Resetting database...');
+    
+    // Clear all data
+    await query('TRUNCATE TABLE rsvps CASCADE;');
+    await query('TRUNCATE TABLE users CASCADE;');
+    await query('TRUNCATE TABLE user_sessions CASCADE;');
+    
+    console.log('✅ Database cleared.');
+    console.log('🌱 Seeding from CSV...');
+    
+    // Read and parse CSV
+    const csvPath = path.join(__dirname, 'test-guests.csv');
+    const csvContent = fs.readFileSync(csvPath, 'utf8');
+    const lines = csvContent.trim().split('\n').filter(line => line.trim());
+    
+    const userIds = new Map();
+    
+    // Insert users
+    for (const line of lines) {
+      const [first_name, last_name, plus_one_allowed, partner_first, partner_last, admin_notes] = line.split(',');
+      
+      if (!first_name || !last_name) continue;
+      
+      const result = await query(`
+        INSERT INTO users (first_name, last_name, plus_one_allowed, account_status, admin_notes)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+      `, [first_name, last_name, plus_one_allowed === 'true', 'guest', admin_notes || '']);
+      
+      const userId = result.rows[0].id;
+      userIds.set(`${first_name},${last_name}`, userId);
+    }
+    
+    // Set up partner relationships
+    for (const line of lines) {
+      const [first_name, last_name, plus_one_allowed, partner_first, partner_last] = line.split(',');
+      
+      if (partner_first && partner_last) {
+        const userId = userIds.get(`${first_name},${last_name}`);
+        const partnerId = userIds.get(`${partner_first},${partner_last}`);
+        
+        if (userId && partnerId) {
+          await query('UPDATE users SET partner_id = $1 WHERE id = $2', [partnerId, userId]);
+        }
+      }
+    }
+    
+    console.log('✅ Database reset complete!');
+  } catch (error) {
+    console.error('❌ Reset failed:', error.message);
+  }
+}
+
+async function cleanDatabase() {
+  try {
+    console.log('🧹 Cleaning database...');
+    
+    // Clear RSVPs
+    await query('DELETE FROM rsvps;');
+    console.log('✅ RSVPs cleared');
+    
+    // Clear test users
+    await query("DELETE FROM users WHERE email LIKE '%test%' OR email LIKE '%example.com%';");
+    console.log('✅ Test users cleared');
+    
+    console.log('✅ Database cleaned!');
+  } catch (error) {
+    console.error('❌ Clean failed:', error.message);
+  }
+}
+
+function showHelp() {
+  console.log('🗄️ Database Management Tool');
+  console.log('===========================');
+  console.log('');
+  console.log('Commands:');
+  console.log('  ./db stats          - Show database statistics');
+  console.log('  ./db users          - Show all users');
+  console.log('  ./db rsvps          - Show all RSVPs');
+  console.log('  ./db reset --confirm - Reset to seeded state');
+  console.log('  ./db clean          - Clean test data');
+  console.log('  ./db help           - Show this help');
+  console.log('');
+  console.log('Examples:');
+  console.log('  ./db stats');
+  console.log('  ./db reset --confirm');
+  console.log('  ./db clean');
+}
+
+// Main execution
+async function main() {
+  const command = process.argv[2];
+  
+  if (!command || !commands[command]) {
+    console.log('❌ Invalid command. Use "help" to see available commands.');
+    process.exit(1);
+  }
+  
+  await commands[command]();
+}
+
+if (require.main === module) {
+  main().catch(console.error);
+}
