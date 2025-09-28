@@ -99,9 +99,116 @@ async function showStats() {
 }
 
 async function resetDatabase() {
-  console.log('⚠️  WARNING: This will reset the database to initial seeded state!');
-  console.log('This action cannot be undone.');
-  console.log('To proceed, run: node db-manager.js reset --confirm');
+  const confirmFlag = process.argv.includes('--confirm');
+  
+  if (!confirmFlag) {
+    console.log('⚠️  WARNING: This will reset the database to initial seeded state!');
+    console.log('This action cannot be undone.');
+    console.log('To proceed, run: node db-manager.js reset --confirm');
+    return;
+  }
+  
+  try {
+    console.log('🔄 Resetting database...');
+    
+    // Clear all data
+    await query('TRUNCATE TABLE rsvps CASCADE;');
+    await query('TRUNCATE TABLE users CASCADE;');
+    await query('TRUNCATE TABLE user_sessions CASCADE;');
+    
+    console.log('✅ Database cleared.');
+    console.log('🌱 Re-seeding with initial data...');
+    
+    // Re-seed with initial data
+    console.log('🌱 Seeding initial users...');
+    
+    // Insert initial seeded users
+    const initialUsers = [
+      // Individual users
+      {
+        first_name: 'Michael',
+        last_name: 'Chen',
+        plus_one_allowed: true,
+        account_status: 'guest',
+        admin_notes: 'College friend - can bring plus-one'
+      },
+      {
+        first_name: 'Sarah',
+        last_name: 'Johnson',
+        plus_one_allowed: false,
+        account_status: 'guest',
+        admin_notes: 'Work colleague'
+      },
+      // Couple 1: Tara & Alfredo
+      {
+        first_name: 'Tara',
+        last_name: 'Folenta',
+        plus_one_allowed: false,
+        account_status: 'guest',
+        admin_notes: 'College friend - part of couple'
+      },
+      {
+        first_name: 'Alfredo',
+        last_name: 'Lopez',
+        plus_one_allowed: false,
+        account_status: 'guest',
+        admin_notes: 'Tara\'s partner'
+      },
+      // Couple 2: Cordelia & Marcus
+      {
+        first_name: 'Cordelia',
+        last_name: 'Reynolds',
+        plus_one_allowed: false,
+        account_status: 'guest',
+        admin_notes: 'College friend - part of couple'
+      },
+      {
+        first_name: 'Marcus',
+        last_name: 'Reynolds',
+        plus_one_allowed: false,
+        account_status: 'guest',
+        admin_notes: 'Cordelia\'s partner'
+      }
+    ];
+    
+    // Insert users
+    for (const user of initialUsers) {
+      await query(`
+        INSERT INTO users (first_name, last_name, plus_one_allowed, account_status, admin_notes)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [
+        user.first_name,
+        user.last_name,
+        user.plus_one_allowed,
+        user.account_status,
+        user.admin_notes
+      ]);
+    }
+    
+    // Set up partner relationships
+    const couples = [
+      ['Tara', 'Folenta', 'Alfredo', 'Lopez'],
+      ['Alfredo', 'Lopez', 'Tara', 'Folenta'],
+      ['Cordelia', 'Reynolds', 'Marcus', 'Reynolds'],
+      ['Marcus', 'Reynolds', 'Cordelia', 'Reynolds']
+    ];
+    
+    for (const [first1, last1, first2, last2] of couples) {
+      // Get user IDs
+      const user1 = await query('SELECT id FROM users WHERE first_name = $1 AND last_name = $2', [first1, last1]);
+      const user2 = await query('SELECT id FROM users WHERE first_name = $1 AND last_name = $2', [first2, last2]);
+      
+      if (user1.rows.length > 0 && user2.rows.length > 0) {
+        await query('UPDATE users SET partner_id = $1 WHERE id = $2', [user2.rows[0].id, user1.rows[0].id]);
+      }
+    }
+    
+    console.log('✅ Database reset to seeded state complete!');
+    
+  } catch (error) {
+    console.error('❌ Reset failed:', error.message);
+    throw error;
+  }
 }
 
 async function showHelp() {
@@ -123,24 +230,6 @@ async function main() {
   if (!command || !commands[command]) {
     console.log('❌ Invalid command. Use "help" to see available commands.');
     process.exit(1);
-  }
-  
-  if (command === 'reset' && process.argv[3] !== '--confirm') {
-    await commands[command]();
-    return;
-  }
-  
-  if (command === 'reset' && process.argv[3] === '--confirm') {
-    console.log('🔄 Resetting database...');
-    const { exec } = require('child_process');
-    exec('node src/admin/reset-users.js', (error, stdout, stderr) => {
-      if (error) {
-        console.error('❌ Reset failed:', error);
-        return;
-      }
-      console.log(stdout);
-    });
-    return;
   }
   
   await commands[command]();
