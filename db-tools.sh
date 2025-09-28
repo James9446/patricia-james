@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Database Management Tools
+# Simple scripts for common database operations during development
+
+echo "🗄️ Database Management Tools"
+echo "============================"
+echo ""
+echo "Available commands:"
+echo ""
+echo "📊 View Data:"
+echo "  ./db stats          - Show database statistics"
+echo "  ./db users          - Show all users"
+echo "  ./db rsvps          - Show all RSVPs"
+echo ""
+echo "🧹 Clean Data:"
+echo "  ./quick-clean.sh    - Remove test data, keep seeded users"
+echo "  ./clear-rsvps.sh    - Clear all RSVPs"
+echo "  ./clear-test-users.sh - Remove test users only"
+echo ""
+echo "🔄 Reset Data:"
+echo "  ./reset-to-seed.sh  - Complete reset to seeded state"
+echo ""
+echo "🔧 Custom Queries:"
+echo "  ./db sql \"SELECT * FROM users;\""
+echo ""
+echo "📖 Help:"
+echo "  ./db help           - Detailed database help"
+echo ""
+echo "Examples:"
+echo "  ./quick-clean.sh     # Most common - clean test data"
+echo "  ./db stats          # Check current state"
+echo "  ./clear-rsvps.sh    # Clear RSVPs for testing"

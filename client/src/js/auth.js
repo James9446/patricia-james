@@ -1,15 +1,18 @@
 /**
- * Authentication System for Wedding App
+ * Authentication System v5 for Wedding App
  * 
+ * Centralized state management for schema v5 (combined table approach).
  * Handles user authentication, session management, and protected page access.
- * Integrates with the backend API for login, logout, and user management.
+ * Integrates with the new backend API structure.
  */
 
-class AuthSystem {
+class AuthSystemV5 {
   constructor() {
     this.currentUser = null;
     this.isAuthenticated = false;
+    this.isInitialized = false;
     this.apiBase = '/api';
+    this.eventListeners = new Map();
     
     // Initialize authentication system
     this.init();
@@ -20,6 +23,8 @@ class AuthSystem {
    */
   async init() {
     try {
+      console.log('🔐 Initializing AuthSystem v5...');
+      
       // Check if user is already authenticated
       await this.checkAuthStatus();
       
@@ -29,9 +34,46 @@ class AuthSystem {
       // Update UI based on authentication status
       this.updateUI();
       
-      console.log('Auth system initialized');
+      this.isInitialized = true;
+      console.log('🔐 AuthSystem v5 initialized');
+      
+      // Emit initialization event
+      this.emit('initialized', { isAuthenticated: this.isAuthenticated, user: this.currentUser });
     } catch (error) {
       console.error('Auth system initialization failed:', error);
+      this.emit('error', { type: 'initialization', error });
+    }
+  }
+
+  /**
+   * Event system for centralized state management
+   */
+  on(event, callback) {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event).push(callback);
+  }
+
+  off(event, callback) {
+    if (this.eventListeners.has(event)) {
+      const listeners = this.eventListeners.get(event);
+      const index = listeners.indexOf(callback);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+  }
+
+  emit(event, data) {
+    if (this.eventListeners.has(event)) {
+      this.eventListeners.get(event).forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`Error in event listener for ${event}:`, error);
+        }
+      });
     }
   }
 
@@ -42,7 +84,7 @@ class AuthSystem {
     try {
       const response = await fetch(`${this.apiBase}/auth/status`, {
         method: 'GET',
-        credentials: 'include' // Include cookies for session
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -52,6 +94,8 @@ class AuthSystem {
         if (this.isAuthenticated) {
           // Get user details
           await this.getCurrentUser();
+        } else {
+          this.currentUser = null;
         }
       } else {
         this.isAuthenticated = false;
@@ -78,14 +122,19 @@ class AuthSystem {
         const data = await response.json();
         this.currentUser = data.data;
         this.isAuthenticated = true;
+        
+        // Emit user data change event
+        this.emit('userChanged', { user: this.currentUser, isAuthenticated: true });
       } else {
         this.currentUser = null;
         this.isAuthenticated = false;
+        this.emit('userChanged', { user: null, isAuthenticated: false });
       }
     } catch (error) {
       console.error('Get current user failed:', error);
       this.currentUser = null;
       this.isAuthenticated = false;
+      this.emit('userChanged', { user: null, isAuthenticated: false });
     }
   }
 
@@ -118,9 +167,9 @@ class AuthSystem {
   }
 
   /**
-   * Register a new user account
+   * Register a new user account (schema v5: uses user_id instead of guest_id)
    */
-  async register(guestId, email, password, firstName, lastName) {
+  async register(userId, email, password, firstName, lastName) {
     try {
       const response = await fetch(`${this.apiBase}/auth/register`, {
         method: 'POST',
@@ -129,7 +178,7 @@ class AuthSystem {
         },
         credentials: 'include',
         body: JSON.stringify({
-          guest_id: guestId,
+          user_id: userId, // Schema v5: user_id instead of guest_id
           email: email,
           password: password,
           first_name: firstName,
@@ -145,13 +194,10 @@ class AuthSystem {
       } else {
         // Handle specific error cases
         if (response.status === 409) {
-          // Duplicate registration - use server message for specificity
-          data.message = data.message || 'An account already exists for this guest or email address. Please try logging in instead.';
+          data.message = data.message || 'An account already exists for this user or email address. Please try logging in instead.';
         } else if (response.status === 404) {
-          // Guest not found
-          data.message = 'Guest information not found. Please check your name spelling or contact us.';
+          data.message = 'User information not found. Please check your name spelling or contact us.';
         } else if (response.status === 400) {
-          // Validation error
           data.message = data.message || 'Please check your information and try again.';
         }
       }
@@ -186,19 +232,21 @@ class AuthSystem {
       const data = await response.json();
       
       if (data.success) {
-        // After successful login, get the full user information
-        await this.getCurrentUser();
+        // Update state after successful login
+        this.currentUser = data.data;
+        this.isAuthenticated = true;
+        
+        // Update UI and emit events
         this.updateUI();
+        this.emit('login', { user: this.currentUser });
+        this.emit('userChanged', { user: this.currentUser, isAuthenticated: true });
       } else {
         // Handle specific error cases
         if (response.status === 401) {
-          // Invalid credentials
           data.message = 'Invalid email or password. Please try again.';
         } else if (response.status === 404) {
-          // User not found
           data.message = 'No account found with this email address.';
         } else if (response.status === 400) {
-          // Validation error
           data.message = data.message || 'Please check your information and try again.';
         }
       }
@@ -226,9 +274,14 @@ class AuthSystem {
       const data = await response.json();
       
       if (data.success) {
+        // Clear state
         this.currentUser = null;
         this.isAuthenticated = false;
+        
+        // Update UI and emit events
         this.updateUI();
+        this.emit('logout');
+        this.emit('userChanged', { user: null, isAuthenticated: false });
       }
       
       return data;
@@ -369,7 +422,6 @@ class AuthSystem {
     const loginForm = document.getElementById('loginFormElement');
     const registerForm = document.getElementById('registerFormElement');
 
-
     // Close modal
     closeBtn.addEventListener('click', () => {
       modal.style.display = 'none';
@@ -377,7 +429,6 @@ class AuthSystem {
 
     // Close modal when clicking outside the modal content
     modal.addEventListener('click', (e) => {
-      // Close if clicking on the modal backdrop (not on the content)
       if (e.target === modal) {
         modal.style.display = 'none';
       }
@@ -496,9 +547,9 @@ class AuthSystem {
       // Show loading state for registration
       this.showAuthMessage('Creating your account...', true);
       
-      // Register user
+      // Register user (schema v5: use user_id instead of guest_id)
       const result = await this.register(
-        guestCheck.data.guest_id,
+        guestCheck.data.user_id, // Schema v5: user_id instead of guest_id
         email,
         password,
         firstName,
@@ -628,21 +679,40 @@ class AuthSystem {
   }
 
   /**
-   * Show a specific page (wrapper for existing showPage function)
+   * Get user data for other components
    */
-  showPage(pageId) {
-    this.navigateToPage(pageId);
+  getUserData() {
+    return {
+      user: this.currentUser,
+      isAuthenticated: this.isAuthenticated,
+      isInitialized: this.isInitialized
+    };
+  }
+
+  /**
+   * Wait for authentication to be initialized
+   */
+  async waitForInitialization() {
+    return new Promise((resolve) => {
+      if (this.isInitialized) {
+        resolve(this.getUserData());
+      } else {
+        this.on('initialized', (data) => {
+          resolve(this.getUserData());
+        });
+      }
+    });
   }
 }
 
 // Initialize authentication system after main.js has loaded
 window.addEventListener('load', () => {
-  console.log('🔐 Initializing authentication system...');
+  console.log('🔐 Initializing AuthSystem v5...');
   
-  // Initialize immediately - the auth system will handle showPage errors gracefully
-  window.authSystem = new AuthSystem();
-  console.log('🔐 Authentication system initialized');
+  // Initialize immediately
+  window.authSystem = new AuthSystemV5();
+  console.log('🔐 AuthSystem v5 initialized');
 });
 
 // Export for use in other scripts
-window.AuthSystem = AuthSystem;
+window.AuthSystemV5 = AuthSystemV5;
