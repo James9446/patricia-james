@@ -276,3 +276,11 @@ function updateCountdown() {
 // Update countdown every minute
 setInterval(updateCountdown, 60000);
 updateCountdown(); // Initial call
+
+// Initialize authentication system
+let authSystem;
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize auth system
+  authSystem = new AuthSystemV5();
+  console.log('🔐 Auth system initialized');
+});
