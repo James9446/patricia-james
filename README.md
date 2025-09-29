@@ -249,11 +249,11 @@ The project includes safe database management tools that automatically load envi
 # ⚠️ WARNING: These commands expose credentials in shell history
 # Use the safe ./db tools instead when possible
 
-# Connect to your local database
-psql postgresql://patricia_james_admin:WeddingAdmin2024!@localhost:5432/patricia_james_wedding_dev
+# Connect using environment variables (recommended)
+psql $DATABASE_URL
 
-# Or with explicit parameters
-psql -h localhost -p 5432 -U patricia_james_admin -d patricia_james_wedding_dev
+# Or load environment variables first
+source .env && psql $DATABASE_URL
 ```
 
 ### 🚨 Troubleshooting Database Connection Issues
@@ -314,9 +314,9 @@ Example safe shell script:
 ```
 
 #### From Application
-The application connects using the `DATABASE_URL` environment variable:
+The application connects using the `DATABASE_URL` environment variable from the `.env` file:
 ```
-DATABASE_URL="postgresql://username:password@localhost:5432/patricia_james_wedding_dev"
+DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
 ```
 
 ### Common Database Commands
