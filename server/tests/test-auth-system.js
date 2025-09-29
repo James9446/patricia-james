@@ -27,6 +27,9 @@ let testResults = {
   tests: []
 };
 
+// Session management for tests
+let sessionCookies = '';
+
 function log(message, type = 'info') {
   const timestamp = new Date().toISOString();
   const colors = {
@@ -58,10 +61,28 @@ async function makeRequest(endpoint, options = {}) {
   try {
     const { default: fetch } = await import('node-fetch');
     const url = `${API_BASE}${endpoint}`;
+    
+    // Add session cookies to headers
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+    
+    if (sessionCookies) {
+      headers['Cookie'] = sessionCookies;
+    }
+    
     const response = await fetch(url, {
       credentials: 'include', // Include cookies for session management
+      headers,
       ...options
     });
+    
+    // Extract cookies from response for session management
+    const setCookieHeader = response.headers.get('set-cookie');
+    if (setCookieHeader) {
+      sessionCookies = setCookieHeader;
+    }
     
     const data = await response.json();
     return { response, data };
@@ -244,6 +265,8 @@ async function testLogout() {
   }
   
   if (response.ok && data.success) {
+    // Clear session cookies on successful logout
+    sessionCookies = '';
     logTest('User Logout', true, 'Successfully logged out');
     return true;
   } else {
@@ -278,8 +301,11 @@ async function cleanupTestData() {
   try {
     const { query } = require('../src/config/db');
     
-    // Clean up test users with test emails
-    await query("DELETE FROM users WHERE email LIKE '%test%' OR email LIKE '%example.com%'");
+    // Clean up test users with test emails (more specific to avoid deleting seeded users)
+    await query("DELETE FROM users WHERE email LIKE '%test%' AND email LIKE '%example.com%'");
+    
+    // Clear session cookies
+    sessionCookies = '';
     
     log('✅ Test data cleaned up', 'success');
   } catch (error) {
@@ -290,9 +316,6 @@ async function cleanupTestData() {
 async function runAllTests() {
   log('🧪 Starting Authentication System Tests...', 'info');
   log('==========================================', 'info');
-  
-  // Clean up any existing test data
-  await cleanupTestData();
   
   // Test 1: Server Connection
   const serverConnected = await testServerConnection();
