@@ -110,6 +110,9 @@ document.addEventListener('DOMContentLoaded', function() {
         history.pushState({ page: pageId }, '', `#${pageId}`);
     }
 
+    // Make showPage available globally for authentication system
+    window.showPage = showPage;
+
     // Add click event listeners to navigation links
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
@@ -273,3 +276,11 @@ function updateCountdown() {
 // Update countdown every minute
 setInterval(updateCountdown, 60000);
 updateCountdown(); // Initial call
+
+// Initialize authentication system
+let authSystem;
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize auth system
+  authSystem = new AuthSystemV5();
+  console.log('🔐 Auth system initialized');
+});

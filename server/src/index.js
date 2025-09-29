@@ -1,11 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
+const PgSession = require('connect-pg-simple')(session);
 const path = require('path');
 const { query } = require('./config/db');
 
 // Import routes
-const guestsRouter = require('./routes/guests');
 const rsvpsRouter = require('./routes/rsvps');
+const authRouter = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -13,6 +15,22 @@ const PORT = process.env.PORT || 5001;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Session configuration
+app.use(session({
+  store: new PgSession({
+    pool: require('./config/db').pool, // Use the same connection pool
+    tableName: 'user_sessions' // Table to store sessions
+  }),
+  secret: process.env.SESSION_SECRET || 'wedding-app-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    httpOnly: true, // Prevent XSS attacks
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  }
+}));
 
 // CORS middleware (for development)
 app.use((req, res, next) => {
@@ -42,7 +60,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mount API routes
-app.use('/api/guests', guestsRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/rsvps', rsvpsRouter);
 
 // Serve the main HTML file for all non-API routes (SPA routing)
@@ -70,14 +88,14 @@ async function startServer() {
       const result = await query('SELECT NOW() as current_time');
       console.log('✅ Database connected successfully:', result.rows[0].current_time);
       
-      // Check if we have any guests
-      const guestCount = await query('SELECT COUNT(*) as count FROM guests');
-      console.log(`📊 Current guest count: ${guestCount.rows[0].count}`);
+      // Check if we have any users (schema v5: combined users table)
+      const userCount = await query('SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL');
+      console.log(`📊 Current user count: ${userCount.rows[0].count}`);
     } catch (dbError) {
       console.warn('⚠️  Database connection failed:', dbError.message);
       console.log('📝 Server will start without database (development mode)');
       console.log('💡 To enable database features, set up PostgreSQL and configure DATABASE_URL');
-      console.log('💡 Run "node src/database/migrate.js reset" to initialize the database');
+      console.log('💡 Run "./db reset --confirm" to initialize the database');
     }
     
     // Start the server

@@ -239,8 +239,7 @@ body.home-page .navbar-brand {
   list-style: none;
   margin: 0;
   padding: 0;
-  width: 614.453px;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* .nav-link {
@@ -503,6 +502,207 @@ body.home-page {
 /* ========================================
    RSVP Form Styles
    ======================================== */
+
+/* Dynamic Form Styles */
+.login-required-message {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--cultured-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--light-gray);
+}
+
+.login-required-message p {
+  margin-bottom: var(--spacing-lg);
+  color: var(--slate-gray);
+  font-size: var(--text-lg);
+}
+
+/* Radio Group Styles */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--cultured-white);
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radio-label:hover {
+  border-color: var(--solstice-blue);
+  background: var(--solstice-blue-light);
+}
+
+.radio-label input[type="radio"] {
+  margin-right: var(--spacing-md);
+  accent-color: var(--solstice-blue);
+}
+
+.radio-label input[type="radio"]:checked + span {
+  font-weight: 600;
+  color: var(--solstice-blue-dark);
+}
+
+/* Plus-One Section */
+.plus-one-section {
+  background: var(--blush-pink-light);
+  border: 1px solid var(--blush-pink);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+}
+
+.plus-one-section h3 {
+  color: var(--lavender-haze-dark);
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-heading);
+}
+
+/* Couple Info Header */
+.couple-info-header {
+  text-align: center;
+  background: var(--solstice-blue-light);
+  border: 1px solid var(--solstice-blue);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.couple-info-header h3 {
+  color: var(--solstice-blue-dark);
+  margin-bottom: var(--spacing-sm);
+  font-family: var(--font-heading);
+}
+
+.couple-info-header p {
+  color: var(--slate-gray);
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+/* Couple RSVP Sections */
+.couple-rsvp-section,
+.partner-rsvp-section {
+  background: var(--cultured-white);
+  border: 1px solid var(--light-gray);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.couple-rsvp-section h4,
+.partner-rsvp-section h4 {
+  color: var(--solstice-blue-dark);
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-heading);
+  border-bottom: 2px solid var(--solstice-blue-light);
+  padding-bottom: var(--spacing-sm);
+  font-size: var(--text-lg);
+}
+
+.couple-rsvp-section {
+  border-left: 4px solid var(--solstice-blue);
+}
+
+.partner-rsvp-section {
+  border-left: 4px solid var(--lavender-haze);
+}
+
+/* Admin Options */
+.admin-notice {
+  background: var(--solstice-blue-light);
+  border: 1px solid var(--solstice-blue);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+.admin-notice p {
+  margin: 0;
+  color: var(--solstice-blue-dark);
+  font-weight: 600;
+}
+
+.admin-options {
+  background: var(--lavender-haze-light);
+  border: 1px solid var(--lavender-haze);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.admin-options h3 {
+  color: var(--lavender-haze-dark);
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-heading);
+}
+
+/* Form Group Enhancements */
+.form-group label {
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: var(--spacing-sm);
+  display: block;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  transition: border-color 0.3s ease;
+}
+
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: var(--solstice-blue);
+  box-shadow: 0 0 0 3px rgba(77, 197, 227, 0.1);
+}
+
+/* Button Enhancements */
+.btn {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--solstice-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--solstice-blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(77, 197, 227, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
 .rsvp-form {
   max-width: 600px;
   margin: 0 auto;
@@ -595,6 +795,9 @@ body.home-page {
   border-radius: var(--radius-lg);
   text-align: center;
   font-weight: 500;
+  transition: all 0.3s ease-in-out;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .rsvp-status.status-info {
@@ -616,7 +819,9 @@ body.home-page {
 }
 
 .rsvp-status.hidden {
-  display: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
 }
 
 /* ========================================
@@ -1901,6 +2106,304 @@ body:not(.home-page) .full-screen-background {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   Authentication System Styles
+   ======================================== */
+
+/* Authentication Modal */
+.auth-modal {
+  display: none;
+  position: fixed;
+  z-index: 1030;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+.auth-modal-content {
+  background-color: var(--pure-white);
+  margin: 5% auto;
+  padding: 0;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--slate-gray);
+  cursor: pointer;
+  z-index: 1031;
+  transition: color 0.3s ease;
+}
+
+.auth-close:hover {
+  color: var(--charcoal);
+}
+
+/* Authentication Tabs */
+.auth-tabs {
+  display: flex;
+  background-color: var(--cultured-white);
+  border-radius: 20px 20px 0 0;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 20px;
+  background: none;
+  border: none;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 18px;
+  color: var(--slate-gray);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.auth-tab.active {
+  color: var(--solstice-blue);
+  border-bottom-color: var(--solstice-blue);
+  background-color: var(--pure-white);
+}
+
+.auth-tab:hover {
+  color: var(--solstice-blue);
+  background-color: var(--blush-pink-light);
+}
+
+/* Authentication Forms */
+.auth-form {
+  display: none;
+  padding: 40px;
+}
+
+.auth-form.active {
+  display: block;
+}
+
+.auth-form h2 {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 28px;
+  color: var(--charcoal);
+  text-align: center;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  color: var(--charcoal);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid var(--light-gray);
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--solstice-blue);
+  box-shadow: 0 0 0 3px rgba(77, 197, 227, 0.1);
+}
+
+/* Authentication Button */
+.auth-button {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  color: var(--pure-white);
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.auth-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(77, 197, 227, 0.3);
+}
+
+.auth-button:active {
+  transform: translateY(0);
+}
+
+/* Authentication Messages */
+.auth-message {
+  margin: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.auth-message.success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #059669;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.auth-message.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* User Info in Navigation */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: var(--spacing-lg);
+}
+
+.user-name {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  color: var(--charcoal);
+  font-weight: 500;
+}
+
+.logout-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, var(--lavender-haze), var(--blush-pink));
+  color: var(--pure-white);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.logout-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(237, 159, 227, 0.3);
+}
+
+.login-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  color: var(--pure-white);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(77, 197, 227, 0.3);
+}
+
+/* Responsive Authentication */
+@media (max-width: 768px) {
+  .auth-modal-content {
+    margin: 10% auto;
+    width: 95%;
+    border-radius: 15px;
+  }
+  
+  .auth-form {
+    padding: 30px 20px;
+  }
+  
+  .auth-form h2 {
+    font-size: 24px;
+  }
+  
+  .auth-tab {
+    padding: 15px;
+    font-size: 16px;
+  }
+  
+  .user-info {
+    flex-direction: column;
+    gap: 10px;
+    margin-left: 0;
+  }
+  
+  .user-name {
+    font-size: 14px;
+  }
+  
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-modal-content {
+    margin: 5% auto;
+    width: 98%;
+  }
+  
+  .auth-form {
+    padding: 20px 15px;
+  }
+  
+  .auth-form h2 {
+    font-size: 20px;
+  }
+  
+  .form-group input {
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .auth-button {
+    padding: 12px;
+    font-size: 16px;
   }
 }
 

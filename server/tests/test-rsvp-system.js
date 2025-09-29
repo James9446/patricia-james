@@ -23,7 +23,7 @@ app.use('/api/rsvps', rsvpRoutes);
 const testData = {
   // Individual guest without plus-one
   cordelia: {
-    guest_id: null, // Will be set after guest lookup
+    user_id: null, // Will be set after guest lookup
     user_id: null, // No user account yet
     response_status: 'attending',
     rsvp_for_self: true,
@@ -37,7 +37,7 @@ const testData = {
   
   // Individual guest with plus-one
   alfredo: {
-    guest_id: null, // Will be set after guest lookup
+    user_id: null, // Will be set after guest lookup
     user_id: null, // No user account yet
     response_status: 'attending',
     rsvp_for_self: true,
@@ -51,7 +51,7 @@ const testData = {
   
   // Couple RSVP (Tara RSVPing for both herself and Brenda)
   tara: {
-    guest_id: null, // Will be set after guest lookup
+    user_id: null, // Will be set after guest lookup
     user_id: null, // No user account yet
     response_status: 'attending',
     rsvp_for_self: true,
@@ -107,14 +107,14 @@ async function testDatabaseConnection() {
   
   const result = await query(`
     SELECT 
-      g.id, g.first_name, g.last_name, g.full_name, 
-      g.plus_one_allowed,
+      u.id, u.first_name, u.last_name, u.full_name, 
+      u.plus_one_allowed,
       p.first_name as partner_first_name,
       p.last_name as partner_last_name
-    FROM guests g
-    LEFT JOIN guests p ON g.partner_id = p.id
-    WHERE g.partner_id IS NULL OR g.id < g.partner_id
-    ORDER BY g.last_name
+    FROM users u
+    LEFT JOIN users p ON u.partner_id = p.id
+    WHERE u.deleted_at IS NULL
+    ORDER BY u.last_name
   `);
   
   console.log('   Sample guests found:');
@@ -134,21 +134,21 @@ async function getGuestIds() {
   
   const guests = await query(`
     SELECT id, first_name, last_name, full_name 
-    FROM guests 
-    WHERE first_name IN ('Cordelia', 'Alfredo', 'Tara')
+    FROM users 
+    WHERE deleted_at IS NULL AND first_name IN ('John', 'Jack', 'Jane')
     ORDER BY first_name
   `);
   
   guests.rows.forEach(guest => {
-    if (guest.first_name === 'Cordelia') {
-      testData.cordelia.guest_id = guest.id;
-      console.log(`   Cordelia Reynolds: ${guest.id}`);
-    } else if (guest.first_name === 'Alfredo') {
-      testData.alfredo.guest_id = guest.id;
-      console.log(`   Alfredo Lopez: ${guest.id}`);
-    } else if (guest.first_name === 'Tara') {
-      testData.tara.guest_id = guest.id;
-      console.log(`   Tara Folenta: ${guest.id}`);
+    if (guest.first_name === 'John' && guest.last_name === 'Smith') {
+      testData.cordelia.user_id = guest.id;
+      console.log(`   John Smith: ${guest.id}`);
+    } else if (guest.first_name === 'Jack' && guest.last_name === 'Blue') {
+      testData.alfredo.user_id = guest.id;
+      console.log(`   Jack Blue: ${guest.id}`);
+    } else if (guest.first_name === 'Jane' && guest.last_name === 'Smith') {
+      testData.tara.user_id = guest.id;
+      console.log(`   Jane Smith: ${guest.id}`);
     }
   });
   
@@ -217,10 +217,10 @@ async function testRsvpRetrieval() {
   
   // Test retrieving Cordelia's RSVP
   const cordeliaRsvp = await query(`
-    SELECT r.*, g.first_name, g.last_name, g.full_name
+    SELECT r.*, u.first_name, u.last_name, u.full_name
     FROM rsvps r
-    JOIN guests g ON r.guest_id = g.id
-    WHERE r.guest_id = $1
+    JOIN users u ON r.user_id = u.id
+    WHERE r.user_id = $1
     ORDER BY r.created_at DESC
     LIMIT 1
   `, [testData.cordelia.guest_id]);
@@ -243,9 +243,9 @@ async function testRsvpSummary() {
   
   const summary = await query(`
     SELECT 
-      g.id,
-      g.first_name,
-      g.last_name,
+      u.id,
+      u.first_name,
+      u.last_name,
       g.full_name,
       g.plus_one_allowed,
       r.response_status,
@@ -260,10 +260,10 @@ async function testRsvpSummary() {
         WHEN r.rsvp_for_self = true THEN 1
         ELSE 0
       END as total_attending
-    FROM guests g
-    LEFT JOIN rsvps r ON g.id = r.guest_id
-    WHERE g.partner_id IS NULL OR g.id < g.partner_id
-    ORDER BY g.last_name, g.first_name
+    FROM users u
+    LEFT JOIN rsvps r ON u.id = r.user_id
+    WHERE g.partner_id IS NULL OR u.id < g.partner_id
+    ORDER BY u.last_name, u.first_name
   `);
   
   console.log('   RSVP Summary:');
@@ -290,7 +290,7 @@ async function testPartnerLinking() {
       g1.last_name as original_last,
       g2.first_name as plus_one_first,
       g2.last_name as plus_one_last
-    FROM guests g1
+    FROM users u1
     JOIN guests g2 ON g1.partner_id = g2.id
     WHERE g1.first_name = 'Alfredo' AND g2.first_name = 'Maria'
   `);
@@ -310,7 +310,7 @@ async function testPartnerLinking() {
       g1.last_name as partner1_last,
       g2.first_name as partner2,
       g2.last_name as partner2_last
-    FROM guests g1
+    FROM users u1
     JOIN guests g2 ON g1.partner_id = g2.id
     WHERE (g1.first_name = 'Tara' AND g2.first_name = 'Brenda') 
        OR (g1.first_name = 'Brenda' AND g2.first_name = 'Tara')
@@ -332,7 +332,6 @@ async function makeRsvpRequest(rsvpData) {
   const { query } = require('../src/config/db');
   
   const { 
-    guest_id, 
     user_id, 
     response_status, 
     rsvp_for_self, 
@@ -350,8 +349,8 @@ async function makeRsvpRequest(rsvpData) {
 
     // Check if an RSVP already exists for this guest/user
     const existingRsvp = await query(
-      'SELECT id FROM rsvps WHERE guest_id = $1 AND user_id = $2', 
-      [guest_id, user_id]
+      'SELECT id FROM rsvps WHERE user_id = $1', 
+      [user_id]
     );
 
     let rsvpResult;
@@ -389,14 +388,13 @@ async function makeRsvpRequest(rsvpData) {
       // Insert new RSVP
       rsvpResult = await query(`
         INSERT INTO rsvps (
-          guest_id, user_id, response_status, rsvp_for_self, rsvp_for_partner,
+          user_id, response_status, rsvp_for_self, rsvp_for_partner,
           partner_attending, plus_one_attending,
           dietary_restrictions, song_requests, message
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *;
       `, [
-        guest_id, 
         user_id, 
         response_status, 
         rsvp_for_self,

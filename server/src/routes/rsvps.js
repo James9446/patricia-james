@@ -1,118 +1,178 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
+const { requireAuth } = require('../middleware/auth');
 
 /**
  * POST /api/rsvps
- * Submit a new RSVP with dynamic plus-one creation
+ * Submit RSVP(s) - can be for self, partner, or both
  */
-router.post('/', async (req, res) => {
-  const { 
-    guest_id, 
-    user_id, 
-    response_status, 
-    rsvp_for_self, 
-    rsvp_for_partner, 
-    partner_attending,
-    plus_one_attending,
-    dietary_restrictions, 
-    song_requests, 
-    message 
-  } = req.body;
-
-  // Basic validation
-  if (!guest_id || !user_id || !response_status) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Missing required RSVP fields.' 
-    });
-  }
-
-  if (!rsvp_for_self && !rsvp_for_partner) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Must RSVP for self, partner, or both.' 
-    });
-  }
-
+router.post('/', requireAuth, async (req, res) => {
   try {
-    // Start a transaction
-    await query('BEGIN');
+    const {
+      response_status,
+      dietary_restrictions,
+      message,
+      partner_response_status,
+      partner_dietary_restrictions,
+      partner_message,
+      plus_one
+    } = req.body;
 
-    // Check if an RSVP already exists for this guest/user
-    const existingRsvp = await query(
-      'SELECT id FROM rsvps WHERE guest_id = $1 AND user_id = $2', 
-      [guest_id, user_id]
-    );
+    const userId = req.user.id;
+    const user = req.user;
 
-    let rsvpResult;
-    // Note: Plus-one creation is now handled separately through the guest management system
-
-    if (existingRsvp.rows.length > 0) {
-      // Update existing RSVP
-      rsvpResult = await query(`
-        UPDATE rsvps
-        SET 
-          response_status = $1, 
-          rsvp_for_self = $2,
-          rsvp_for_partner = $3,
-          partner_attending = $4,
-          plus_one_attending = $5,
-          dietary_restrictions = $6, 
-          song_requests = $7, 
-          message = $8,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = $9
-        RETURNING *;
-      `, [
-        response_status, 
-        rsvp_for_self,
-        rsvp_for_partner,
-        partner_attending,
-        plus_one_attending,
-        dietary_restrictions, 
-        song_requests, 
-        message, 
-        existingRsvp.rows[0].id
-      ]);
-    } else {
-      // Insert new RSVP
-      rsvpResult = await query(`
-        INSERT INTO rsvps (
-          guest_id, user_id, response_status, rsvp_for_self, rsvp_for_partner,
-          partner_attending, plus_one_attending,
-          dietary_restrictions, song_requests, message
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *;
-      `, [
-        guest_id, 
-        user_id, 
-        response_status, 
-        rsvp_for_self,
-        rsvp_for_partner,
-        partner_attending,
-        plus_one_attending,
-        dietary_restrictions, 
-        song_requests, 
-        message
-      ]);
+    // Basic validation
+    if (!response_status) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Response status is required' 
+      });
     }
 
-    // Commit transaction
-    await query('COMMIT');
-    
-    res.status(201).json({
-      success: true,
-      message: 'RSVP submitted successfully!',
-      data: {
-        rsvp: rsvpResult.rows[0]
+    // Start transaction
+    await query('BEGIN');
+
+    try {
+      // Check if RSVP already exists for this user
+      const existingRsvp = await query(
+        'SELECT id FROM rsvps WHERE user_id = $1', 
+        [userId]
+      );
+
+      let rsvpResult;
+      if (existingRsvp.rows.length > 0) {
+        // Update existing RSVP
+        rsvpResult = await query(`
+          UPDATE rsvps
+          SET 
+            response_status = $1,
+            dietary_restrictions = $2,
+            message = $3,
+            partner_id = $4,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = $5
+          RETURNING *;
+        `, [response_status, dietary_restrictions, message, user.partner_id, userId]);
+      } else {
+        // Create new RSVP
+        rsvpResult = await query(`
+          INSERT INTO rsvps (
+            user_id, partner_id, response_status, dietary_restrictions, message
+          )
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING *;
+        `, [userId, user.partner_id, response_status, dietary_restrictions, message]);
       }
-    });
+
+      // Handle partner RSVP if user has a partner
+      let partnerRsvpResult = null;
+      if (user.partner_id && partner_response_status) {
+        // Check if partner RSVP already exists
+        const existingPartnerRsvp = await query(
+          'SELECT id FROM rsvps WHERE user_id = $1', 
+          [user.partner_id]
+        );
+
+        if (existingPartnerRsvp.rows.length > 0) {
+          // Update existing partner RSVP
+          partnerRsvpResult = await query(`
+            UPDATE rsvps
+            SET 
+              response_status = $1,
+              dietary_restrictions = $2,
+              message = $3,
+              partner_id = $4,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = $5
+            RETURNING *;
+          `, [partner_response_status, partner_dietary_restrictions, partner_message, userId, user.partner_id]);
+        } else {
+          // Create new partner RSVP
+          partnerRsvpResult = await query(`
+            INSERT INTO rsvps (
+              user_id, partner_id, response_status, dietary_restrictions, message
+            )
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *;
+          `, [user.partner_id, userId, partner_response_status, partner_dietary_restrictions, partner_message]);
+        }
+      }
+
+      // Handle plus-one creation if user is bringing one
+      let plusOneRsvpResult = null;
+      if (plus_one && plus_one.first_name && plus_one.last_name && plus_one.email) {
+        console.log('📝 RSVP API: Creating plus-one user and RSVP:', plus_one);
+        
+        // Create plus-one user
+        const plusOneUserResult = await query(`
+          INSERT INTO users (
+            first_name, last_name, email, account_status, plus_one_allowed
+          )
+          VALUES ($1, $2, $3, 'guest', false)
+          RETURNING *;
+        `, [plus_one.first_name, plus_one.last_name, plus_one.email]);
+        
+        const plusOneUserId = plusOneUserResult.rows[0].id;
+        
+        // Create RSVP for plus-one
+        plusOneRsvpResult = await query(`
+          INSERT INTO rsvps (
+            user_id, partner_id, response_status, dietary_restrictions, message
+          )
+          VALUES ($1, $2, 'attending', $3, $4)
+          RETURNING *;
+        `, [plusOneUserId, userId, plus_one.dietary_restrictions, `Plus-one for ${user.first_name} ${user.last_name}`]);
+        
+        console.log('📝 RSVP API: Plus-one user and RSVP created:', {
+          user_id: plusOneUserId,
+          rsvp_id: plusOneRsvpResult.rows[0].id
+        });
+        
+        // Update the main user's RSVP to include the plus-one's partner_id
+        await query(`
+          UPDATE rsvps
+          SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = $2
+        `, [plusOneUserId, userId]);
+        
+        // Update the users table to establish the partner relationship
+        await query(`
+          UPDATE users
+          SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2
+        `, [plusOneUserId, userId]);
+        
+        // Update the plus-one user to have the main user as partner
+        await query(`
+          UPDATE users
+          SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2
+        `, [userId, plusOneUserId]);
+        
+        console.log('📝 RSVP API: Updated both users and RSVPs with partner relationships');
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+      
+      res.status(201).json({
+        success: true,
+        message: 'RSVP submitted successfully!',
+        data: {
+          user_rsvp: rsvpResult.rows[0],
+          partner_rsvp: partnerRsvpResult ? partnerRsvpResult.rows[0] : null,
+          plus_one_rsvp: plusOneRsvpResult ? plusOneRsvpResult.rows[0] : null
+        }
+      });
+
+    } catch (error) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw error;
+    }
 
   } catch (error) {
-    // Rollback transaction on error
-    await query('ROLLBACK');
     console.error('Error submitting RSVP:', error);
     res.status(500).json({
       success: false,
@@ -123,44 +183,60 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * GET /api/rsvps/:guest_id
- * Get RSVP details for a specific guest
+ * GET /api/rsvps
+ * Get RSVP details for the current user (and partner if applicable)
  */
-router.get('/:guest_id', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
-    const { guest_id } = req.params;
+    const userId = req.user.id;
+    const user = req.user;
 
-    const result = await query(`
+    // Get user's RSVP
+    const userRsvp = await query(`
       SELECT 
         r.*,
-        g.first_name,
-        g.last_name,
-        g.full_name,
-        g.email as guest_email,
-        g.plus_one_allowed,
-        p.first_name as partner_first_name,
-        p.last_name as partner_last_name,
-        p.full_name as partner_full_name,
-        p.email as partner_email
+        u.first_name,
+        u.last_name,
+        u.full_name,
+        u.email
       FROM rsvps r
-      JOIN guests g ON r.guest_id = g.id
-      LEFT JOIN guests p ON g.partner_id = p.id
-      WHERE r.guest_id = $1
-      ORDER BY r.created_at DESC
-      LIMIT 1
-    `, [guest_id]);
+      JOIN users u ON r.user_id = u.id
+      WHERE r.user_id = $1
+    `, [userId]);
 
-    if (result.rows.length === 0) {
-      return res.json({
-        success: true,
-        data: null,
-        message: 'No RSVP found for this guest'
-      });
+    // Get partner's RSVP if user has a partner
+    let partnerRsvp = null;
+    if (user.partner_id) {
+      const partnerRsvpResult = await query(`
+        SELECT 
+          r.*,
+          u.first_name,
+          u.last_name,
+          u.full_name,
+          u.email
+        FROM rsvps r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.user_id = $1
+      `, [user.partner_id]);
+      
+      partnerRsvp = partnerRsvpResult.rows.length > 0 ? partnerRsvpResult.rows[0] : null;
     }
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: {
+        user_rsvp: userRsvp.rows.length > 0 ? userRsvp.rows[0] : null,
+        partner_rsvp: partnerRsvp,
+        partner_info: user.partner, // Use partner info from auth middleware
+        user_info: {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          full_name: user.full_name,
+          plus_one_allowed: user.plus_one_allowed,
+          has_partner: !!user.partner_id
+        }
+      }
     });
 
   } catch (error) {
@@ -177,56 +253,65 @@ router.get('/:guest_id', async (req, res) => {
  * GET /api/rsvps/summary
  * Get RSVP summary for admin (requires authentication in production)
  */
-router.get('/summary', async (req, res) => {
+router.get('/summary', requireAuth, async (req, res) => {
   try {
     const result = await query(`
       SELECT 
-        g.id,
-        g.first_name,
-        g.last_name,
-        g.full_name,
-        g.email,
-        g.plus_one_allowed,
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.full_name,
+        u.email,
+        u.plus_one_allowed,
+        u.account_status,
         r.response_status,
-        r.rsvp_for_self,
-        r.rsvp_for_partner,
-        r.partner_attending,
-        r.plus_one_attending,
+        r.dietary_restrictions,
+        r.message,
         r.responded_at,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
         p.full_name as partner_full_name,
-        CASE 
-          WHEN r.rsvp_for_self = true AND r.rsvp_for_partner = true AND r.partner_attending = true AND r.plus_one_attending = true THEN 3
-          WHEN r.rsvp_for_self = true AND r.rsvp_for_partner = true AND r.partner_attending = true THEN 2
-          WHEN r.rsvp_for_self = true AND r.plus_one_attending = true THEN 2
-          WHEN r.rsvp_for_self = true THEN 1
-          ELSE 0
-        END as total_attending
-      FROM guests g
-      LEFT JOIN rsvps r ON g.id = r.guest_id
-      LEFT JOIN guests p ON g.partner_id = p.id
-      WHERE g.partner_id IS NULL OR g.id < g.partner_id
-      ORDER BY g.last_name, g.first_name
+        p.email as partner_email,
+        pr.response_status as partner_response_status,
+        pr.dietary_restrictions as partner_dietary_restrictions,
+        pr.message as partner_message,
+        pr.responded_at as partner_responded_at
+      FROM users u
+      LEFT JOIN rsvps r ON u.id = r.user_id
+      LEFT JOIN users p ON u.partner_id = p.id
+      LEFT JOIN rsvps pr ON p.id = pr.user_id
+      WHERE u.deleted_at IS NULL
+      AND (u.partner_id IS NULL OR u.id < u.partner_id) -- Avoid duplicates for couples
+      ORDER BY u.last_name, u.first_name
     `);
 
     // Calculate summary statistics
-    const totalGuests = result.rows.length;
+    const totalUsers = result.rows.length;
     const responded = result.rows.filter(r => r.response_status).length;
     const attending = result.rows.filter(r => r.response_status === 'attending').length;
-    const totalAttending = result.rows.reduce((sum, r) => sum + (r.total_attending || 0), 0);
+    
+    // Calculate total attending count (including partners)
+    let totalAttending = 0;
+    result.rows.forEach(row => {
+      if (row.response_status === 'attending') {
+        totalAttending += 1; // User
+        if (row.partner_response_status === 'attending') {
+          totalAttending += 1; // Partner
+        }
+      }
+    });
 
     res.json({
       success: true,
       data: {
         summary: {
-          total_guests: totalGuests,
+          total_users: totalUsers,
           responded: responded,
           attending: attending,
           not_attending: responded - attending,
           total_attending_count: totalAttending
         },
-        guests: result.rows
+        users: result.rows
       }
     });
 
@@ -235,6 +320,101 @@ router.get('/summary', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch RSVP summary',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/rsvps/plus-one
+ * Add a plus-one as a new user (if plus_one_allowed is true)
+ */
+router.post('/plus-one', requireAuth, async (req, res) => {
+  try {
+    const { first_name, last_name, email, password } = req.body;
+    const userId = req.user.id;
+    const user = req.user;
+
+    // Check if user is allowed to bring a plus-one
+    if (!user.plus_one_allowed) {
+      return res.status(403).json({
+        success: false,
+        message: 'Plus-one not allowed for this user'
+      });
+    }
+
+    // Basic validation
+    if (!first_name || !last_name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required for plus-one'
+      });
+    }
+
+    // Check if email is already used
+    const existingUser = await query(
+      'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'This email address is already registered'
+      });
+    }
+
+    // Start transaction
+    await query('BEGIN');
+
+    try {
+      // Create plus-one user
+      const password_hash = Buffer.from(password).toString('base64');
+      const plusOneUser = await query(`
+        INSERT INTO users (
+          first_name, last_name, email, password_hash, account_status, plus_one_allowed
+        ) VALUES ($1, $2, $3, $4, 'registered', false)
+        RETURNING id, first_name, last_name, full_name, email
+      `, [first_name, last_name, email, password_hash]);
+
+      // Link plus-one to the original user (as partner)
+      await query(`
+        UPDATE users 
+        SET partner_id = $1 
+        WHERE id = $2
+      `, [userId, plusOneUser.rows[0].id]);
+
+      // Create RSVP for plus-one
+      const plusOneRsvp = await query(`
+        INSERT INTO rsvps (
+          user_id, partner_id, response_status, dietary_restrictions, message
+        ) VALUES ($1, $2, 'attending', '', 'Plus-one RSVP')
+        RETURNING *
+      `, [plusOneUser.rows[0].id, userId]);
+
+      // Commit transaction
+      await query('COMMIT');
+
+      res.status(201).json({
+        success: true,
+        message: 'Plus-one added successfully!',
+        data: {
+          plus_one_user: plusOneUser.rows[0],
+          plus_one_rsvp: plusOneRsvp.rows[0]
+        }
+      });
+
+    } catch (error) {
+      // Rollback transaction on error
+      await query('ROLLBACK');
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('Error adding plus-one:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add plus-one',
       error: error.message
     });
   }

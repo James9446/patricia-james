@@ -1,184 +1,199 @@
 /**
  * Authentication Middleware
  * 
- * Handles user authentication and authorization for the wedding website.
+ * Provides authentication and authorization middleware for the wedding app.
+ * Handles session-based authentication with guest list validation.
  */
 
-const bcrypt = require('bcrypt');
 const { query } = require('../config/db');
 
 /**
- * Middleware to require authentication
+ * Middleware to check if user is authenticated
+ * Sets req.user if authenticated, otherwise returns 401
  */
-function requireAuth(req, res, next) {
-  // For now, we'll implement a simple session check
-  // In a full implementation, this would check JWT tokens or session cookies
-  
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
+const requireAuth = async (req, res, next) => {
+  try {
+    // Check if user is in session
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+
+    // Get user details from database (schema v5: combined users table)
+    const result = await query(`
+      SELECT 
+        u.id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.full_name,
+        u.partner_id,
+        u.plus_one_allowed,
+        u.is_admin,
+        u.account_status,
+        p.first_name as partner_first_name,
+        p.last_name as partner_last_name,
+        p.full_name as partner_full_name,
+        p.email as partner_email
+      FROM users u
+      LEFT JOIN users p ON u.partner_id = p.id
+      WHERE u.id = $1 AND u.account_status = 'registered' AND u.deleted_at IS NULL
+    `, [req.session.userId]);
+
+    if (result.rows.length === 0) {
+      // User not found or inactive, clear session
+      req.session.destroy();
+      return res.status(401).json({
+        success: false,
+        message: 'User not found or inactive',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Attach user to request object (schema v5: combined users table)
+    req.user = {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      full_name: user.full_name,
+      partner_id: user.partner_id,
+      plus_one_allowed: user.plus_one_allowed,
+      is_admin: user.is_admin,
+      account_status: user.account_status,
+      partner: user.partner_id ? {
+        first_name: user.partner_first_name,
+        last_name: user.partner_last_name,
+        full_name: user.partner_full_name,
+        email: user.partner_email
+      } : null
+    };
+
+    next();
+  } catch (error) {
+    console.error('Authentication middleware error:', error);
+    res.status(500).json({
       success: false,
-      message: 'Authentication required'
+      message: 'Authentication error',
+      error: error.message
     });
   }
-  
-  const token = authHeader.substring(7);
-  
-  // TODO: Implement proper JWT token validation
-  // For now, we'll just check if it's a valid user ID
-  if (!token || token.length < 10) {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid authentication token'
-    });
-  }
-  
-  // Add user info to request (this would come from JWT validation)
-  req.user = {
-    id: token, // This would be extracted from JWT
-    isAdmin: false // This would be extracted from JWT
-  };
-  
-  next();
-}
+};
 
 /**
- * Middleware to require admin privileges
+ * Middleware to check if user is admin
+ * Must be used after requireAuth
  */
-function requireAdmin(req, res, next) {
-  // First check if user is authenticated
+const requireAdmin = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
-      message: 'Authentication required'
+      message: 'Authentication required',
+      code: 'AUTH_REQUIRED'
     });
   }
-  
-  // Check if user is admin
-  if (!req.user.isAdmin) {
+
+  if (!req.user.is_admin) {
     return res.status(403).json({
       success: false,
-      message: 'Admin privileges required'
+      message: 'Admin privileges required',
+      code: 'ADMIN_REQUIRED'
     });
   }
-  
+
   next();
-}
+};
 
 /**
- * Verify user credentials
+ * Optional authentication middleware
+ * Sets req.user if authenticated, but doesn't require it
  */
-async function verifyCredentials(email, password) {
+const optionalAuth = async (req, res, next) => {
   try {
-    // Find user by email
-    const result = await query(`
-      SELECT 
-        id, email, password_hash, first_name, last_name, 
-        is_admin, is_active, last_login
-      FROM users 
-      WHERE email = $1
-    `, [email]);
-    
-    if (result.rows.length === 0) {
-      return { success: false, message: 'Invalid email or password' };
-    }
-    
-    const user = result.rows[0];
-    
-    // Check if user is active
-    if (!user.is_active) {
-      return { success: false, message: 'Account is deactivated' };
-    }
-    
-    // Verify password
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
-    
-    if (!passwordMatch) {
-      return { success: false, message: 'Invalid email or password' };
-    }
-    
-    // Update last login
-    await query(`
-      UPDATE users 
-      SET last_login = CURRENT_TIMESTAMP 
-      WHERE id = $1
-    `, [user.id]);
-    
-    // Return user info (without password hash)
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        is_admin: user.is_admin,
-        is_active: user.is_active,
-        last_login: user.last_login
+    if (req.session && req.session.userId) {
+      // Try to get user details (schema v5: combined users table)
+      const result = await query(`
+        SELECT 
+          u.id,
+          u.email,
+          u.first_name,
+          u.last_name,
+          u.full_name,
+          u.partner_id,
+          u.plus_one_allowed,
+          u.is_admin,
+          u.account_status
+        FROM users u
+        WHERE u.id = $1 AND u.account_status = 'registered' AND u.deleted_at IS NULL
+      `, [req.session.userId]);
+
+      if (result.rows.length > 0) {
+        const user = result.rows[0];
+        req.user = {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          full_name: user.full_name,
+          partner_id: user.partner_id,
+          plus_one_allowed: user.plus_one_allowed,
+          is_admin: user.is_admin,
+          account_status: user.account_status
+        };
+      } else {
+        // User not found, clear session
+        req.session.destroy();
       }
-    };
+    }
     
+    next();
   } catch (error) {
-    console.error('Error verifying credentials:', error);
-    return { success: false, message: 'Authentication error' };
+    console.error('Optional authentication middleware error:', error);
+    // Don't fail the request, just continue without user
+    next();
   }
-}
+};
 
 /**
- * Create a new user account
+ * Middleware to check if user can access a specific guest's data
+ * Useful for RSVP endpoints where users should only access their own data
  */
-async function createUser(userData) {
-  try {
-    const { email, password, first_name, last_name, guest_id, is_admin = false } = userData;
-    
-    // Check if user already exists
-    const existingUser = await query(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
-    );
-    
-    if (existingUser.rows.length > 0) {
-      return { success: false, message: 'User with this email already exists' };
-    }
-    
-    // Hash password
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-    
-    // Create user
-    const result = await query(`
-      INSERT INTO users (
-        email, password_hash, first_name, last_name, 
-        guest_id, is_admin, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, email, first_name, last_name, is_admin, is_active, created_at
-    `, [email, passwordHash, first_name, last_name, guest_id, is_admin, true]);
-    
-    const user = result.rows[0];
-    
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        is_admin: user.is_admin,
-        is_active: user.is_active,
-        created_at: user.created_at
-      }
-    };
-    
-  } catch (error) {
-    console.error('Error creating user:', error);
-    return { success: false, message: 'Error creating user account' };
+const requireGuestAccess = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required',
+      code: 'AUTH_REQUIRED'
+    });
   }
-}
+
+  // Admin users can access any guest data
+  if (req.user.is_admin) {
+    return next();
+  }
+
+  // Check if user is trying to access their own data or their partner's data
+  const requestedUserId = req.params.userId || req.body.user_id;
+  
+  if (requestedUserId && requestedUserId !== req.user.id && requestedUserId !== req.user.partner_id) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied: You can only access your own data or your partner\'s data',
+      code: 'ACCESS_DENIED'
+    });
+  }
+
+  next();
+};
 
 module.exports = {
   requireAuth,
   requireAdmin,
-  verifyCredentials,
-  createUser
+  optionalAuth,
+  requireGuestAccess
 };

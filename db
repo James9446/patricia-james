@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Database Management Wrapper
+# Runs the database tool from the server directory
+
+cd "$(dirname "$0")/server"
+node db "$@"
