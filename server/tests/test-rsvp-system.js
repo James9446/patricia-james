@@ -388,14 +388,13 @@ async function makeRsvpRequest(rsvpData) {
       // Insert new RSVP
       rsvpResult = await query(`
         INSERT INTO rsvps (
-          user_id, user_id, response_status, rsvp_for_self, rsvp_for_partner,
+          user_id, response_status, rsvp_for_self, rsvp_for_partner,
           partner_attending, plus_one_attending,
           dietary_restrictions, song_requests, message
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *;
       `, [
-        user_id, 
         user_id, 
         response_status, 
         rsvp_for_self,

@@ -317,9 +317,6 @@ async function runAllTests() {
   log('🧪 Starting Authentication System Tests...', 'info');
   log('==========================================', 'info');
   
-  // Clean up any existing test data (only test emails)
-  await cleanupTestData();
-  
   // Test 1: Server Connection
   const serverConnected = await testServerConnection();
   if (!serverConnected) {

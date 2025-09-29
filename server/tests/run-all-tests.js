@@ -41,42 +41,64 @@ class TestRunner {
       console.log(`\n📋 Running ${testFile}...`);
       console.log('─'.repeat(50));
 
-      const testPath = path.join(__dirname, testFile);
-      const child = spawn('node', [testPath], {
-        stdio: 'inherit',
-        cwd: path.join(__dirname, '..')
-      });
-
-      child.on('close', (code) => {
-        const result = {
-          name: testFile,
-          passed: code === 0,
-          exitCode: code
-        };
-        
-        this.results.suites.push(result);
-        
-        if (code === 0) {
-          this.results.passed++;
-          console.log(`✅ ${testFile} completed successfully`);
-        } else {
-          this.results.failed++;
-          console.log(`❌ ${testFile} failed with exit code ${code}`);
-        }
-        
-        resolve();
-      });
-
-      child.on('error', (error) => {
-        console.error(`❌ Error running ${testFile}:`, error);
-        this.results.failed++;
-        this.results.suites.push({
-          name: testFile,
-          passed: false,
-          error: error.message
+      // Reset database before tests that need clean state
+      if (testFile === 'test-basic-functionality.js' || testFile === 'test-auth-system.js') {
+        console.log('🔄 Resetting database for auth test...');
+        const resetChild = spawn('node', ['db', 'reset', '--confirm'], {
+          stdio: 'inherit',
+          cwd: path.join(__dirname, '..')
         });
-        resolve();
+        
+        resetChild.on('close', (resetCode) => {
+          if (resetCode === 0) {
+            this.runActualTest(testFile, resolve);
+          } else {
+            console.log(`❌ Database reset failed for ${testFile}`);
+            resolve();
+          }
+        });
+      } else {
+        this.runActualTest(testFile, resolve);
+      }
+    });
+  }
+
+  runActualTest(testFile, resolve) {
+    const testPath = path.join(__dirname, testFile);
+    const child = spawn('node', [testPath], {
+      stdio: 'inherit',
+      cwd: path.join(__dirname, '..')
+    });
+
+    child.on('close', (code) => {
+      const result = {
+        name: testFile,
+        passed: code === 0,
+        exitCode: code
+      };
+      
+      this.results.suites.push(result);
+      
+      if (code === 0) {
+        this.results.passed++;
+        console.log(`✅ ${testFile} completed successfully`);
+      } else {
+        this.results.failed++;
+        console.log(`❌ ${testFile} failed with exit code ${code}`);
+      }
+      
+      resolve();
+    });
+
+    child.on('error', (error) => {
+      console.error(`❌ Error running ${testFile}:`, error);
+      this.results.failed++;
+      this.results.suites.push({
+        name: testFile,
+        passed: false,
+        error: error.message
       });
+      resolve();
     });
   }
 
