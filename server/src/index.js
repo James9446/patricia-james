@@ -6,8 +6,7 @@ const path = require('path');
 const { query } = require('./config/db');
 
 // Import routes
-const guestsRouter = require('./routes/guests');
-const rsvpsRouter = require('./routes/rsvps'); // Use schema v5 RSVP routes
+const rsvpsRouter = require('./routes/rsvps');
 const authRouter = require('./routes/auth');
 
 const app = express();
@@ -62,7 +61,6 @@ app.get('/api/health', (req, res) => {
 
 // Mount API routes
 app.use('/api/auth', authRouter);
-app.use('/api/guests', guestsRouter);
 app.use('/api/rsvps', rsvpsRouter);
 
 // Serve the main HTML file for all non-API routes (SPA routing)
@@ -97,7 +95,7 @@ async function startServer() {
       console.warn('⚠️  Database connection failed:', dbError.message);
       console.log('📝 Server will start without database (development mode)');
       console.log('💡 To enable database features, set up PostgreSQL and configure DATABASE_URL');
-      console.log('💡 Run "node src/database/migrate.js reset" to initialize the database');
+      console.log('💡 Run "./db reset --confirm" to initialize the database');
     }
     
     // Start the server
