@@ -301,8 +301,8 @@ async function cleanupTestData() {
   try {
     const { query } = require('../src/config/db');
     
-    // Clean up test users with test emails (more specific to avoid deleting seeded users)
-    await query("DELETE FROM users WHERE email LIKE '%test%' AND email LIKE '%example.com%'");
+    // Clean up test users with test emails (very specific pattern)
+    await query("DELETE FROM users WHERE email LIKE 'test-%@example.com'");
     
     // Clear session cookies
     sessionCookies = '';
@@ -316,6 +316,9 @@ async function cleanupTestData() {
 async function runAllTests() {
   log('🧪 Starting Authentication System Tests...', 'info');
   log('==========================================', 'info');
+  
+  // Clean up any existing test data (only test emails)
+  await cleanupTestData();
   
   // Test 1: Server Connection
   const serverConnected = await testServerConnection();
