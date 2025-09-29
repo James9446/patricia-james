@@ -16,8 +16,8 @@ require('dotenv').config();
 // Test configuration
 const API_BASE = 'http://localhost:5001/api';
 const TEST_GUEST = {
-  first_name: 'Cordelia',
-  last_name: 'Reynolds'
+  first_name: 'John',
+  last_name: 'Smith'
 };
 
 // Test results tracking
@@ -272,9 +272,27 @@ async function testPostLogoutAccess() {
   }
 }
 
+async function cleanupTestData() {
+  log('\n🧹 Cleaning up test data...', 'info');
+  
+  try {
+    const { query } = require('../src/config/db');
+    
+    // Clean up test users with test emails
+    await query("DELETE FROM users WHERE email LIKE '%test%' OR email LIKE '%example.com%'");
+    
+    log('✅ Test data cleaned up', 'success');
+  } catch (error) {
+    log(`⚠️  Cleanup warning: ${error.message}`, 'warning');
+  }
+}
+
 async function runAllTests() {
   log('🧪 Starting Authentication System Tests...', 'info');
   log('==========================================', 'info');
+  
+  // Clean up any existing test data
+  await cleanupTestData();
   
   // Test 1: Server Connection
   const serverConnected = await testServerConnection();

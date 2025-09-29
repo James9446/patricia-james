@@ -23,7 +23,7 @@ app.use('/api/rsvps', rsvpRoutes);
 const testData = {
   // Individual guest without plus-one
   cordelia: {
-    guest_id: null, // Will be set after guest lookup
+    user_id: null, // Will be set after guest lookup
     user_id: null, // No user account yet
     response_status: 'attending',
     rsvp_for_self: true,
@@ -37,7 +37,7 @@ const testData = {
   
   // Individual guest with plus-one
   alfredo: {
-    guest_id: null, // Will be set after guest lookup
+    user_id: null, // Will be set after guest lookup
     user_id: null, // No user account yet
     response_status: 'attending',
     rsvp_for_self: true,
@@ -51,7 +51,7 @@ const testData = {
   
   // Couple RSVP (Tara RSVPing for both herself and Brenda)
   tara: {
-    guest_id: null, // Will be set after guest lookup
+    user_id: null, // Will be set after guest lookup
     user_id: null, // No user account yet
     response_status: 'attending',
     rsvp_for_self: true,
@@ -135,20 +135,20 @@ async function getGuestIds() {
   const guests = await query(`
     SELECT id, first_name, last_name, full_name 
     FROM users 
-    WHERE deleted_at IS NULL AND first_name IN ('Cordelia', 'Alfredo', 'Tara')
+    WHERE deleted_at IS NULL AND first_name IN ('John', 'Jack', 'Jane')
     ORDER BY first_name
   `);
   
   guests.rows.forEach(guest => {
-    if (guest.first_name === 'Cordelia') {
-      testData.cordelia.guest_id = guest.id;
-      console.log(`   Cordelia Reynolds: ${guest.id}`);
-    } else if (guest.first_name === 'Alfredo') {
-      testData.alfredo.guest_id = guest.id;
-      console.log(`   Alfredo Lopez: ${guest.id}`);
-    } else if (guest.first_name === 'Tara') {
-      testData.tara.guest_id = guest.id;
-      console.log(`   Tara Folenta: ${guest.id}`);
+    if (guest.first_name === 'John' && guest.last_name === 'Smith') {
+      testData.cordelia.user_id = guest.id;
+      console.log(`   John Smith: ${guest.id}`);
+    } else if (guest.first_name === 'Jack' && guest.last_name === 'Blue') {
+      testData.alfredo.user_id = guest.id;
+      console.log(`   Jack Blue: ${guest.id}`);
+    } else if (guest.first_name === 'Jane' && guest.last_name === 'Smith') {
+      testData.tara.user_id = guest.id;
+      console.log(`   Jane Smith: ${guest.id}`);
     }
   });
   
@@ -261,7 +261,7 @@ async function testRsvpSummary() {
         ELSE 0
       END as total_attending
     FROM users u
-    LEFT JOIN rsvps r ON u.id = r.guest_id
+    LEFT JOIN rsvps r ON u.id = r.user_id
     WHERE g.partner_id IS NULL OR u.id < g.partner_id
     ORDER BY u.last_name, u.first_name
   `);
@@ -332,7 +332,6 @@ async function makeRsvpRequest(rsvpData) {
   const { query } = require('../src/config/db');
   
   const { 
-    guest_id, 
     user_id, 
     response_status, 
     rsvp_for_self, 
@@ -350,8 +349,8 @@ async function makeRsvpRequest(rsvpData) {
 
     // Check if an RSVP already exists for this guest/user
     const existingRsvp = await query(
-      'SELECT id FROM rsvps WHERE guest_id = $1 AND user_id = $2', 
-      [guest_id, user_id]
+      'SELECT id FROM rsvps WHERE user_id = $1', 
+      [user_id]
     );
 
     let rsvpResult;
@@ -389,14 +388,14 @@ async function makeRsvpRequest(rsvpData) {
       // Insert new RSVP
       rsvpResult = await query(`
         INSERT INTO rsvps (
-          guest_id, user_id, response_status, rsvp_for_self, rsvp_for_partner,
+          user_id, user_id, response_status, rsvp_for_self, rsvp_for_partner,
           partner_attending, plus_one_attending,
           dietary_restrictions, song_requests, message
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *;
       `, [
-        guest_id, 
+        user_id, 
         user_id, 
         response_status, 
         rsvp_for_self,

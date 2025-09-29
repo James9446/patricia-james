@@ -49,13 +49,9 @@ class BasicFunctionalityTest {
     console.log('🏥 Testing Server Health...');
     
     try {
-      const response = await fetch(`${BASE_URL}/auth/check-guest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: 'Test', last_name: 'User' })
-      });
+      const response = await fetch(`${BASE_URL}/health`);
       
-      if (response.ok || response.status === 400) {
+      if (response.ok) {
         this.recordTest('Server Health Check', true, 'Server is responding');
       } else {
         this.recordTest('Server Health Check', false, `Server health check failed: ${response.status}`);
@@ -69,13 +65,9 @@ class BasicFunctionalityTest {
     console.log('🗄️ Testing Database Connection...');
     
     try {
-      const response = await fetch(`${BASE_URL}/auth/check-guest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: 'Test', last_name: 'User' })
-      });
+      const response = await fetch(`${BASE_URL}/health`);
       
-      if (response.ok || response.status === 400) {
+      if (response.ok) {
         this.recordTest('Database Connection', true, 'Database is accessible and responding');
       } else {
         this.recordTest('Database Connection', false, `Database connection test failed: ${response.status}`);
@@ -93,8 +85,8 @@ class BasicFunctionalityTest {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          first_name: 'Tara', 
-          last_name: 'Folenta' 
+          first_name: 'John', 
+          last_name: 'Smith' 
         })
       });
       
