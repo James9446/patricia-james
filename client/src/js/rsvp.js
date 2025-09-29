@@ -104,7 +104,7 @@ class RSVPManagerV5 {
         if (attempts >= maxAttempts) {
           console.log('📝 RSVP Manager: Auth check timeout, proceeding anyway');
           resolve();
-        } else {
+      } else {
           setTimeout(checkAuthStatus, 100);
         }
       };
@@ -194,9 +194,9 @@ class RSVPManagerV5 {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        
-        if (data.success) {
+      const data = await response.json();
+
+      if (data.success) {
           this.userRsvp = data.data.user_rsvp;
           this.partnerRsvp = data.data.partner_rsvp;
           this.partnerInfo = data.data.partner_info;
@@ -225,6 +225,9 @@ class RSVPManagerV5 {
     } catch (error) {
       console.error('Error loading RSVP data:', error);
     }
+    
+    // Always update user info display, regardless of RSVP data
+    this.updateUserInfo();
   }
 
   /**
@@ -244,56 +247,34 @@ class RSVPManagerV5 {
    * Update user information display
    */
   updateUserInfo() {
-    if (!this.currentUser) return;
+    if (!this.currentUser) {
+      console.log('📝 RSVP Manager: No current user for updateUserInfo');
+      return;
+    }
+
+    console.log('📝 RSVP Manager: Updating user info for:', this.currentUser.full_name);
 
     // Update guest name
     const guestName = document.getElementById('guest-name');
     if (guestName) {
       guestName.textContent = this.currentUser.full_name;
+      console.log('📝 RSVP Manager: Updated guest name to:', this.currentUser.full_name);
+    } else {
+      console.log('📝 RSVP Manager: guest-name element not found');
     }
 
     // Update email display
     const guestEmailDisplay = document.getElementById('guest-email-display');
     if (guestEmailDisplay) {
       guestEmailDisplay.textContent = this.currentUser.email || 'Not provided';
+      console.log('📝 RSVP Manager: Updated guest email to:', this.currentUser.email || 'Not provided');
+    } else {
+      console.log('📝 RSVP Manager: guest-email-display element not found');
     }
 
-    // Update party size information
-    this.updatePartySizeInfo();
+      // User type info no longer displayed
   }
 
-  /**
-   * Update party size information based on user type
-   */
-  updatePartySizeInfo() {
-    const guestPartySize = document.getElementById('guest-party-size');
-    const partySizeSelect = document.getElementById('party_size');
-
-    if (guestPartySize) {
-      // Calculate party size based on user type
-      let partySize = 1; // Base size
-      if (this.currentUser.partner_id) {
-        partySize = 2; // Couple
-      }
-      if (this.currentUser.plus_one_allowed) {
-        partySize = Math.max(partySize, 2); // Plus-one allowed
-      }
-      guestPartySize.textContent = partySize;
-    }
-
-    // Update party size select options
-    if (partySizeSelect) {
-      const maxSize = this.currentUser.plus_one_allowed ? 2 : 1;
-      partySizeSelect.innerHTML = '<option value="">Select number of guests</option>';
-      
-      for (let i = 1; i <= maxSize; i++) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = i === 1 ? '1 Guest' : `${i} Guests`;
-        partySizeSelect.appendChild(option);
-      }
-    }
-  }
 
   /**
    * Populate RSVP form with existing data
@@ -414,7 +395,7 @@ class RSVPManagerV5 {
       } else {
         console.log('📝 RSVP Manager: Plus-one selected but missing required fields');
         alert('Please fill in all required plus-one information.');
-        return;
+      return;
       }
     }
 
@@ -609,35 +590,52 @@ class RSVPManagerV5 {
     if (!formContainer) return;
     
     formContainer.innerHTML = `
-      <form id="rsvp-form-element">
-        <div class="form-group">
-          <label>Will you be attending?</label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="response_status" value="attending" required>
-              <span>Yes, I'll be there!</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="response_status" value="not_attending" required>
-              <span>No, I can't make it</span>
-            </label>
+      <div class="card">
+        <form id="rsvp-form-element">
+          <!-- Guest Info Section (Pre-populated for logged-in users) -->
+          <div class="form-section">
+            <h3 class="section-title">Your Invitation</h3>
+            
+            <div class="guest-info">
+              <p><strong>Guest:</strong> <span id="guest-name">Loading...</span></p>
+              <p><strong>Email:</strong> <span id="guest-email-display">Loading...</span></p>
+            </div>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="dietary_restrictions">Dietary Restrictions (optional)</label>
-          <textarea id="dietary_restrictions" name="dietary_restrictions" 
-                    placeholder="Please let us know about any dietary restrictions or allergies..."></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label for="message">Message (optional)</label>
-          <textarea id="message" name="message" 
-                    placeholder="Any additional message for the couple..."></textarea>
-        </div>
-        
-        <button type="submit" class="btn btn-primary">Submit RSVP</button>
-      </form>
+          
+          <!-- RSVP Form -->
+          <div class="form-section">
+            <h3 class="section-title">RSVP Details</h3>
+            
+            <div class="form-group">
+              <label class="form-label">Will you be attending?</label>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="response_status" value="attending" class="form-radio">
+                  <span class="radio-label">Yes, I'll be there!</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="response_status" value="not_attending" class="form-radio">
+                  <span class="radio-label">No, I can't make it</span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="dietary_restrictions" class="form-label">Dietary Restrictions (optional)</label>
+              <textarea id="dietary_restrictions" name="dietary_restrictions" class="form-textarea"
+                        placeholder="Please let us know about any dietary restrictions or allergies..."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label for="message" class="form-label">Message (optional)</label>
+              <textarea id="message" name="message" class="form-textarea"
+                        placeholder="Any additional message for the couple..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Submit RSVP</button>
+          </div>
+        </form>
+      </div>
     `;
     
     // Wait for DOM to update before setting up event listeners
@@ -654,20 +652,35 @@ class RSVPManagerV5 {
     if (!formContainer) return;
     
     formContainer.innerHTML = `
-      <form id="rsvp-form-element">
-        <div class="form-group">
-          <label>Will you be attending?</label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="response_status" value="attending" required>
-              <span>Yes, I'll be there!</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="response_status" value="not_attending" required>
-              <span>No, I can't make it</span>
-            </label>
+      <div class="card">
+        <form id="rsvp-form-element">
+          <!-- Guest Info Section (Pre-populated for logged-in users) -->
+          <div class="form-section">
+            <h3 class="section-title">Your Invitation</h3>
+            
+            <div class="guest-info">
+              <p><strong>Guest:</strong> <span id="guest-name">Loading...</span></p>
+              <p><strong>Email:</strong> <span id="guest-email-display">Loading...</span></p>
+            </div>
           </div>
-        </div>
+          
+          <!-- RSVP Form -->
+          <div class="form-section">
+            <h3 class="section-title">RSVP Details</h3>
+            
+            <div class="form-group">
+              <label class="form-label">Will you be attending?</label>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="response_status" value="attending" class="form-radio" required>
+                  <span class="radio-label">Yes, I'll be there!</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="response_status" value="not_attending" class="form-radio" required>
+                  <span class="radio-label">No, I can't make it</span>
+                </label>
+              </div>
+            </div>
         
         <div class="form-group">
           <label>
@@ -734,11 +747,22 @@ class RSVPManagerV5 {
     }
     
     formContainer.innerHTML = `
-      <form id="rsvp-form-element">
-        <div class="couple-info-header">
-          <h3>RSVP for You and ${partnerName}</h3>
-          <p>You can RSVP for both yourself and your partner. Each person can have different dietary restrictions.</p>
-        </div>
+      <div class="card">
+        <form id="rsvp-form-element">
+          <!-- Guest Info Section (Pre-populated for logged-in users) -->
+          <div class="form-section">
+            <h3 class="section-title">Your Invitation</h3>
+            
+            <div class="guest-info">
+              <p><strong>Guest:</strong> <span id="guest-name">Loading...</span></p>
+              <p><strong>Email:</strong> <span id="guest-email-display">Loading...</span></p>
+            </div>
+          </div>
+          
+          <!-- RSVP Form -->
+          <div class="form-section">
+            <h3 class="section-title">RSVP for You and ${partnerName}</h3>
+            <p>You can RSVP for both yourself and your partner. Each person can have different dietary restrictions.</p>
         
         <div class="couple-rsvp-section">
           <h4>${this.currentUser.first_name} ${this.currentUser.last_name}</h4>
@@ -810,24 +834,39 @@ class RSVPManagerV5 {
     if (!formContainer) return;
     
     formContainer.innerHTML = `
-      <form id="rsvp-form-element">
-        <div class="admin-notice">
-          <p><strong>Admin Mode:</strong> You have additional options available.</p>
-        </div>
-        
-        <div class="form-group">
-          <label>Will you be attending?</label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="response_status" value="attending" required>
-              <span>Yes, I'll be there!</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="response_status" value="not_attending" required>
-              <span>No, I can't make it</span>
-            </label>
+      <div class="card">
+        <form id="rsvp-form-element">
+          <!-- Guest Info Section (Pre-populated for logged-in users) -->
+          <div class="form-section">
+            <h3 class="section-title">Your Invitation</h3>
+            
+            <div class="guest-info">
+              <p><strong>Guest:</strong> <span id="guest-name">Loading...</span></p>
+              <p><strong>Email:</strong> <span id="guest-email-display">Loading...</span></p>
+            </div>
           </div>
-        </div>
+          
+          <!-- RSVP Form -->
+          <div class="form-section">
+            <h3 class="section-title">RSVP Details</h3>
+            
+            <div class="admin-notice">
+              <p><strong>Admin Mode:</strong> You have additional options available.</p>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Will you be attending?</label>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="response_status" value="attending" class="form-radio" required>
+                  <span class="radio-label">Yes, I'll be there!</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="response_status" value="not_attending" class="form-radio" required>
+                  <span class="radio-label">No, I can't make it</span>
+                </label>
+              </div>
+            </div>
         
         <div class="form-group">
           <label for="dietary_restrictions">Dietary Restrictions (optional)</label>
