@@ -12,8 +12,8 @@ A modern, interactive wedding website with guest authentication, RSVP system, an
 ./db rsvps          # View all RSVPs
 ./db help           # Show all commands
 
-# Custom queries
-./db sql "SELECT * FROM users WHERE account_status = 'registered';"
+# Note: Custom SQL queries are not supported by the ./db tool
+# Use direct psql connection for custom queries (see Advanced section below)
 ```
 
 ### Prerequisites
@@ -130,8 +130,8 @@ cd server && node tests/test-basic-functionality.js
 # View all RSVPs
 ./db rsvps
 
-# Run custom SQL queries
-./db sql "SELECT * FROM users WHERE account_status = 'registered';"
+# Note: Custom SQL queries are not supported by the ./db tool
+# Use direct psql connection for custom queries (see Advanced section below)
 
 # Reset database (with confirmation)
 ./db reset
@@ -159,11 +159,11 @@ The project includes a single, comprehensive database management tool:
 
 # Debug user issues
 ./db users
-./db sql "SELECT * FROM users WHERE email = 'user@example.com';"
+# For custom queries, use: psql $DATABASE_URL -c "SELECT * FROM users WHERE email = 'user@example.com';"
 
 # Debug RSVP issues  
 ./db rsvps
-./db sql "SELECT * FROM rsvps WHERE response_status = 'attending';"
+# For custom queries, use: psql $DATABASE_URL -c "SELECT * FROM rsvps WHERE response_status = 'attending';"
 
 # Reset for testing
 ./db reset
@@ -231,9 +231,8 @@ The project includes safe database management tools that automatically load envi
 # View all RSVPs with user details
 ./db rsvps
 
-# Run custom SQL queries safely
-./db sql "SELECT first_name, last_name, account_status FROM users;"
-./db sql "SELECT COUNT(*) FROM rsvps WHERE response_status = 'attending';"
+# Note: Custom SQL queries are not supported by the ./db tool
+# Use direct psql connection for custom queries (see Advanced section below)
 
 # Reset database with confirmation
 ./db reset
@@ -282,7 +281,7 @@ psql $DATABASE_URL -c "SELECT * FROM users;"
 # Use the project's safe database tools
 ./db stats
 ./db users
-./db sql "SELECT * FROM users;"
+# Note: Custom SQL queries are not supported by the ./db tool
 ```
 
 #### ❌ DON'T Expose Credentials
@@ -303,14 +302,14 @@ When creating new shell scripts that need database access:
 1. **Use Node.js scripts** that load environment variables with `dotenv`
 2. **Call the safe database tools** instead of direct database commands
 3. **Avoid hardcoded credentials** in shell scripts
-4. **Use the existing patterns** from `reset-users.sh` and `check-system.sh`
+4. **Use the existing patterns** from the `./db` tool and server scripts
 
 Example safe shell script:
 ```bash
 #!/bin/bash
 # Safe database operations using project tools
 ./db stats
-./db sql "SELECT COUNT(*) FROM users;"
+# Note: Custom SQL queries are not supported by the ./db tool
 ```
 
 #### From Application
@@ -572,8 +571,8 @@ psql -d patricia_james_wedding_dev -f server/database/schema.sql
 # Clean test data
 ./db clean
 
-# Run custom SQL
-./db sql "SELECT * FROM users WHERE is_admin = true;"
+# Run custom SQL (use direct psql)
+# psql $DATABASE_URL -c "SELECT * FROM users WHERE is_admin = true;"
 ```
 
 ### API Endpoints
@@ -626,11 +625,11 @@ The system uses a combined approach where all users are stored in the `users` ta
 # View all users
 ./db users
 
-# View user details
-./db sql "SELECT * FROM users WHERE email = 'user@example.com';"
+# View user details (use direct psql for custom queries)
+# psql $DATABASE_URL -c "SELECT * FROM users WHERE email = 'user@example.com';"
 
-# Create admin user (manual)
-./db sql "UPDATE users SET is_admin = true WHERE email = 'admin@example.com';"
+# Create admin user (manual - use direct psql)
+# psql $DATABASE_URL -c "UPDATE users SET is_admin = true WHERE email = 'admin@example.com';"
 ```
 
 ### User Features
@@ -708,7 +707,7 @@ node -e "console.log(require('fs').readFileSync('your-guests.csv', 'utf8').split
 npm run dev
 
 # Test API endpoints
-curl -X GET http://localhost:5001/api/guests
+curl -X GET http://localhost:5001/api/rsvps
 ```
 
 ### Getting Help
