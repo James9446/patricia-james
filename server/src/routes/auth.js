@@ -171,19 +171,67 @@ router.post('/register', async (req, res) => {
         account_status = 'registered',
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $3
-      RETURNING id, email, first_name, last_name, account_status, created_at
+      RETURNING id, email, first_name, last_name, full_name, partner_id, plus_one_allowed, account_status
     `, [email, password_hash, user_id]);
 
-    res.status(201).json({
-      success: true,
-      message: 'User account created successfully',
-      data: {
-        user_id: updatedUser.rows[0].id,
-        email: updatedUser.rows[0].email,
-        first_name: updatedUser.rows[0].first_name,
-        last_name: updatedUser.rows[0].last_name,
-        account_status: updatedUser.rows[0].account_status
+    // Get partner info if exists
+    let partnerInfo = null;
+    if (updatedUser.rows[0].partner_id) {
+      const partnerResult = await query(`
+        SELECT first_name, last_name, full_name, email
+        FROM users
+        WHERE id = $1 AND deleted_at IS NULL
+      `, [updatedUser.rows[0].partner_id]);
+
+      if (partnerResult.rows.length > 0) {
+        const p = partnerResult.rows[0];
+        partnerInfo = {
+          first_name: p.first_name,
+          last_name: p.last_name,
+          full_name: p.full_name,
+          email: p.email
+        };
       }
+    }
+
+    // Create session for the newly registered user (auto-login after registration)
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Session regeneration error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Registration succeeded but session creation failed',
+          error: err.message
+        });
+      }
+
+      // Set user ID in session
+      req.session.userId = updatedUser.rows[0].id;
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.status(500).json({
+            success: false,
+            message: 'Registration succeeded but session save failed',
+            error: saveErr.message
+          });
+        }
+
+        res.status(201).json({
+          success: true,
+          message: 'User account created successfully',
+          data: {
+            user_id: updatedUser.rows[0].id,
+            email: updatedUser.rows[0].email,
+            first_name: updatedUser.rows[0].first_name,
+            last_name: updatedUser.rows[0].last_name,
+            full_name: updatedUser.rows[0].full_name,
+            plus_one_allowed: updatedUser.rows[0].plus_one_allowed,
+            account_status: updatedUser.rows[0].account_status,
+            partner: partnerInfo
+          }
+        });
+      });
     });
 
   } catch (error) {
