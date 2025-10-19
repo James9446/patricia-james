@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
+const { hashPassword, verifyPassword, validatePassword } = require('../utils/password');
 
 /**
  * POST /api/auth/check-guest
@@ -105,6 +106,25 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password does not meet requirements',
+        errors: passwordValidation.errors
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
     // Check if user exists (schema v5: combined users table)
     const userResult = await query(
       'SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL',
@@ -139,14 +159,13 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // For now, we'll use a simple password hash
-    // In production, use bcrypt or similar
-    const password_hash = Buffer.from(password).toString('base64'); // Simple encoding for demo
+    // Hash password securely using bcrypt
+    const password_hash = await hashPassword(password);
 
     // Update user account with email and password (schema v5: update existing user)
     const updatedUser = await query(`
-      UPDATE users 
-      SET 
+      UPDATE users
+      SET
         email = $1,
         password_hash = $2,
         account_status = 'registered',
@@ -192,13 +211,12 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Simple password check (in production, use proper hashing)
-    const password_hash = Buffer.from(password).toString('base64');
-
+    // Get user by email (need to retrieve password_hash for verification)
     const result = await query(`
-      SELECT 
+      SELECT
         u.id,
         u.email,
+        u.password_hash,
         u.first_name,
         u.last_name,
         u.full_name,
@@ -211,8 +229,8 @@ router.post('/login', async (req, res) => {
         p.email as partner_email
       FROM users u
       LEFT JOIN users p ON u.partner_id = p.id
-      WHERE u.email = $1 AND u.password_hash = $2 AND u.account_status = 'registered' AND u.deleted_at IS NULL
-    `, [email, password_hash]);
+      WHERE u.email = $1 AND u.account_status = 'registered' AND u.deleted_at IS NULL
+    `, [email]);
 
     if (result.rows.length === 0) {
       return res.status(401).json({
@@ -223,17 +241,25 @@ router.post('/login', async (req, res) => {
 
     const user = result.rows[0];
 
+    // Verify password using bcrypt
+    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
     // Update last login
     await query(
       'UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
       [user.id]
     );
 
-    // Create session
-    req.session.userId = user.id;
-    req.session.save((err) => {
+    // Regenerate session to prevent session fixation and ensure clean session
+    req.session.regenerate((err) => {
       if (err) {
-        console.error('Session save error:', err);
+        console.error('Session regeneration error:', err);
         return res.status(500).json({
           success: false,
           message: 'Failed to create session',
@@ -241,23 +267,36 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      res.json({
-        success: true,
-        message: 'Login successful',
-        data: {
-          user_id: user.id,
-          email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          full_name: user.full_name,
-          plus_one_allowed: user.plus_one_allowed,
-          partner: user.partner_id ? {
-            first_name: user.partner_first_name,
-            last_name: user.partner_last_name,
-            full_name: user.partner_full_name,
-            email: user.partner_email
-          } : null
+      // Create new session with user ID
+      req.session.userId = user.id;
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to save session',
+            error: saveErr.message
+          });
         }
+
+        res.json({
+          success: true,
+          message: 'Login successful',
+          data: {
+            user_id: user.id,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            full_name: user.full_name,
+            plus_one_allowed: user.plus_one_allowed,
+            partner: user.partner_id ? {
+              first_name: user.partner_first_name,
+              last_name: user.partner_last_name,
+              full_name: user.partner_full_name,
+              email: user.partner_email
+            } : null
+          }
+        });
       });
     });
 

@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Close mobile menu if open
-        mobileMenu.classList.add('hidden');
+        mobileMenu.classList.remove('active');
         
         // Update URL without page reload
         history.pushState({ page: pageId }, '', `#${pageId}`);
@@ -123,8 +123,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Mobile menu toggle
-    mobileMenuButton.addEventListener('click', function() {
-        mobileMenu.classList.toggle('hidden');
+    mobileMenuButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        mobileMenu.classList.toggle('active');
+    });
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (mobileMenu.classList.contains('active') &&
+            !mobileMenu.contains(e.target) &&
+            !mobileMenuButton.contains(e.target)) {
+            mobileMenu.classList.remove('active');
+        }
     });
 
     // Handle browser back/forward buttons
@@ -256,26 +266,32 @@ function formatTime(time) {
 
 // Add some dynamic content updates
 function updateCountdown() {
-    const weddingDate = new Date('2024-06-15T16:00:00');
-    const now = new Date();
-    const timeDiff = weddingDate - now;
-    
-    if (timeDiff > 0) {
-        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-        
+    // Use CONFIG for wedding date
+    const countdown = window.CONFIG.getCountdown();
+
+    if (countdown.days >= 0) {
         // Update countdown if element exists
         const countdownElement = document.getElementById('countdown');
         if (countdownElement) {
-            countdownElement.innerHTML = `${days} days, ${hours} hours, ${minutes} minutes`;
+            countdownElement.innerHTML = `${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes`;
         }
+    }
+}
+
+// Update wedding date display on home page
+function updateWeddingDateDisplay() {
+    const weddingDateElement = document.getElementById('wedding-date-display');
+    if (weddingDateElement && window.CONFIG) {
+        weddingDateElement.textContent = window.CONFIG.WEDDING_DATE_DISPLAY;
     }
 }
 
 // Update countdown every minute
 setInterval(updateCountdown, 60000);
 updateCountdown(); // Initial call
+
+// Set wedding date on page load
+document.addEventListener('DOMContentLoaded', updateWeddingDateDisplay);
 
 // Initialize authentication system
 let authSystem;

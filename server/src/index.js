@@ -8,6 +8,8 @@ const { query } = require('./config/db');
 // Import routes
 const rsvpsRouter = require('./routes/rsvps');
 const authRouter = require('./routes/auth');
+const photosRouter = require('./routes/photos');
+const categoriesRouter = require('./routes/categories');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -16,28 +18,40 @@ const PORT = process.env.PORT || 5001;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Validate required environment variables in production
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error('ERROR: SESSION_SECRET environment variable is required in production');
+  process.exit(1);
+}
+
 // Session configuration
 app.use(session({
   store: new PgSession({
     pool: require('./config/db').pool, // Use the same connection pool
     tableName: 'user_sessions' // Table to store sessions
   }),
-  secret: process.env.SESSION_SECRET || 'wedding-app-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
     httpOnly: true, // Prevent XSS attacks
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax' // CSRF protection
   }
 }));
 
-// CORS middleware (for development)
+// CORS middleware (environment-based)
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  // In production, only allow requests from specific origin
+  const allowedOrigin = process.env.CORS_ORIGIN || '*';
+
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
+  res.header('Access-Control-Allow-Credentials', 'true');
+
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -62,6 +76,8 @@ app.get('/api/health', (req, res) => {
 // Mount API routes
 app.use('/api/auth', authRouter);
 app.use('/api/rsvps', rsvpsRouter);
+app.use('/api/photos', photosRouter);
+app.use('/api/categories', categoriesRouter);
 
 // Serve the main HTML file for all non-API routes (SPA routing)
 app.use((req, res) => {

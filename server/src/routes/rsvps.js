@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
+const { hashPassword, validatePassword } = require('../utils/password');
 
 /**
  * POST /api/rsvps
@@ -24,9 +25,9 @@ router.post('/', requireAuth, async (req, res) => {
 
     // Basic validation
     if (!response_status) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Response status is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Response status is required'
       });
     }
 
@@ -45,7 +46,7 @@ router.post('/', requireAuth, async (req, res) => {
         // Update existing RSVP
         rsvpResult = await query(`
           UPDATE rsvps
-          SET 
+          SET
             response_status = $1,
             dietary_restrictions = $2,
             message = $3,
@@ -351,6 +352,25 @@ router.post('/plus-one', requireAuth, async (req, res) => {
       });
     }
 
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password does not meet requirements',
+        errors: passwordValidation.errors
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
     // Check if email is already used
     const existingUser = await query(
       'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
@@ -368,8 +388,10 @@ router.post('/plus-one', requireAuth, async (req, res) => {
     await query('BEGIN');
 
     try {
+      // Hash password securely using bcrypt
+      const password_hash = await hashPassword(password);
+
       // Create plus-one user
-      const password_hash = Buffer.from(password).toString('base64');
       const plusOneUser = await query(`
         INSERT INTO users (
           first_name, last_name, email, password_hash, account_status, plus_one_allowed
