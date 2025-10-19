@@ -14,6 +14,9 @@ const categoriesRouter = require('./routes/categories');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Trust first proxy (required for Render/Cloudflare to handle secure cookies)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
