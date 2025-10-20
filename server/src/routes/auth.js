@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
 const { hashPassword, verifyPassword, validatePassword } = require('../utils/password');
+const logger = require('../config/logger');
 
 /**
  * POST /api/auth/check-guest
@@ -75,7 +76,7 @@ router.post('/check-guest', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error checking guest:', error);
+    logger.error(`Error checking guest: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to check guest information',
@@ -197,7 +198,7 @@ router.post('/register', async (req, res) => {
     // Create session for the newly registered user (auto-login after registration)
     req.session.regenerate((err) => {
       if (err) {
-        console.error('Session regeneration error:', err);
+        logger.error(`Session regeneration error during registration: ${err.message}`, { stack: err.stack });
         return res.status(500).json({
           success: false,
           message: 'Registration succeeded but session creation failed',
@@ -209,7 +210,7 @@ router.post('/register', async (req, res) => {
       req.session.userId = updatedUser.rows[0].id;
       req.session.save((saveErr) => {
         if (saveErr) {
-          console.error('Session save error:', saveErr);
+          logger.error(`Session save error during registration: ${saveErr.message}`, { stack: saveErr.stack });
           return res.status(500).json({
             success: false,
             message: 'Registration succeeded but session save failed',
@@ -235,7 +236,7 @@ router.post('/register', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating user account:', error);
+    logger.error(`Error creating user account: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to create user account',
@@ -307,7 +308,7 @@ router.post('/login', async (req, res) => {
     // Regenerate session to prevent session fixation and ensure clean session
     req.session.regenerate((err) => {
       if (err) {
-        console.error('Session regeneration error:', err);
+        logger.error(`Session regeneration error during login: ${err.message}`, { stack: err.stack });
         return res.status(500).json({
           success: false,
           message: 'Failed to create session',
@@ -319,7 +320,7 @@ router.post('/login', async (req, res) => {
       req.session.userId = user.id;
       req.session.save((saveErr) => {
         if (saveErr) {
-          console.error('Session save error:', saveErr);
+          logger.error(`Session save error during login: ${saveErr.message}`, { stack: saveErr.stack });
           return res.status(500).json({
             success: false,
             message: 'Failed to save session',
@@ -349,7 +350,7 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error during login:', error);
+    logger.error(`Error during login: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to login',
@@ -421,7 +422,7 @@ router.get('/me', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching user info:', error);
+    logger.error(`Error fetching user info: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch user information',
@@ -439,14 +440,14 @@ router.post('/logout', (req, res) => {
     if (req.session) {
       req.session.destroy((err) => {
         if (err) {
-          console.error('Session destruction error:', err);
+          logger.error(`Session destruction error during logout: ${err.message}`, { stack: err.stack });
           return res.status(500).json({
             success: false,
             message: 'Failed to logout',
             error: err.message
           });
         }
-        
+
         res.clearCookie('connect.sid'); // Clear the session cookie
         res.json({
           success: true,
@@ -460,7 +461,7 @@ router.post('/logout', (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error(`Logout error: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Logout failed',
@@ -488,7 +489,7 @@ router.get('/status', (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Auth status error:', error);
+    logger.error(`Auth status error: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to check authentication status',

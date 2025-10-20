@@ -293,10 +293,5 @@ updateCountdown(); // Initial call
 // Set wedding date on page load
 document.addEventListener('DOMContentLoaded', updateWeddingDateDisplay);
 
-// Initialize authentication system
-let authSystem;
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize auth system
-  authSystem = new AuthSystemV5();
-  console.log('🔐 Auth system initialized');
-});
+// Authentication system is initialized in auth.js
+// Access it via window.authSystem after page load

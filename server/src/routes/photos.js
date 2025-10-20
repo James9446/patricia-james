@@ -132,8 +132,13 @@ router.get('/', async (req, res) => {
       params.push(category);
     }
 
+    // Whitelist valid sort options to prevent SQL injection
+    // Using switch statement ensures only predefined ORDER BY clauses are used
+    const validSortOptions = ['newest', 'oldest', 'most_liked', 'most_commented', 'featured'];
+    const sortOption = validSortOptions.includes(sort) ? sort : 'newest';
+
     let orderBy;
-    switch (sort) {
+    switch (sortOption) {
       case 'newest':
         orderBy = 'p.upload_date DESC';
         break;
