@@ -146,10 +146,10 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Check if email is already used by another user
+    // Check if email is already used by a DIFFERENT user
     const existingUserWithEmail = await query(
-      'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
-      [email]
+      'SELECT id FROM users WHERE email = $1 AND id != $2 AND deleted_at IS NULL',
+      [email, user_id]
     );
 
     if (existingUserWithEmail.rows.length > 0) {
