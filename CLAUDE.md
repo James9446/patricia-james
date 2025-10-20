@@ -270,44 +270,291 @@ psql -d patricia_james_wedding_dev -f server/database/schema.sql
 
 ## Deployment
 
-### Render.com Deployment
+### Render.com Deployment - Complete Guide
 
-**Backend Deployment:**
-1. Create new Web Service on Render
-2. Connect to GitHub repository
-3. Set build command: `cd server && npm install`
-4. Set start command: `cd server && npm start`
-5. Add environment variables (see below)
+**Production URL:** https://patriciajames.fyi
+**Platform:** Render.com (Free tier → Starter $7/month recommended)
+**Database:** Render PostgreSQL (Free tier → Starter $7/month for persistence)
+**Custom Domain:** AWS Route 53
 
-**Environment Variables for Production:**
-```env
-DATABASE_URL=<Render PostgreSQL connection string>
-SESSION_SECRET=<generate secure random string>
-NODE_ENV=production
-PORT=10000
-UPLOAD_DIR=./uploads
-MAX_FILE_SIZE=10485760
+---
+
+### Part 1: Database Setup
+
+**Step 1: Create PostgreSQL Database**
+1. Go to Render Dashboard → **"New +"** → **"PostgreSQL"**
+2. Configure:
+   - Name: `patricia-james-wedding-db`
+   - Database: `patricia_james_wedding` (auto-filled)
+   - Region: **Oregon (US West)** (same as web service)
+   - Plan: Free (or Starter $7/month for persistence beyond 90 days)
+3. Click **"Create Database"**
+
+**Step 2: Copy Database URLs**
+After creation, you'll see two URLs:
+- **Internal Database URL** (use this for web service)
+- **External Database URL** (use for local migrations)
+
+**Step 3: Initialize Schema**
+```bash
+# Use EXTERNAL URL for migrations from local machine
+psql "postgresql://user:pass@host.oregon-postgres.render.com:5432/db" \
+  -f server/database/schema.sql
+
+# Seed guest data (if using seed file)
+psql "postgresql://user:pass@host.oregon-postgres.render.com:5432/db" \
+  -f server/database/seed-v5.sql
 ```
 
-**Database Setup on Render:**
-1. Create PostgreSQL database in Render
-2. Copy DATABASE_URL from Render dashboard
-3. Run schema initialization:
-   ```bash
-   psql <DATABASE_URL> -f server/database/schema.sql
-   ```
-4. Seed initial data via `./db reset --confirm` (run locally pointing to production DB)
+---
+
+### Part 2: Web Service Setup
+
+**Step 1: Create Web Service**
+1. Render Dashboard → **"New +"** → **"Web Service"**
+2. Connect GitHub repository: `James9446/patricia-james`
+3. Configure:
+   - **Name**: `patricia-james-wedding`
+   - **Region**: **Oregon (US West)** (same as database!)
+   - **Branch**: `initial-deployment` (or `main`)
+   - **Root Directory**: Leave blank
+   - **Build Command**: `cd server && npm install`
+   - **Start Command**: `cd server && npm start`
+   - **Health Check Path**: `/api/health`
+   - **Plan**: Free (or Starter $7/month for no cold starts)
+
+**Step 2: Add Environment Variables**
+
+⚠️ **CRITICAL:** Environment variables must be set in Render UI, not in code!
+
+Go to **Environment** tab and add:
+
+| Key | Value | Notes |
+|-----|-------|-------|
+| `NODE_ENV` | `production` | Required for secure cookies |
+| `DATABASE_URL` | `postgresql://...` | ⚠️ Use **INTERNAL** URL from Step 1 |
+| `SESSION_SECRET` | `<generate>` | Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `CORS_ORIGIN` | `https://patriciajames.fyi` | Your custom domain (update after DNS setup) |
+
+**Step 3: Deploy**
+- Click **"Create Web Service"** or **"Manual Deploy"**
+- Wait 2-3 minutes for build and deployment
+- Check logs for successful startup
+
+---
+
+### Part 3: Critical Code Configuration
+
+⚠️ **REQUIRED:** Trust Proxy Setting
+
+Render uses Cloudflare proxy. Express MUST trust the proxy for secure cookies to work:
+
+```javascript
+// server/src/index.js
+app.set('trust proxy', 1);  // CRITICAL - must be set before session middleware
+```
+
+**Without this setting:**
+- ❌ Set-Cookie headers won't be sent
+- ❌ Sessions won't work
+- ❌ Users can't login/register
+
+This is already in the code at `server/src/index.js:18`.
+
+---
+
+### Part 4: Custom Domain Setup (patriciajames.fyi)
+
+**Step 1: Add Domain in Render**
+1. Web Service → **Settings** → **Custom Domain**
+2. Click **"Add Custom Domain"**
+3. Enter: `patriciajames.fyi`
+4. Render shows DNS records (copy these!)
+
+**Step 2: Configure DNS in AWS Route 53**
+1. AWS Console → **Route 53** → **Hosted Zones**
+2. Click `patriciajames.fyi`
+3. **Create A Record:**
+   - Record name: (blank)
+   - Type: **A**
+   - Value: Render's IP addresses (from Step 1, one per line)
+   - TTL: `300`
+4. **Create CNAME Record** (optional for www):
+   - Record name: `www`
+   - Type: **CNAME**
+   - Value: `patricia-james.onrender.com`
+   - TTL: `300`
+
+**Step 3: Update CORS_ORIGIN**
+After DNS propagates, update environment variable:
+- `CORS_ORIGIN` → `https://patriciajames.fyi`
+- Save changes (triggers redeploy)
+
+**Step 4: Wait for SSL**
+- Render auto-provisions Let's Encrypt SSL certificate
+- Takes 5-15 minutes after DNS propagates
+- Site will be available at `https://patriciajames.fyi`
+
+---
+
+### Part 5: Deployment Verification
+
+**Check 1: Health Endpoint**
+```bash
+curl https://patriciajames.fyi/api/health
+# Should return: {"status":"UP","environment":"production",...}
+```
+
+**Check 2: Database Connection**
+- Look for "✅ Database connected successfully" in logs
+- Look for "📊 Current user count: X" in logs
+
+**Check 3: Session Cookies**
+1. Visit site in browser
+2. Register a test user
+3. F12 → Network → POST /api/auth/register → **Response Headers**
+4. **Must see:** `Set-Cookie: connect.sid=...`
+5. F12 → Application → Cookies → Should see `connect.sid` cookie
+
+**Check 4: RSVP Flow**
+1. Login as registered user
+2. Navigate to RSVP page
+3. Should load without 401 errors
+4. Submit RSVP successfully
+
+---
+
+### Deployment Strategy: Free vs Paid
+
+**Free Tier ($0/month):**
+- ✅ Good for testing/development
+- ❌ Cold starts (50+ seconds after 15min inactivity)
+- ❌ Database expires after 90 days
+- ❌ Limited to 750 hours/month
+- ⚠️ **Manual deploys recommended** (limited deploy quota)
+
+**Starter Tier ($14/month total):**
+- ✅ Web Service: $7/month (no cold starts, always running)
+- ✅ Database: $7/month (permanent, doesn't expire)
+- ✅ Better performance
+- ✅ Unlimited deploys
+- ✅ Custom domains included
+
+**Recommendation:** Start on free tier for testing, upgrade to Starter before sending invitations to guests.
+
+---
+
+### Manual Deploy Workflow (Free Tier)
+
+Since free tier has limited deploy quota:
+
+1. Make changes locally and test
+2. Commit to `initial-deployment` branch
+3. Push to GitHub: `git push origin initial-deployment`
+4. **Wait** - don't auto-deploy yet
+5. Batch multiple changes together
+6. Go to Render → **"Manual Deploy"** when ready
+7. Select branch and deploy
+
+**Auto-Deploy:** Can be enabled in Settings → Build & Deploy, but uses quota faster.
+
+---
+
+### Environment Variables - Production Checklist
+
+✅ **Required:**
+- `NODE_ENV=production`
+- `DATABASE_URL` (Internal URL from Render PostgreSQL)
+- `SESSION_SECRET` (32+ character random hex)
+- `CORS_ORIGIN=https://patriciajames.fyi`
+
+✅ **Auto-Set by Render:**
+- `PORT` (Render sets this, don't override)
+
+❌ **Not Needed:**
+- `UPLOAD_DIR` (not used in current static photo implementation)
+- `MAX_FILE_SIZE` (not used until user uploads are implemented)
+
+---
+
+### Important Database Notes
+
+**Use Internal vs External URLs:**
+- **Web Service → Database:** Internal URL (faster, secure, free bandwidth)
+- **Local Machine → Database:** External URL (for migrations, manual queries)
+- Internal URL format: `postgresql://...@dpg-xxx.oregon-postgres.render.com/db`
+- External URL format: `postgresql://...@dpg-xxx.oregon-postgres.render.com:5432/db`
+
+**Session Storage:**
+- Sessions stored in `user_sessions` table (PostgreSQL-backed)
+- 30-day session lifetime
+- Automatically cleaned by connect-pg-simple
+- Persists across server restarts
+
+---
+
+### Troubleshooting Production Issues
+
+**Issue: No cookies being set**
+- ✅ Check `app.set('trust proxy', 1)` is in index.js
+- ✅ Check `NODE_ENV=production` is set
+- ✅ Check response headers for `Set-Cookie`
+
+**Issue: 401 Unauthorized on /api/rsvps**
+- ✅ Check `CORS_ORIGIN` matches URL you're accessing
+- ✅ Check cookie is being sent (Network → Request Headers → Cookie)
+- ✅ Check session exists in database: `SELECT * FROM user_sessions;`
+
+**Issue: Database connection fails**
+- ✅ Use **Internal Database URL** not External
+- ✅ Ensure web service and database in same region
+- ✅ Check DATABASE_URL is set in environment variables
+
+**Issue: Plus-ones can't register**
+- ✅ Email validation should exclude current user_id
+- ✅ Check `account_status='guest'` vs `'registered'`
+- ✅ Fixed in commit `6ec640c`
+
+---
+
+### Post-Deployment Configuration
 
 **Static Files:**
 - Express serves `client/src` directory
 - No separate frontend deployment needed
 - All static assets served from same web service
+- Optimized engagement photos (13MB, 27 images)
 
-**Post-Deployment:**
-- Test health endpoint: `https://<app-name>.onrender.com/api/health`
-- Verify landing page loads correctly
-- Check database connectivity
-- Test authentication flow
+**Pages Status:**
+- ✅ Home (hero with transparent navbar)
+- ✅ RSVP (full functionality)
+- ✅ Events (ceremony & reception)
+- ✅ Photos (static gallery with lightbox)
+- 🚧 Location (under construction)
+- 🚧 Accommodations (under construction)
+
+**SSL/HTTPS:**
+- Automatic Let's Encrypt SSL certificate
+- Force HTTPS enabled by default
+- HTTP automatically redirects to HTTPS
+
+**Monitoring:**
+- Check `/api/health` endpoint
+- Monitor Render logs for errors
+- Watch database size (free tier: 1GB limit)
+
+---
+
+### Key Lessons Learned
+
+1. **Trust Proxy is Critical:** Render/Cloudflare require `app.set('trust proxy', 1)` for secure cookies
+2. **Use Internal Database URL:** For web service connections (faster, secure, free)
+3. **Environment Variables in Render UI:** Not in code or .env file
+4. **Auto-Login After Registration:** Session must be created in registration endpoint
+5. **Plus-One Registration:** Email validation must exclude current user's email
+6. **Manual Deploys on Free Tier:** Conserve deploy quota by batching changes
+7. **Custom Domain DNS:** A records for root, CNAME for www
+8. **SSL is Automatic:** Let's Encrypt provisioned automatically after DNS propagates
 
 ## Important Patterns
 
