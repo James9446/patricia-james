@@ -32,8 +32,11 @@ function showNotification(message, type = 'info', duration = 5000) {
   // Trigger animation
   setTimeout(() => notification.classList.add('show'), 10);
 
-  // Auto-remove after duration
-  if (duration > 0) {
+  // Error and warning messages should never auto-dismiss - user must manually close them
+  // Success and info messages auto-dismiss after duration
+  const shouldAutoDismiss = (type === 'success' || type === 'info') && duration > 0;
+
+  if (shouldAutoDismiss) {
     setTimeout(() => {
       notification.classList.remove('show');
       setTimeout(() => notification.remove(), 300);

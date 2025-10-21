@@ -3159,7 +3159,7 @@ button[type="submit"]:disabled {
    ======================================== */
 .notification {
   position: fixed;
-  top: 80px;
+  top: 20px;
   right: 20px;
   min-width: 300px;
   max-width: 500px;
@@ -3169,7 +3169,7 @@ button[type="submit"]:disabled {
   opacity: 0;
   transform: translateX(400px);
   transition: all var(--transition-normal);
-  z-index: var(--z-tooltip);
+  z-index: 99999;  /* Ensure notifications are always on top */
 }
 
 .notification.show {
@@ -3192,6 +3192,9 @@ button[type="submit"]:disabled {
 .notification-message {
   flex: 1;
   font-size: 0.9375rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
 }
 
 .notification-close {
@@ -3292,10 +3295,21 @@ button.loading::after {
 /* Mobile notification adjustments */
 @media (max-width: 768px) {
   .notification {
+    top: 20px;  /* Consistent top positioning on mobile */
     right: 10px;
     left: 10px;
     min-width: auto;
     max-width: none;
+    z-index: 99999;  /* Ensure above mobile menu */
+  }
+
+  .notification-content {
+    padding: 1.25rem 1rem;  /* Extra padding on mobile for easier reading */
+  }
+
+  .notification-message {
+    font-size: 1rem;  /* Slightly larger text on mobile */
+    line-height: 1.6;
   }
 }
 
