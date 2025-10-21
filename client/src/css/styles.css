@@ -3159,22 +3159,26 @@ button[type="submit"]:disabled {
    ======================================== */
 .notification {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  min-width: 300px;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: calc(100% - 40px);
   max-width: 500px;
   background: var(--white);
-  border-radius: var(--radius-lg);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   box-shadow: var(--shadow-xl);
   opacity: 0;
-  transform: translateX(400px);
+  transform: translateY(-100%);
   transition: all var(--transition-normal);
   z-index: 99999;  /* Ensure notifications are always on top */
+  /* Support for iPhone notch */
+  padding-top: env(safe-area-inset-top);
 }
 
 .notification.show {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateY(0);
 }
 
 .notification-content {
@@ -3295,21 +3299,28 @@ button.loading::after {
 /* Mobile notification adjustments */
 @media (max-width: 768px) {
   .notification {
-    top: 20px;  /* Consistent top positioning on mobile */
-    right: 10px;
-    left: 10px;
-    min-width: auto;
-    max-width: none;
-    z-index: 99999;  /* Ensure above mobile menu */
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    z-index: 99999;
   }
 
   .notification-content {
-    padding: 1.25rem 1rem;  /* Extra padding on mobile for easier reading */
+    padding: 1.5rem 1rem;  /* Extra padding on mobile for easier reading */
   }
 
   .notification-message {
     font-size: 1rem;  /* Slightly larger text on mobile */
     line-height: 1.6;
+  }
+
+  .notification-close {
+    font-size: 2rem;  /* Larger close button for easier tapping on mobile */
+    width: 32px;
+    height: 32px;
   }
 }
 
