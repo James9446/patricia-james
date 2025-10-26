@@ -3,12 +3,13 @@ const router = express.Router();
 const { query } = require('../config/db');
 const { hashPassword, verifyPassword, validatePassword } = require('../utils/password');
 const logger = require('../config/logger');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 /**
  * POST /api/auth/check-guest
  * Check if a guest exists by name (for authentication)
  */
-router.post('/check-guest', async (req, res) => {
+router.post('/check-guest', authLimiter, async (req, res) => {
   try {
     const { first_name, last_name } = req.body;
 
@@ -89,7 +90,7 @@ router.post('/check-guest', async (req, res) => {
  * POST /api/auth/register
  * Register a user account for a guest
  */
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { 
       user_id, 
@@ -249,7 +250,7 @@ router.post('/register', async (req, res) => {
  * POST /api/auth/login
  * Login with email and password
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
