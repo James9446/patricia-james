@@ -14,6 +14,31 @@ Patricia y James Wedding Website - A modern, interactive wedding website with gu
 - Session: PostgreSQL-based sessions (connect-pg-simple)
 - Animations: GSAP with ScrollTrigger
 
+## CRITICAL DEVELOPMENT RULES
+
+### ⛔ NEVER Push to GitHub Without User Testing
+
+**ABSOLUTE RULE:** You must NEVER push any code to GitHub until the user has explicitly tested the changes and given permission to push.
+
+**Workflow:**
+1. ✅ Make code changes as requested
+2. ✅ Commit changes locally (so they're saved)
+3. ✅ User tests changes thoroughly
+4. ⛔ **STOP** - Do NOT push to GitHub yet
+5. ✅ User explicitly says "push to production" or "push to GitHub"
+6. ✅ ONLY THEN can you run `git push`
+
+**Why This Matters:**
+- Production site is live at patriciajames.fyi
+- Untested changes can break the site for wedding guests
+- User needs to verify changes work as expected before deployment
+- Render auto-deploys from GitHub (push = instant production deploy)
+
+**If User Asks to "Deploy" or "Push Changes":**
+- First confirm: "I see you have uncommitted changes. Would you like me to commit them locally first so you can test?"
+- After testing: "Have you tested these changes and verified they work correctly?"
+- Only after explicit confirmation: Push to GitHub
+
 ## Current Development Priorities (IMPORTANT)
 
 **Timeline:** Initial deployment target is 24-48 hours via Render.com
