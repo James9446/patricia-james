@@ -3,6 +3,7 @@ const router = express.Router();
 const { query } = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { hashPassword, validatePassword } = require('../utils/password');
+const logger = require('../config/logger');
 
 /**
  * POST /api/rsvps
@@ -103,7 +104,7 @@ router.post('/', requireAuth, async (req, res) => {
       // Handle plus-one creation if user is bringing one
       let plusOneRsvpResult = null;
       if (plus_one && plus_one.first_name && plus_one.last_name && plus_one.email) {
-        console.log('📝 RSVP API: Creating plus-one user and RSVP:', plus_one);
+        logger.info('Creating plus-one user and RSVP', { plus_one });
         
         // Create plus-one user
         const plusOneUserResult = await query(`
@@ -124,8 +125,8 @@ router.post('/', requireAuth, async (req, res) => {
           VALUES ($1, $2, 'attending', $3, $4)
           RETURNING *;
         `, [plusOneUserId, userId, plus_one.dietary_restrictions, `Plus-one for ${user.first_name} ${user.last_name}`]);
-        
-        console.log('📝 RSVP API: Plus-one user and RSVP created:', {
+
+        logger.info('Plus-one user and RSVP created', {
           user_id: plusOneUserId,
           rsvp_id: plusOneRsvpResult.rows[0].id
         });
@@ -150,8 +151,8 @@ router.post('/', requireAuth, async (req, res) => {
           SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
           WHERE id = $2
         `, [userId, plusOneUserId]);
-        
-        console.log('📝 RSVP API: Updated both users and RSVPs with partner relationships');
+
+        logger.info('Updated both users and RSVPs with partner relationships');
       }
 
       // Commit transaction
@@ -174,7 +175,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error submitting RSVP:', error);
+    logger.error(`Error submitting RSVP: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to submit RSVP',
@@ -241,7 +242,7 @@ router.get('/', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching RSVP:', error);
+    logger.error(`Error fetching RSVP: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch RSVP',
@@ -317,7 +318,7 @@ router.get('/summary', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching RSVP summary:', error);
+    logger.error(`Error fetching RSVP summary: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch RSVP summary',
@@ -433,7 +434,7 @@ router.post('/plus-one', requireAuth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error adding plus-one:', error);
+    logger.error(`Error adding plus-one: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to add plus-one',

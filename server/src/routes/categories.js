@@ -1,5 +1,6 @@
 const express = require('express');
 const { query } = require('../config/db');
+const logger = require('../config/logger');
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get('/', async (req, res) => {
       categories: result.rows
     });
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    logger.error(`Error fetching categories: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch categories',
@@ -109,7 +110,7 @@ router.get('/:slug', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching category:', error);
+    logger.error(`Error fetching category: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch category',
@@ -185,7 +186,7 @@ router.get('/:slug/photos', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching category photos:', error);
+    logger.error(`Error fetching category photos: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch category photos',
@@ -230,7 +231,7 @@ router.get('/stats', async (req, res) => {
       categories: result.rows
     });
   } catch (error) {
-    console.error('Error fetching category stats:', error);
+    logger.error(`Error fetching category stats: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch category statistics',

@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { query } = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
+const logger = require('../config/logger');
 
 const router = express.Router();
 
@@ -106,9 +107,9 @@ const processAndSaveImage = async (buffer, originalFilename, photoId) => {
       WHERE id = $4
     `, [optimizedFilename, thumbnailFilename, optimizedBuffer.length, photoId]);
     
-    console.log(`✅ Photo ${photoId} optimized successfully`);
+    logger.info(`Photo ${photoId} optimized successfully`);
   } catch (error) {
-    console.error(`❌ Failed to optimize photo ${photoId}:`, error);
+    logger.error(`Failed to optimize photo ${photoId}: ${error.message}`, { stack: error.stack });
   }
 };
 
@@ -206,7 +207,7 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching photos:', error);
+    logger.error(`Error fetching photos: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch photos',
@@ -314,7 +315,7 @@ router.post('/', requireAuth, upload.single('photo'), async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error uploading photo:', error);
+    logger.error(`Error uploading photo: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to upload photo',
@@ -431,7 +432,7 @@ router.post('/batch', requireAuth, batchUpload.array('photos', 20), async (req, 
         results.summary.succeeded++;
 
       } catch (error) {
-        console.error(`Error processing photo ${i}:`, error);
+        logger.error(`Error processing photo ${i}: ${error.message}`, { stack: error.stack });
         results.failed.push({
           index: i,
           filename: file.originalname,
@@ -452,7 +453,7 @@ router.post('/batch', requireAuth, batchUpload.array('photos', 20), async (req, 
     });
 
   } catch (error) {
-    console.error('Error in batch upload:', error);
+    logger.error(`Error in batch upload: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to process batch upload',
@@ -510,7 +511,7 @@ router.get('/:id', async (req, res) => {
       photo: result.rows[0]
     });
   } catch (error) {
-    console.error('Error fetching photo:', error);
+    logger.error(`Error fetching photo: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch photo',
@@ -562,7 +563,7 @@ router.post('/:id/likes', requireAuth, async (req, res) => {
       message: 'Photo liked successfully'
     });
   } catch (error) {
-    console.error('Error liking photo:', error);
+    logger.error(`Error liking photo: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to like photo',
@@ -594,7 +595,7 @@ router.delete('/:id/likes', requireAuth, async (req, res) => {
       message: 'Like removed successfully'
     });
   } catch (error) {
-    console.error('Error removing like:', error);
+    logger.error(`Error removing like: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to remove like',
@@ -651,7 +652,7 @@ router.post('/:id/comments', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error adding comment:', error);
+    logger.error(`Error adding comment: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to add comment',
@@ -684,7 +685,7 @@ router.get('/:id/comments', async (req, res) => {
       comments: result.rows
     });
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    logger.error(`Error fetching comments: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch comments',
@@ -700,7 +701,7 @@ router.get('/uploads/:filename', (req, res) => {
   
   res.sendFile(filePath, (err) => {
     if (err) {
-      console.error('Error serving photo:', err);
+      logger.error(`Error serving photo: ${err.message}`, { stack: err.stack });
       res.status(404).json({
         success: false,
         message: 'Photo not found'
