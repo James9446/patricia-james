@@ -1,79 +1,165 @@
-// Photo Gallery System - Static Engagement Photos
-// Displays engagement photos from the filesystem
+// Photo Gallery System - Connected to Backend API
+// Displays photos from the database with categories, likes, and comments
 
 class PhotoSystem {
   constructor() {
     this.currentCategory = 'all';
     this.currentPage = 1;
-    this.photosPerPage = 12;
+    this.photosPerPage = 50; // Initial load: 50 photos
+    this.photosPerScroll = 25; // Load 25 more on scroll
     this.selectedPhotoIndex = 0;
-
-    // Static engagement photos list
-    this.allPhotos = [
-      { id: 1, filename: '01_picnic_only.jpg', category: 'engagement', caption: 'Picnic Setup' },
-      { id: 2, filename: '02_picnic_only.jpg', category: 'engagement', caption: 'Picnic Moments' },
-      { id: 3, filename: '03_proposal.jpg', category: 'engagement', caption: 'The Proposal' },
-      { id: 4, filename: '04_proposal.jpg', category: 'engagement', caption: 'The Proposal' },
-      { id: 5, filename: '05_proposal.jpg', category: 'engagement', caption: 'The Proposal' },
-      { id: 6, filename: '06_ring.jpg', category: 'engagement', caption: 'The Ring' },
-      { id: 7, filename: '07_ring.jpg', category: 'engagement', caption: 'The Ring' },
-      { id: 8, filename: '08_champaigne.jpg', category: 'engagement', caption: 'Celebration' },
-      { id: 9, filename: '09_ring_champaign_glass.jpg', category: 'engagement', caption: 'Ring and Champagne' },
-      { id: 10, filename: '10_A_picnic.jpg', category: 'engagement', caption: 'Picnic Together' },
-      { id: 11, filename: '10_B_picnic.jpg', category: 'engagement', caption: 'Picnic Together' },
-      { id: 12, filename: '10_C_picnic.jpg', category: 'engagement', caption: 'Picnic Together' },
-      { id: 13, filename: '11_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 14, filename: '12_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 15, filename: '13_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 16, filename: '14_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 17, filename: '15_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 18, filename: '16__engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 19, filename: '17_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 20, filename: '18_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 21, filename: '19_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 22, filename: '20_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 23, filename: '21_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 24, filename: '22_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 25, filename: '23_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 26, filename: '24_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' },
-      { id: 27, filename: '25_engagement.jpg', category: 'engagement', caption: 'Engagement Photos' }
-    ];
+    this.photos = [];
+    this.categories = [];
+    this.loading = false;
+    this.hasMore = true;
+    this.isInitialLoad = true;
 
     this.init();
   }
 
-  init() {
+  async init() {
     console.log('📸 Initializing Photo Gallery...');
+    await this.loadCategories();
     this.setupEventListeners();
-    this.renderPhotos();
+    await this.loadPhotos();
+  }
+
+  async loadCategories() {
+    try {
+      const response = await fetch('/api/categories');
+      const data = await response.json();
+
+      if (data.success) {
+        this.categories = data.categories;
+        console.log(`📸 Loaded ${this.categories.length} categories`);
+        this.renderCategoryButtons();
+      } else {
+        console.error('Failed to load categories:', data.message);
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }
+
+  renderCategoryButtons() {
+    // Check if category navigation exists in HTML
+    const categoryNav = document.querySelector('.category-navigation');
+    if (!categoryNav) {
+      console.log('📸 Category navigation not found in HTML - skipping');
+      return;
+    }
+
+    const categoryBtnsContainer = categoryNav.querySelector('.category-nav');
+    if (!categoryBtnsContainer) return;
+
+    // Clear existing buttons
+    categoryBtnsContainer.innerHTML = '';
+
+    // Add "All" button
+    const allBtn = document.createElement('button');
+    allBtn.className = 'category-btn active';
+    allBtn.setAttribute('data-category', 'all');
+    allBtn.textContent = 'All Photos';
+    categoryBtnsContainer.appendChild(allBtn);
+
+    // Add category buttons (only active categories)
+    this.categories.forEach(category => {
+      if (category.is_active) {
+        const btn = document.createElement('button');
+        btn.className = 'category-btn';
+        btn.setAttribute('data-category', category.slug);
+        btn.textContent = category.name;
+        categoryBtnsContainer.appendChild(btn);
+      }
+    });
+
+    // Show the category navigation
+    categoryNav.style.display = 'block';
   }
 
   setupEventListeners() {
-    // Category navigation
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    categoryBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => this.handleCategoryClick(e));
+    // Category navigation (delegated event listener)
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('category-btn')) {
+        this.handleCategoryClick(e);
+      }
     });
 
-    // Load more button
+    // Infinite scroll
+    window.addEventListener('scroll', () => {
+      // Check if user is near bottom of page
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const pageHeight = document.documentElement.scrollHeight;
+      const threshold = 300; // Load more when 300px from bottom
+
+      if (scrollPosition >= pageHeight - threshold) {
+        this.loadMorePhotos();
+      }
+    });
+
+    // Load more button (fallback)
     const loadMoreBtn = document.getElementById('load-more-photos');
     if (loadMoreBtn) {
       loadMoreBtn.addEventListener('click', () => this.loadMorePhotos());
     }
   }
 
-  getFilteredPhotos() {
-    if (this.currentCategory === 'all') {
-      return this.allPhotos;
-    }
-    return this.allPhotos.filter(photo => photo.category === this.currentCategory);
-  }
+  async loadPhotos(reset = false) {
+    if (this.loading) return;
 
-  getCurrentPagePhotos() {
-    const filtered = this.getFilteredPhotos();
-    const startIndex = 0;
-    const endIndex = this.currentPage * this.photosPerPage;
-    return filtered.slice(startIndex, endIndex);
+    if (reset) {
+      this.currentPage = 1;
+      this.photos = [];
+      this.hasMore = true;
+      this.isInitialLoad = true;
+    }
+
+    this.loading = true;
+    this.showLoading();
+
+    try {
+      // Use 50 for initial load, 25 for subsequent loads
+      const limit = this.isInitialLoad ? this.photosPerPage : this.photosPerScroll;
+      const offset = this.isInitialLoad ? 0 : this.photos.length;
+
+      const params = new URLSearchParams({
+        limit: limit,
+        offset: offset,
+        sort: 'oldest'
+      });
+
+      if (this.currentCategory && this.currentCategory !== 'all') {
+        params.append('category', this.currentCategory);
+      }
+
+      const response = await fetch(`/api/photos?${params}`);
+      const data = await response.json();
+
+      if (data.success) {
+        if (reset) {
+          this.photos = data.photos;
+        } else {
+          this.photos = [...this.photos, ...data.photos];
+        }
+
+        this.hasMore = data.pagination.hasMore;
+        this.isInitialLoad = false; // After first load, all subsequent loads are scroll loads
+
+        console.log(`📸 Loaded ${data.photos.length} photos (Total: ${this.photos.length})`);
+
+        this.renderPhotos();
+        this.updateLoadMoreButton();
+      } else {
+        console.error('Failed to load photos:', data.message);
+        this.showError('Failed to load photos');
+      }
+    } catch (error) {
+      console.error('Error loading photos:', error);
+      this.showError('Error loading photos. Please try again.');
+    } finally {
+      this.loading = false;
+      this.hideLoading();
+    }
   }
 
   handleCategoryClick(e) {
@@ -88,8 +174,30 @@ class PhotoSystem {
 
     // Load photos for this category
     this.currentCategory = category;
-    this.currentPage = 1;
-    this.renderPhotos();
+    this.loadPhotos(true);
+  }
+
+  showLoading() {
+    const gallery = document.getElementById('photo-gallery');
+    if (!gallery) return;
+
+    if (this.photos.length === 0) {
+      gallery.innerHTML = '<div class="loading-spinner">Loading photos...</div>';
+    }
+  }
+
+  hideLoading() {
+    const spinner = document.querySelector('.loading-spinner');
+    if (spinner) {
+      spinner.remove();
+    }
+  }
+
+  showError(message) {
+    const gallery = document.getElementById('photo-gallery');
+    if (!gallery) return;
+
+    gallery.innerHTML = `<div class="error-message">${message}</div>`;
   }
 
   renderPhotos() {
@@ -99,22 +207,28 @@ class PhotoSystem {
       return;
     }
 
-    // Clear gallery
-    gallery.innerHTML = '';
+    // Clear gallery if this is the first page
+    if (this.currentPage === 1) {
+      gallery.innerHTML = '';
+    }
 
-    // Get photos to display
-    const photosToDisplay = this.getCurrentPagePhotos();
+    if (this.photos.length === 0) {
+      gallery.innerHTML = '<div class="no-photos-message">No photos available yet. Check back soon!</div>';
+      return;
+    }
 
-    console.log(`📸 Rendering ${photosToDisplay.length} photos`);
+    console.log(`📸 Rendering ${this.photos.length} photos`);
 
     // Create photo elements
-    photosToDisplay.forEach((photo, index) => {
+    this.photos.forEach((photo, index) => {
+      // Skip if this photo is already rendered
+      if (gallery.querySelector(`[data-photo-id="${photo.id}"]`)) {
+        return;
+      }
+
       const photoElement = this.createPhotoElement(photo, index);
       gallery.appendChild(photoElement);
     });
-
-    // Update load more button
-    this.updateLoadMoreButton();
   }
 
   createPhotoElement(photo, index) {
@@ -123,13 +237,18 @@ class PhotoSystem {
     photoDiv.dataset.photoId = photo.id;
     photoDiv.dataset.photoIndex = index;
 
-    // Use optimized photos for faster loading
-    const imageUrl = `/images/engagement-photos-optimized/${photo.filename}`;
+    // Use thumbnail for gallery grid (small, fast loading)
+    const imageUrl = `/api/photos/uploads/${photo.thumbnail_filename || photo.optimized_filename || photo.filename}`;
 
     photoDiv.innerHTML = `
-      <img src="${imageUrl}" alt="${photo.caption}" loading="lazy" class="photo-image">
+      <img src="${imageUrl}" alt="${photo.caption || 'Wedding photo'}" loading="lazy" class="photo-image">
       <div class="photo-overlay">
-        <div class="photo-caption">${photo.caption}</div>
+        <div class="photo-caption">${photo.caption || ''}</div>
+        <div class="photo-meta">
+          <span class="photo-uploader">by ${photo.full_name || 'Anonymous'}</span>
+          ${photo.like_count > 0 ? `<span class="photo-likes">❤️ ${photo.like_count}</span>` : ''}
+          ${photo.comment_count > 0 ? `<span class="photo-comments">💬 ${photo.comment_count}</span>` : ''}
+        </div>
       </div>
     `;
 
@@ -143,8 +262,7 @@ class PhotoSystem {
 
   openLightbox(index) {
     this.selectedPhotoIndex = index;
-    const photos = this.getCurrentPagePhotos();
-    const photo = photos[index];
+    const photo = this.photos[index];
 
     // Create lightbox if it doesn't exist
     let lightbox = document.getElementById('photo-lightbox');
@@ -153,11 +271,17 @@ class PhotoSystem {
       document.body.appendChild(lightbox);
     }
 
-    // Update lightbox content (use optimized photos)
-    const imageUrl = `/images/engagement-photos-optimized/${photo.filename}`;
+    // Update lightbox content
+    const imageUrl = `/api/photos/uploads/${photo.optimized_filename || photo.filename}`;
     lightbox.querySelector('.lightbox-image').src = imageUrl;
-    lightbox.querySelector('.lightbox-caption').textContent = photo.caption;
-    lightbox.querySelector('.lightbox-counter').textContent = `${index + 1} / ${photos.length}`;
+    lightbox.querySelector('.lightbox-caption').textContent = photo.caption || '';
+    lightbox.querySelector('.lightbox-counter').textContent = `${index + 1} / ${this.photos.length}`;
+
+    // Update uploader info
+    const uploaderInfo = lightbox.querySelector('.lightbox-uploader');
+    if (uploaderInfo) {
+      uploaderInfo.textContent = `Uploaded by ${photo.full_name || 'Anonymous'}`;
+    }
 
     // Show lightbox
     lightbox.classList.add('active');
@@ -176,8 +300,11 @@ class PhotoSystem {
         <button class="lightbox-prev" aria-label="Previous">‹</button>
         <button class="lightbox-next" aria-label="Next">›</button>
         <img src="" alt="" class="lightbox-image">
-        <div class="lightbox-caption"></div>
-        <div class="lightbox-counter"></div>
+        <div class="lightbox-info">
+          <div class="lightbox-caption"></div>
+          <div class="lightbox-uploader"></div>
+          <div class="lightbox-counter"></div>
+        </div>
       </div>
     `;
 
@@ -208,36 +335,36 @@ class PhotoSystem {
   }
 
   navigateLightbox(direction) {
-    const photos = this.getCurrentPagePhotos();
     this.selectedPhotoIndex += direction;
 
     // Wrap around
     if (this.selectedPhotoIndex < 0) {
-      this.selectedPhotoIndex = photos.length - 1;
-    } else if (this.selectedPhotoIndex >= photos.length) {
+      this.selectedPhotoIndex = this.photos.length - 1;
+    } else if (this.selectedPhotoIndex >= this.photos.length) {
       this.selectedPhotoIndex = 0;
+    }
+
+    // Load more photos if we're within 10 photos of the end
+    const photosFromEnd = this.photos.length - this.selectedPhotoIndex;
+    if (photosFromEnd <= 10 && this.hasMore && !this.loading) {
+      this.loadMorePhotos();
     }
 
     this.openLightbox(this.selectedPhotoIndex);
   }
 
   loadMorePhotos() {
-    this.currentPage++;
-    this.renderPhotos();
+    if (this.hasMore && !this.loading) {
+      this.loadPhotos(false);
+    }
   }
 
   updateLoadMoreButton() {
     const loadMoreBtn = document.getElementById('load-more-photos');
     if (!loadMoreBtn) return;
 
-    const filtered = this.getFilteredPhotos();
-    const currentlyDisplayed = this.currentPage * this.photosPerPage;
-
-    if (currentlyDisplayed >= filtered.length) {
-      loadMoreBtn.style.display = 'none';
-    } else {
-      loadMoreBtn.style.display = 'inline-block';
-    }
+    // Hide button with infinite scroll (it's now a fallback)
+    loadMoreBtn.style.display = 'none';
   }
 }
 
