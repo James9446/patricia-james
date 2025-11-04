@@ -328,6 +328,36 @@ class PhotoSystem {
       }
     });
 
+    // Touch/swipe navigation for mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const minSwipeDistance = 50; // Minimum distance for a swipe
+
+    const lightboxContent = lightbox.querySelector('.lightbox-content');
+
+    lightboxContent.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    lightboxContent.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, { passive: true });
+
+    const handleSwipe = () => {
+      const swipeDistance = touchEndX - touchStartX;
+
+      // Swipe left (next photo)
+      if (swipeDistance < -minSwipeDistance) {
+        this.navigateLightbox(1);
+      }
+
+      // Swipe right (previous photo)
+      if (swipeDistance > minSwipeDistance) {
+        this.navigateLightbox(-1);
+      }
+    };
+
     return lightbox;
   }
 
