@@ -160,7 +160,7 @@ router.get('/', async (req, res) => {
     }
 
     const result = await query(`
-      SELECT 
+      SELECT
         p.id,
         p.filename,
         p.optimized_filename,
@@ -169,6 +169,7 @@ router.get('/', async (req, res) => {
         p.is_featured,
         p.upload_date,
         p.display_order,
+        p.upload_source,
         c.name as category_name,
         c.slug as category_slug,
         u.first_name,

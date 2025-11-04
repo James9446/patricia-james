@@ -133,8 +133,9 @@ async function uploadPhotosFromFolder(folderName, categorySlug, userId) {
           mime_type,
           original_file_size,
           file_hash,
-          is_approved
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          is_approved,
+          upload_source
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       `, [
         userId,
         categoryId,
@@ -145,7 +146,8 @@ async function uploadPhotosFromFolder(folderName, categorySlug, userId) {
         `image/${ext.substring(1)}`,
         fileStats.size,
         generateFileHash(sourcePath),
-        true // Auto-approve since these are curated photos
+        true, // Auto-approve since these are curated photos
+        'bulk_import' // Mark as bulk imported
       ]);
 
       successCount++;

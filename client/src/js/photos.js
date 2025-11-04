@@ -245,7 +245,7 @@ class PhotoSystem {
       <div class="photo-overlay">
         <div class="photo-caption">${photo.caption || ''}</div>
         <div class="photo-meta">
-          <span class="photo-uploader">by ${photo.full_name || 'Anonymous'}</span>
+          ${photo.upload_source === 'website' ? `<span class="photo-uploader">by ${photo.full_name || 'Anonymous'}</span>` : ''}
           ${photo.like_count > 0 ? `<span class="photo-likes">❤️ ${photo.like_count}</span>` : ''}
           ${photo.comment_count > 0 ? `<span class="photo-comments">💬 ${photo.comment_count}</span>` : ''}
         </div>
@@ -277,10 +277,15 @@ class PhotoSystem {
     lightbox.querySelector('.lightbox-caption').textContent = photo.caption || '';
     lightbox.querySelector('.lightbox-counter').textContent = `${index + 1} / ${this.photos.length}`;
 
-    // Update uploader info
+    // Update uploader info (only show for website uploads)
     const uploaderInfo = lightbox.querySelector('.lightbox-uploader');
     if (uploaderInfo) {
-      uploaderInfo.textContent = `Uploaded by ${photo.full_name || 'Anonymous'}`;
+      if (photo.upload_source === 'website') {
+        uploaderInfo.textContent = `Uploaded by ${photo.full_name || 'Anonymous'}`;
+        uploaderInfo.style.display = 'block';
+      } else {
+        uploaderInfo.style.display = 'none';
+      }
     }
 
     // Show lightbox
