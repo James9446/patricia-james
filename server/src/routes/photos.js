@@ -50,6 +50,26 @@ const ensureUploadsDir = async () => {
 // Initialize uploads directory
 ensureUploadsDir();
 
+// Serve uploaded photos (static file serving)
+router.get('/uploads/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filePath = path.join(uploadsDir, filename);
+
+    // Check if file exists
+    await fs.access(filePath);
+
+    // Send file
+    res.sendFile(filePath);
+  } catch (error) {
+    logger.error(`Error serving photo: ${error.message}`);
+    res.status(404).json({
+      success: false,
+      message: 'Photo not found'
+    });
+  }
+});
+
 // Helper function to get user info
 const getUserInfo = async (userId) => {
   const result = await query(
