@@ -82,18 +82,25 @@ document.addEventListener('DOMContentLoaded', function() {
         pages.forEach(page => {
             page.classList.remove('active');
         });
-        
+
         // Show the selected page
         const targetPage = document.getElementById(pageId);
         if (targetPage) {
             targetPage.classList.add('active');
-            
+
             // Remove all page classes from body
             document.body.classList.remove('home-page', 'rsvp-page', 'events-page', 'location-page', 'photos-page', 'accommodations-page');
-            
+
             // Add the appropriate page class to body for navbar color control
             document.body.classList.add(`${pageId}-page`);
-            
+
+            // Trigger page animation (reset opacity and transform set by IntersectionObserver)
+            targetPage.style.opacity = '1';
+            targetPage.style.transform = 'translateY(0)';
+
+            // Scroll to top of page
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             // Initialize venue showcase if location page is shown
             if (pageId === 'location') {
                 // Small delay to ensure DOM is ready
@@ -102,10 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 100);
             }
         }
-        
+
         // Close mobile menu if open
         mobileMenu.classList.remove('active');
-        
+
         // Update URL without page reload
         history.pushState({ page: pageId }, '', `#${pageId}`);
     }
