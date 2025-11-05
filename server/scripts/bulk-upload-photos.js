@@ -78,6 +78,10 @@ function generateFileHash(filepath) {
 
 function isImageFile(filename) {
   const ext = path.extname(filename).toLowerCase();
+  // Skip macOS metadata files (._filename)
+  if (filename.startsWith('._')) {
+    return false;
+  }
   return IMAGE_EXTENSIONS.includes(ext);
 }
 
