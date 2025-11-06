@@ -198,10 +198,15 @@ class AuthSystemV5 {
         } else if (response.status === 404) {
           data.message = 'User information not found. Please check your name spelling or contact us.';
         } else if (response.status === 400) {
-          data.message = data.message || 'Please check your information and try again.';
+          // Check if there are specific validation errors (e.g., password requirements)
+          if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            data.message = 'Password requirements:\n' + data.errors.join('\n');
+          } else {
+            data.message = data.message || 'Please check your information and try again.';
+          }
         }
       }
-      
+
       return data;
     } catch (error) {
       console.error('Registration failed:', error);

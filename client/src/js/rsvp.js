@@ -299,20 +299,6 @@ class RSVPManagerV5 {
     if (message && this.userRsvp.message) {
       message.value = this.userRsvp.message;
     }
-
-    // Populate party size
-    const partySize = document.getElementById('party_size');
-    if (partySize) {
-      // Calculate party size from RSVP data
-      let calculatedSize = 1;
-      if (this.userRsvp.response_status === 'attending') {
-        calculatedSize = 1; // User attending
-        if (this.partnerRsvp && this.partnerRsvp.response_status === 'attending') {
-          calculatedSize = 2; // Both attending
-        }
-      }
-      partySize.value = calculatedSize;
-    }
   }
 
   /**
@@ -431,6 +417,16 @@ class RSVPManagerV5 {
       }
     } catch (error) {
       console.error('RSVP submission error:', error);
+
+      // Show error notification if available
+      if (window.showNotification) {
+        window.showNotification(
+          error.message || 'Failed to submit RSVP. Please try again.',
+          'error'
+        );
+      } else {
+        alert('Error: ' + (error.message || 'Failed to submit RSVP. Please try again.'));
+      }
     }
   }
 
@@ -929,6 +925,12 @@ class RSVPManagerV5 {
    * Show success message
    */
   showSuccessMessage(message) {
+    // Use new notification system if available
+    if (window.showNotification) {
+      window.showNotification(message, 'success', 5000);
+    }
+
+    // Also update the status element for backward compatibility
     const statusElement = document.getElementById('rsvp-status');
     if (statusElement) {
       statusElement.innerHTML = `
@@ -937,7 +939,7 @@ class RSVPManagerV5 {
         </div>
       `;
       statusElement.style.display = 'block';
-      
+
       // Hide message after 5 seconds
       setTimeout(() => {
         statusElement.style.display = 'none';

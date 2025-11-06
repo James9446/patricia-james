@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
+const { hashPassword, validatePassword } = require('../utils/password');
+const logger = require('../config/logger');
 
 /**
  * POST /api/rsvps
@@ -24,9 +26,9 @@ router.post('/', requireAuth, async (req, res) => {
 
     // Basic validation
     if (!response_status) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Response status is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Response status is required'
       });
     }
 
@@ -45,7 +47,7 @@ router.post('/', requireAuth, async (req, res) => {
         // Update existing RSVP
         rsvpResult = await query(`
           UPDATE rsvps
-          SET 
+          SET
             response_status = $1,
             dietary_restrictions = $2,
             message = $3,
@@ -102,7 +104,7 @@ router.post('/', requireAuth, async (req, res) => {
       // Handle plus-one creation if user is bringing one
       let plusOneRsvpResult = null;
       if (plus_one && plus_one.first_name && plus_one.last_name && plus_one.email) {
-        console.log('📝 RSVP API: Creating plus-one user and RSVP:', plus_one);
+        logger.info('Creating plus-one user and RSVP', { plus_one });
         
         // Create plus-one user
         const plusOneUserResult = await query(`
@@ -123,8 +125,8 @@ router.post('/', requireAuth, async (req, res) => {
           VALUES ($1, $2, 'attending', $3, $4)
           RETURNING *;
         `, [plusOneUserId, userId, plus_one.dietary_restrictions, `Plus-one for ${user.first_name} ${user.last_name}`]);
-        
-        console.log('📝 RSVP API: Plus-one user and RSVP created:', {
+
+        logger.info('Plus-one user and RSVP created', {
           user_id: plusOneUserId,
           rsvp_id: plusOneRsvpResult.rows[0].id
         });
@@ -149,8 +151,8 @@ router.post('/', requireAuth, async (req, res) => {
           SET partner_id = $1, updated_at = CURRENT_TIMESTAMP
           WHERE id = $2
         `, [userId, plusOneUserId]);
-        
-        console.log('📝 RSVP API: Updated both users and RSVPs with partner relationships');
+
+        logger.info('Updated both users and RSVPs with partner relationships');
       }
 
       // Commit transaction
@@ -173,7 +175,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error submitting RSVP:', error);
+    logger.error(`Error submitting RSVP: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to submit RSVP',
@@ -240,7 +242,7 @@ router.get('/', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching RSVP:', error);
+    logger.error(`Error fetching RSVP: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch RSVP',
@@ -316,7 +318,7 @@ router.get('/summary', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching RSVP summary:', error);
+    logger.error(`Error fetching RSVP summary: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch RSVP summary',
@@ -351,6 +353,25 @@ router.post('/plus-one', requireAuth, async (req, res) => {
       });
     }
 
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password does not meet requirements',
+        errors: passwordValidation.errors
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
     // Check if email is already used
     const existingUser = await query(
       'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
@@ -368,8 +389,10 @@ router.post('/plus-one', requireAuth, async (req, res) => {
     await query('BEGIN');
 
     try {
+      // Hash password securely using bcrypt
+      const password_hash = await hashPassword(password);
+
       // Create plus-one user
-      const password_hash = Buffer.from(password).toString('base64');
       const plusOneUser = await query(`
         INSERT INTO users (
           first_name, last_name, email, password_hash, account_status, plus_one_allowed
@@ -411,7 +434,7 @@ router.post('/plus-one', requireAuth, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error adding plus-one:', error);
+    logger.error(`Error adding plus-one: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Failed to add plus-one',

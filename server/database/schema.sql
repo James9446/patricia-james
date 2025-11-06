@@ -70,6 +70,7 @@ CREATE TABLE photos (
     file_path VARCHAR(500) NOT NULL,
     file_size INTEGER NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
+    file_hash VARCHAR(64),  -- SHA-256 hash for duplicate detection
     caption TEXT,
     is_approved BOOLEAN DEFAULT false,
     is_featured BOOLEAN DEFAULT false,
@@ -92,9 +93,9 @@ CREATE TABLE photo_comments (
 );
 
 -- ========================================
--- PHOTO_UPVOTES Table (Future feature)
+-- PHOTO_LIKES Table (Future feature)
 -- ========================================
-CREATE TABLE photo_upvotes (
+CREATE TABLE photo_likes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     photo_id UUID REFERENCES photos(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,

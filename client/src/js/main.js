@@ -82,18 +82,25 @@ document.addEventListener('DOMContentLoaded', function() {
         pages.forEach(page => {
             page.classList.remove('active');
         });
-        
+
         // Show the selected page
         const targetPage = document.getElementById(pageId);
         if (targetPage) {
             targetPage.classList.add('active');
-            
+
             // Remove all page classes from body
             document.body.classList.remove('home-page', 'rsvp-page', 'events-page', 'location-page', 'photos-page', 'accommodations-page');
-            
+
             // Add the appropriate page class to body for navbar color control
             document.body.classList.add(`${pageId}-page`);
-            
+
+            // Trigger page animation (reset opacity and transform set by IntersectionObserver)
+            targetPage.style.opacity = '1';
+            targetPage.style.transform = 'translateY(0)';
+
+            // Scroll to top of page
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             // Initialize venue showcase if location page is shown
             if (pageId === 'location') {
                 // Small delay to ensure DOM is ready
@@ -102,10 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 100);
             }
         }
-        
+
         // Close mobile menu if open
-        mobileMenu.classList.add('hidden');
-        
+        mobileMenu.classList.remove('active');
+
         // Update URL without page reload
         history.pushState({ page: pageId }, '', `#${pageId}`);
     }
@@ -123,8 +130,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Mobile menu toggle
-    mobileMenuButton.addEventListener('click', function() {
-        mobileMenu.classList.toggle('hidden');
+    mobileMenuButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        mobileMenu.classList.toggle('active');
+    });
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (mobileMenu.classList.contains('active') &&
+            !mobileMenu.contains(e.target) &&
+            !mobileMenuButton.contains(e.target)) {
+            mobileMenu.classList.remove('active');
+        }
     });
 
     // Handle browser back/forward buttons
@@ -256,20 +273,23 @@ function formatTime(time) {
 
 // Add some dynamic content updates
 function updateCountdown() {
-    const weddingDate = new Date('2024-06-15T16:00:00');
-    const now = new Date();
-    const timeDiff = weddingDate - now;
-    
-    if (timeDiff > 0) {
-        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-        
+    // Use CONFIG for wedding date
+    const countdown = window.CONFIG.getCountdown();
+
+    if (countdown.days >= 0) {
         // Update countdown if element exists
         const countdownElement = document.getElementById('countdown');
         if (countdownElement) {
-            countdownElement.innerHTML = `${days} days, ${hours} hours, ${minutes} minutes`;
+            countdownElement.innerHTML = `${countdown.days} days, ${countdown.hours} hours, ${countdown.minutes} minutes`;
         }
+    }
+}
+
+// Update wedding date display on home page
+function updateWeddingDateDisplay() {
+    const weddingDateElement = document.getElementById('wedding-date-display');
+    if (weddingDateElement && window.CONFIG) {
+        weddingDateElement.textContent = window.CONFIG.WEDDING_DATE_DISPLAY;
     }
 }
 
@@ -277,10 +297,8 @@ function updateCountdown() {
 setInterval(updateCountdown, 60000);
 updateCountdown(); // Initial call
 
-// Initialize authentication system
-let authSystem;
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize auth system
-  authSystem = new AuthSystemV5();
-  console.log('🔐 Auth system initialized');
-});
+// Set wedding date on page load
+document.addEventListener('DOMContentLoaded', updateWeddingDateDisplay);
+
+// Authentication system is initialized in auth.js
+// Access it via window.authSystem after page load

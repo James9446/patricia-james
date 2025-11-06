@@ -1,11 +1,12 @@
 /**
  * Authentication Middleware
- * 
+ *
  * Provides authentication and authorization middleware for the wedding app.
  * Handles session-based authentication with guest list validation.
  */
 
 const { query } = require('../config/db');
+const logger = require('../config/logger');
 
 /**
  * Middleware to check if user is authenticated
@@ -76,7 +77,7 @@ const requireAuth = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Authentication middleware error:', error);
+    logger.error(`Authentication middleware error: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Authentication error',
@@ -150,10 +151,10 @@ const optionalAuth = async (req, res, next) => {
         req.session.destroy();
       }
     }
-    
+
     next();
   } catch (error) {
-    console.error('Optional authentication middleware error:', error);
+    logger.error(`Optional authentication middleware error: ${error.message}`, { stack: error.stack });
     // Don't fail the request, just continue without user
     next();
   }

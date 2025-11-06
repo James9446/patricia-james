@@ -105,3 +105,18 @@ Thumbs.db
 # Uploads directory (for user-uploaded photos)
 /uploads
 /server/uploads
+
+# Photo source files and archives
+/photos
+photos/
+*.tar.gz
+photos.tar.gz
+
+# Temporary SQL files
+*.sql.bak
+*.sql.tmp
+migrate-production.sql
+
+# Application logs
+/server/logs
+logs/
