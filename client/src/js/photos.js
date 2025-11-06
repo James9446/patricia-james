@@ -362,6 +362,12 @@ class PhotoSystem {
   }
 
   closeLightbox() {
+    // Scroll to the currently viewed photo before closing
+    const currentPhotoElement = document.querySelector(`.photo-item[data-photo-index="${this.selectedPhotoIndex}"]`);
+    if (currentPhotoElement) {
+      currentPhotoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     const lightbox = document.getElementById('photo-lightbox');
     if (lightbox) {
       lightbox.classList.remove('active');
