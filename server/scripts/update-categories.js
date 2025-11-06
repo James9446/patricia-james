@@ -1,87 +1,65 @@
 /**
  * Update Photo Categories Script
  *
- * - Renames categories to final names
- * - Sets active status (only Engagement and Patricia & James active initially)
+ * Updates the photo_categories table to contain only the 5 specified categories:
+ * 1. Patricia & James
+ * 2. Engagement
+ * 3. Friends & Family
+ * 4. Childhood
+ * 5. Wedding Day
  */
 
 const { Pool } = require('pg');
+const fs = require('fs').promises;
+const path = require('path');
 require('dotenv').config();
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 async function updateCategories() {
   console.log('==========================================');
-  console.log('UPDATING PHOTO CATEGORIES');
+  console.log('UPDATE PHOTO CATEGORIES');
   console.log('==========================================\n');
 
   try {
-    // Update category names and active status
-    await pool.query(`
-      UPDATE photo_categories SET
-        name = 'Patricia & James',
-        description = 'Photos of Patricia and James throughout their relationship',
-        is_active = true
-      WHERE slug = 'timeline'
-    `);
-    console.log('✓ Renamed "Relationship Timeline" to "Patricia & James" (active)');
+    // Read the migration file
+    const migrationPath = path.join(__dirname, '../database/migrations/008_update_photo_categories.sql');
+    const migrationSQL = await fs.readFile(migrationPath, 'utf8');
 
-    await pool.query(`
-      UPDATE photo_categories SET
-        is_active = true
-      WHERE slug = 'engagement'
-    `);
-    console.log('✓ Set "Engagement" as active');
+    console.log('📋 Running migration 008...\n');
 
-    await pool.query(`
-      UPDATE photo_categories SET
-        name = 'Friends & Family',
-        description = 'Photos with friends and family members',
-        is_active = false
-      WHERE slug = 'family'
-    `);
-    console.log('✓ Renamed "Family" to "Friends & Family" (inactive)');
+    // Execute the migration
+    await pool.query(migrationSQL);
 
-    await pool.query(`
-      UPDATE photo_categories SET
-        is_active = false
-      WHERE slug = 'childhood'
-    `);
-    console.log('✓ Set "Childhood" as inactive');
+    console.log('✓ Migration completed successfully\n');
 
-    await pool.query(`
-      UPDATE photo_categories SET
-        is_active = false
-      WHERE slug = 'wedding'
-    `);
-    console.log('✓ Set "Wedding Day" as inactive');
-
-    // Set all other categories as inactive
-    await pool.query(`
-      UPDATE photo_categories SET
-        is_active = false
-      WHERE slug NOT IN ('engagement', 'timeline', 'family', 'childhood', 'wedding')
-    `);
-    console.log('✓ Set other categories as inactive');
-
-    // Display final state
+    // Verify the results
     const result = await pool.query(`
-      SELECT name, slug, is_active,
+      SELECT
+        name,
+        slug,
+        description,
+        display_order,
+        is_active,
         (SELECT COUNT(*) FROM photos WHERE category_id = photo_categories.id) as photo_count
       FROM photo_categories
       ORDER BY display_order
     `);
 
-    console.log('\n==========================================');
-    console.log('FINAL CATEGORY STATE');
-    console.log('==========================================\n');
-
-    result.rows.forEach(cat => {
-      const status = cat.is_active ? '✅ ACTIVE' : '⊘  INACTIVE';
-      console.log(`${status} | ${cat.name} (${cat.slug}) - ${cat.photo_count} photos`);
+    console.log('Current categories:');
+    console.log('==========================================');
+    result.rows.forEach((cat) => {
+      const status = cat.is_active ? '✓ Active' : '✗ Inactive';
+      const count = cat.photo_count;
+      console.log(`${cat.display_order}. ${cat.name} (${cat.slug}) - ${status} - ${count} photos`);
+      console.log(`   ${cat.description}`);
+      console.log('');
     });
 
-    console.log('\n==========================================\n');
+    console.log('==========================================');
+    console.log(`Total categories: ${result.rows.length}`);
+    console.log(`Active categories: ${result.rows.filter(c => c.is_active).length}`);
+    console.log('==========================================\n');
 
   } catch (error) {
     console.error('\n❌ Error:', error.message);
@@ -92,4 +70,5 @@ async function updateCategories() {
   }
 }
 
+// Run the script
 updateCategories();
