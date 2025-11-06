@@ -62,9 +62,9 @@ class PhotoSystem {
     allBtn.textContent = 'All Photos';
     categoryBtnsContainer.appendChild(allBtn);
 
-    // Add category buttons (only active categories)
+    // Add category buttons (only active categories with photos)
     this.categories.forEach(category => {
-      if (category.is_active) {
+      if (category.is_active && parseInt(category.photo_count) > 0) {
         const btn = document.createElement('button');
         btn.className = 'category-btn';
         btn.setAttribute('data-category', category.slug);

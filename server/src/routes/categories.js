@@ -4,21 +4,24 @@ const logger = require('../config/logger');
 
 const router = express.Router();
 
-// GET /api/categories - Get all active photo categories
+// GET /api/categories - Get all active photo categories with photo counts
 router.get('/', async (req, res) => {
   try {
     const result = await query(`
-      SELECT 
-        id,
-        name,
-        slug,
-        description,
-        display_order,
-        is_active,
-        created_at
-      FROM photo_categories 
-      WHERE is_active = true 
-      ORDER BY display_order ASC, name ASC
+      SELECT
+        c.id,
+        c.name,
+        c.slug,
+        c.description,
+        c.display_order,
+        c.is_active,
+        c.created_at,
+        COUNT(p.id) as photo_count
+      FROM photo_categories c
+      LEFT JOIN photos p ON c.id = p.category_id AND p.is_approved = true
+      WHERE c.is_active = true
+      GROUP BY c.id, c.name, c.slug, c.description, c.display_order, c.is_active, c.created_at
+      ORDER BY c.display_order ASC, c.name ASC
     `);
 
     res.json({
