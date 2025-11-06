@@ -1,6 +1,10 @@
-# Patricia y James Wedding Website
+# Patricia & James Wedding Website
 
-A modern, interactive wedding website with guest authentication, RSVP system, and photo sharing capabilities.
+A modern, interactive wedding website with guest authentication, RSVP system, and photo gallery.
+
+**Production URL**: https://patriciajames.fyi/
+
+**Status**: ✅ Live in production
 
 ## 🚀 Quick Start
 
@@ -61,11 +65,24 @@ A modern, interactive wedding website with guest authentication, RSVP system, an
 
 ## 🎯 Features
 
-- **Guest Authentication**: Guests can register and login with email/password
-- **RSVP System**: Submit and update RSVPs with dietary restrictions
+- **Guest Authentication**: Secure registration and login system
+- **RSVP System**: Submit and update RSVPs with dietary restrictions and notes
 - **Partner Support**: Couples can RSVP for each other
 - **Plus-one Support**: Add plus-ones during RSVP process
+- **Photo Gallery**: Browse 256 curated photos across categories
+  - Engagement photos (27)
+  - Relationship timeline (229)
+  - Infinite scroll with lazy loading
+  - Mobile-optimized with swipe navigation
+  - Thumbnail optimization for fast loading
 - **Database Management**: Comprehensive `./db` tool for all operations
+
+## 📖 Documentation
+
+- **[Development Workflow](docs/DEVELOPMENT_WORKFLOW.md)** - Complete development process and git workflow
+- **[Cleanup Plan](docs/CLEANUP_PLAN.md)** - Codebase cleanup tasks and status
+- **[Database Schema](docs/DATABASE_SCHEMA.md)** - Database structure and relationships
+- **[Project Plan](docs/PROJECT_PLAN.md)** - Feature roadmap and implementation status
 
 ## 🔍 Development Startup Sequence
 
@@ -724,5 +741,5 @@ This project is for personal use only.
 
 ---
 
-*Last Updated: December 20, 2024*
-*Version: 1.0.0 - Schema v5 Implemented*
+*Last Updated: November 5, 2025*
+*Version: 1.5.0 - Photo Gallery Live in Production*

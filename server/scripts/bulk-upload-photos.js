@@ -1,10 +1,32 @@
 /**
  * Bulk Photo Upload Script
  *
- * Uploads photos from the top-level photos folder into the database
- * Maps folders to categories:
+ * Description: Uploads photos from the source photos folder into the database
+ *              and copies them to the server uploads directory.
+ *
+ * When to use: Initial photo import or bulk adding curated photos to production
+ *
+ * Folder mappings:
  * - engagement_photos → Engagement category
  * - patricia_and_james → Relationship Timeline category
+ *
+ * Features:
+ * - Automatically generates unique filenames
+ * - Prevents duplicate uploads (checks original_filename + category)
+ * - Auto-approves imported photos (sets is_approved = true)
+ * - Marks as 'bulk_import' source
+ * - Skips macOS metadata files (._*)
+ *
+ * Usage:
+ *   cd server
+ *   node scripts/bulk-upload-photos.js
+ *
+ * Prerequisites:
+ * - DATABASE_URL environment variable configured
+ * - Source photos directory exists (../../photos/)
+ * - Database migrations up to date (migration 006 minimum)
+ *
+ * Output: Displays upload progress and summary statistics
  */
 
 const { Pool } = require('pg');

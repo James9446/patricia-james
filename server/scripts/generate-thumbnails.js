@@ -1,8 +1,28 @@
 /**
  * Generate Thumbnails and Optimized Images
  *
- * Creates thumbnails (300x300) and optimized versions (1200px max) for all existing photos
- * Updates database with the new filenames
+ * Description: Processes all existing photos to create thumbnails and optimized versions
+ *              using the Sharp image processing library.
+ *
+ * When to use: After bulk photo upload or when photos are missing optimized versions
+ *
+ * Processing Details:
+ * - Thumbnails: 300x300px, 80% quality, cover fit (for gallery grid)
+ * - Optimized: 1200px max dimension, 85% quality, inside fit (for lightbox)
+ * - Auto-rotates based on EXIF orientation
+ * - Preserves aspect ratio
+ *
+ * Usage:
+ *   cd server
+ *   node scripts/generate-thumbnails.js
+ *
+ * Prerequisites:
+ * - DATABASE_URL environment variable configured
+ * - Sharp library installed (npm install sharp)
+ * - Photos exist in server/uploads directory
+ * - Database migrations up to date
+ *
+ * Output: Progress updates and size reduction statistics
  */
 
 const { Pool } = require('pg');
