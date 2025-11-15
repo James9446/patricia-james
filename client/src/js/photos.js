@@ -542,7 +542,7 @@ class PhotoUpload {
     this.updateSubmitButton();
   }
 
-  handleFileSelect(files) {
+  async handleFileSelect(files) {
     const fileArray = Array.from(files);
 
     // Filter for image files only
@@ -558,9 +558,126 @@ class PhotoUpload {
       imageFiles.splice(20); // Keep only first 20
     }
 
-    this.selectedFiles = imageFiles;
+    // Show compression message
+    this.showStatus('Preparing photos for upload...', 'info');
+
+    // Compress images for faster mobile upload
+    const compressedFiles = await Promise.all(
+      imageFiles.map(file => this.compressImage(file))
+    );
+
+    this.selectedFiles = compressedFiles;
+    this.uploadStatus.style.display = 'none'; // Hide compression message
     this.showPreviews();
     this.updateSubmitButton();
+  }
+
+  // Compress image for faster mobile upload
+  async compressImage(file) {
+    // Skip compression for small files (< 500KB)
+    if (file.size < 500 * 1024) {
+      return file;
+    }
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        const img = new Image();
+
+        img.onload = async () => {
+          // Get EXIF orientation first
+          const orientation = await this.getImageOrientation(file);
+
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Calculate new dimensions (max 2048px on longest side)
+          let width = img.width;
+          let height = img.height;
+          const maxDimension = 2048;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+
+          // Handle EXIF orientation (swap dimensions if rotated 90/270)
+          if (orientation >= 5 && orientation <= 8) {
+            // Orientation 5, 6, 7, 8 are rotated 90 or 270 degrees
+            canvas.width = height;
+            canvas.height = width;
+          } else {
+            canvas.width = width;
+            canvas.height = height;
+          }
+
+          // Apply EXIF orientation transforms
+          switch (orientation) {
+            case 2:
+              ctx.transform(-1, 0, 0, 1, width, 0); // Flip horizontal
+              break;
+            case 3:
+              ctx.transform(-1, 0, 0, -1, width, height); // Rotate 180°
+              break;
+            case 4:
+              ctx.transform(1, 0, 0, -1, 0, height); // Flip vertical
+              break;
+            case 5:
+              ctx.transform(0, 1, 1, 0, 0, 0); // Rotate 90° CW and flip
+              break;
+            case 6:
+              ctx.transform(0, 1, -1, 0, height, 0); // Rotate 90° CW
+              break;
+            case 7:
+              ctx.transform(0, -1, -1, 0, height, width); // Rotate 270° CW and flip
+              break;
+            case 8:
+              ctx.transform(0, -1, 1, 0, 0, width); // Rotate 270° CW
+              break;
+          }
+
+          // Draw image
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to blob with quality compression
+          canvas.toBlob(
+            (blob) => {
+              // Create new file with compressed data
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+
+              console.log(`Compressed ${file.name}: ${this.formatFileSize(file.size)} → ${this.formatFileSize(compressedFile.size)}`);
+              resolve(compressedFile);
+            },
+            'image/jpeg',
+            0.85 // 85% quality
+          );
+        };
+
+        img.onerror = () => {
+          console.warn(`Failed to compress ${file.name}, using original`);
+          resolve(file);
+        };
+
+        img.src = e.target.result;
+      };
+
+      reader.onerror = () => {
+        console.warn(`Failed to read ${file.name}, using original`);
+        resolve(file);
+      };
+
+      reader.readAsDataURL(file);
+    });
   }
 
   showPreviews() {
@@ -772,14 +889,28 @@ class PhotoUpload {
       });
 
       // Show initial progress
-      this.showProgress(10, 'Preparing upload...');
+      this.showProgress(10, 'Uploading to server...');
 
-      // Upload to server
-      const response = await fetch('/api/photos/batch', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
+      // Upload to server with timeout handling
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+
+      let response;
+      try {
+        response = await fetch('/api/photos/batch', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+      } catch (fetchError) {
+        clearTimeout(timeout);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Upload timed out. Please check your connection and try again with fewer photos.');
+        }
+        throw new Error('Network error. Please check your connection and try again.');
+      }
 
       this.showProgress(90, 'Processing photos...');
 

@@ -4064,6 +4064,12 @@ button.loading::after {
   border: 1px solid #FCD34D;
 }
 
+.upload-status.info {
+  background: #DBEAFE;
+  color: #1E40AF;
+  border: 1px solid #93C5FD;
+}
+
 /* Modal Footer */
 .upload-modal-footer {
   display: flex;
