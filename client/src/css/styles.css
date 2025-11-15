@@ -2684,11 +2684,15 @@ body:not(.home-page) .full-screen-background {
 
 .category-btn.active {
   color: var(--solstice-blue) !important;
-  border: 2px solid var(--solstice-blue) !important;
+  border: 1px solid var(--solstice-blue) !important;
+  box-shadow: inset 0 0 0 1px var(--solstice-blue) !important;
+  transform: none !important; /* Prevent scaling on hover */
 }
 
 .category-btn.active:hover {
   color: white !important;
+  box-shadow: none !important;
+  transform: none !important; /* Prevent scaling on hover */
 }
 
 .photo-gallery {
@@ -3021,9 +3025,10 @@ body:not(.home-page) .full-screen-background {
   .category-nav {
     justify-content: flex-start;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
+    padding: 0.25rem 0.5rem 0.5rem 0.5rem; /* Add horizontal padding to prevent overflow */
+    margin: 0 -0.5rem; /* Negative margin to offset container padding */
   }
-  
+
   .category-btn {
     white-space: nowrap;
     flex-shrink: 0;
