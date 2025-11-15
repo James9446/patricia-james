@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Patricia y James Wedding</title>
-  <link rel="stylesheet" href="./css/styles.css?v=20251020">
+  <link rel="stylesheet" href="./css/styles.css?v=20250108m">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@200;300;400;500;600;700&family=Playfair+Display:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -199,10 +199,23 @@
       <div class="container">
         <h1 class="text-center mb-6">Our Story in Photos</h1>
 
-        <!-- Category Navigation -->
-        <div class="category-navigation mb-6" style="display: none;">
-          <div class="category-nav">
-            <!-- Category buttons will be dynamically generated from API -->
+        <!-- Category Navigation and Upload Button -->
+        <div class="photos-header mb-6">
+          <!-- Category Navigation -->
+          <div class="category-navigation" style="display: none;">
+            <div class="category-nav">
+              <!-- Category buttons will be dynamically generated from API -->
+            </div>
+          </div>
+
+          <!-- Upload Button -->
+          <div class="upload-button-container">
+            <button id="open-upload-modal" class="btn btn-primary">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Share Your Photos
+            </button>
           </div>
         </div>
 
@@ -210,15 +223,68 @@
         <div class="photo-gallery" id="photo-gallery">
           <!-- Photos will be loaded dynamically -->
         </div>
-        
+
         <!-- Load More Button -->
         <div class="text-center mt-6">
           <button id="load-more-photos" class="btn btn-primary">Load More Photos</button>
         </div>
-        
-        <!-- Simple Photo Gallery - No Upload for Now -->
-        <div class="photo-gallery-intro text-center mt-8">
-          <p class="text-lg text-gray-600">Browse through our beautiful memories</p>
+      </div>
+    </div>
+
+    <!-- Photo Upload Modal -->
+    <div id="photo-upload-modal" class="upload-modal">
+      <div class="upload-modal-backdrop"></div>
+      <div class="upload-modal-content">
+        <div class="upload-modal-header">
+          <h2>Share Your Photos</h2>
+          <button class="upload-modal-close" aria-label="Close">×</button>
+        </div>
+
+        <div class="upload-modal-body">
+          <!-- File Selection -->
+          <div class="upload-section">
+            <label class="upload-label">Select Photos</label>
+            <div class="upload-dropzone" id="upload-dropzone">
+              <input type="file" id="photo-upload-input" accept="image/*" multiple hidden>
+              <div class="upload-dropzone-content">
+                <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="margin: 0 auto 1rem;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="upload-dropzone-text">Click to Browse or Drag and Drop</p>
+                <p class="upload-dropzone-subtext">You can upload multiple photos at once</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Photo Previews -->
+          <div id="photo-previews" class="photo-previews" style="display: none;">
+            <!-- Preview thumbnails will be added here -->
+          </div>
+
+          <!-- Category Selection -->
+          <div class="upload-section">
+            <label for="upload-category" class="upload-label">Category *</label>
+            <select id="upload-category" class="upload-select" required>
+              <option value="">Select a category...</option>
+              <!-- Categories will be loaded dynamically -->
+            </select>
+          </div>
+
+          <!-- Upload Progress -->
+          <div id="upload-progress-section" class="upload-progress-section" style="display: none;">
+            <div class="upload-progress-bar">
+              <div id="upload-progress-fill" class="upload-progress-fill"></div>
+            </div>
+            <p id="upload-progress-text" class="upload-progress-text">Uploading...</p>
+          </div>
+
+          <!-- Upload Status Messages -->
+          <div id="upload-status" class="upload-status" style="display: none;"></div>
+        </div>
+
+        <div class="upload-modal-footer">
+          <button id="cancel-upload" class="btn btn-secondary">Cancel</button>
+          <button id="submit-upload" class="btn btn-primary" disabled>Upload Photos</button>
         </div>
       </div>
     </div>

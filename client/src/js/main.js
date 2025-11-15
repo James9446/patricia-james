@@ -94,6 +94,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add the appropriate page class to body for navbar color control
             document.body.classList.add(`${pageId}-page`);
 
+            // Update navbar active state - query fresh each time since auth.js replaces the links
+            document.querySelectorAll('[data-page]').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-page') === pageId) {
+                    link.classList.add('active');
+                }
+            });
+
             // Trigger page animation (reset opacity and transform set by IntersectionObserver)
             targetPage.style.opacity = '1';
             targetPage.style.transform = 'translateY(0)';
@@ -148,6 +156,11 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('popstate', function(e) {
         const pageId = e.state ? e.state.page : 'home';
         showPage(pageId);
+    });
+
+    // Clear any existing active classes from nav links on page load
+    document.querySelectorAll('[data-page]').forEach(link => {
+        link.classList.remove('active');
     });
 
     // Handle initial page load with hash

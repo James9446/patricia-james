@@ -4,6 +4,7 @@
 class PhotoSystem {
   constructor() {
     this.currentCategory = 'all';
+    this.currentSort = 'oldest'; // Default sort order
     this.currentPage = 1;
     this.photosPerPage = 50; // Initial load: 50 photos
     this.photosPerScroll = 25; // Load 25 more on scroll
@@ -125,7 +126,7 @@ class PhotoSystem {
       const params = new URLSearchParams({
         limit: limit,
         offset: offset,
-        sort: 'oldest'
+        sort: this.currentSort
       });
 
       if (this.currentCategory && this.currentCategory !== 'all') {
@@ -413,5 +414,359 @@ class PhotoSystem {
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('photo-gallery')) {
     window.photoSystem = new PhotoSystem();
+    window.photoUpload = new PhotoUpload(window.photoSystem);
   }
 });
+
+// ========================================
+// Photo Upload System
+// ========================================
+class PhotoUpload {
+  constructor(photoSystem) {
+    this.photoSystem = photoSystem;
+    this.selectedFiles = [];
+    this.modal = document.getElementById('photo-upload-modal');
+    this.fileInput = document.getElementById('photo-upload-input');
+    this.dropzone = document.getElementById('upload-dropzone');
+    this.previewsContainer = document.getElementById('photo-previews');
+    this.categorySelect = document.getElementById('upload-category');
+    this.submitButton = document.getElementById('submit-upload');
+    this.uploadStatus = document.getElementById('upload-status');
+
+    this.init();
+  }
+
+  init() {
+    this.setupEventListeners();
+    this.loadCategories();
+  }
+
+  setupEventListeners() {
+    // Open modal
+    document.getElementById('open-upload-modal')?.addEventListener('click', () => {
+      this.openModal();
+    });
+
+    // Close modal
+    this.modal.querySelector('.upload-modal-close')?.addEventListener('click', () => {
+      this.closeModal();
+    });
+
+    this.modal.querySelector('.upload-modal-backdrop')?.addEventListener('click', () => {
+      this.closeModal();
+    });
+
+    document.getElementById('cancel-upload')?.addEventListener('click', () => {
+      this.closeModal();
+    });
+
+    // File selection
+    this.dropzone?.addEventListener('click', () => {
+      this.fileInput.click();
+    });
+
+    this.fileInput?.addEventListener('change', (e) => {
+      this.handleFileSelect(e.target.files);
+    });
+
+    // Drag and drop
+    this.dropzone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      this.dropzone.classList.add('drag-over');
+    });
+
+    this.dropzone?.addEventListener('dragleave', () => {
+      this.dropzone.classList.remove('drag-over');
+    });
+
+    this.dropzone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      this.dropzone.classList.remove('drag-over');
+      this.handleFileSelect(e.dataTransfer.files);
+    });
+
+    // Category selection
+    this.categorySelect?.addEventListener('change', () => {
+      this.updateSubmitButton();
+    });
+
+    // Submit upload
+    this.submitButton?.addEventListener('click', () => {
+      this.uploadPhotos();
+    });
+  }
+
+  async loadCategories() {
+    if (!this.categorySelect) return;
+
+    // Use categories from photoSystem
+    // Only allow "Friends & Family" and "Wedding Day" for user uploads
+    const allowedCategories = ['friends-family', 'wedding-day'];
+
+    if (this.photoSystem && this.photoSystem.categories) {
+      this.categorySelect.innerHTML = '<option value="">Select a category...</option>';
+
+      this.photoSystem.categories.forEach(category => {
+        if (category.is_active && allowedCategories.includes(category.slug)) {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          this.categorySelect.appendChild(option);
+        }
+      });
+    }
+  }
+
+  openModal() {
+    this.resetModal();
+    this.modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    this.loadCategories(); // Refresh categories when opening
+  }
+
+  closeModal() {
+    this.modal.classList.remove('active');
+    document.body.style.overflow = '';
+    this.resetModal();
+  }
+
+  resetModal() {
+    this.selectedFiles = [];
+    this.fileInput.value = '';
+    this.previewsContainer.style.display = 'none';
+    this.previewsContainer.innerHTML = '';
+    this.categorySelect.value = '';
+    this.uploadStatus.style.display = 'none';
+    this.uploadStatus.innerHTML = '';
+    this.hideProgress();
+    this.updateSubmitButton();
+  }
+
+  handleFileSelect(files) {
+    const fileArray = Array.from(files);
+
+    // Filter for image files only
+    const imageFiles = fileArray.filter(file => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      this.showStatus('Please select image files only', 'error');
+      return;
+    }
+
+    if (imageFiles.length > 20) {
+      this.showStatus('You can upload a maximum of 20 photos at once', 'warning');
+      imageFiles.splice(20); // Keep only first 20
+    }
+
+    this.selectedFiles = imageFiles;
+    this.showPreviews();
+    this.updateSubmitButton();
+  }
+
+  showPreviews() {
+    this.previewsContainer.innerHTML = '';
+    this.previewsContainer.style.display = 'grid';
+
+    this.selectedFiles.forEach((file, index) => {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'photo-preview-item';
+        previewItem.dataset.index = index;
+
+        previewItem.innerHTML = `
+          <img src="${e.target.result}" alt="${file.name}">
+          <button class="photo-preview-remove" data-index="${index}">×</button>
+          <div class="photo-preview-info">${this.formatFileSize(file.size)}</div>
+        `;
+
+        // Remove button handler
+        previewItem.querySelector('.photo-preview-remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.removeFile(index);
+        });
+
+        this.previewsContainer.appendChild(previewItem);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  removeFile(index) {
+    this.selectedFiles.splice(index, 1);
+
+    if (this.selectedFiles.length === 0) {
+      this.previewsContainer.style.display = 'none';
+      this.previewsContainer.innerHTML = '';
+    } else {
+      this.showPreviews();
+    }
+
+    this.updateSubmitButton();
+  }
+
+  updateSubmitButton() {
+    const hasFiles = this.selectedFiles.length > 0;
+    const hasCategory = this.categorySelect.value !== '';
+
+    this.submitButton.disabled = !(hasFiles && hasCategory);
+  }
+
+  showProgress(percent, text) {
+    const progressSection = document.getElementById('upload-progress-section');
+    const progressFill = document.getElementById('upload-progress-fill');
+    const progressText = document.getElementById('upload-progress-text');
+
+    progressSection.style.display = 'block';
+    progressFill.style.width = `${percent}%`;
+    progressText.textContent = text;
+  }
+
+  hideProgress() {
+    const progressSection = document.getElementById('upload-progress-section');
+    progressSection.style.display = 'none';
+  }
+
+  showStatus(message, type = 'success') {
+    this.uploadStatus.innerHTML = message;
+    this.uploadStatus.className = `upload-status ${type}`;
+    this.uploadStatus.style.display = 'block';
+
+    // Auto-hide success messages after 5 seconds
+    if (type === 'success') {
+      setTimeout(() => {
+        this.uploadStatus.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  async uploadPhotos() {
+    if (this.selectedFiles.length === 0) return;
+
+    const categoryId = this.categorySelect.value;
+    if (!categoryId) {
+      this.showStatus('Please select a category', 'error');
+      return;
+    }
+
+    // Get the selected category slug for switching view after upload
+    // Category IDs are UUIDs (strings), so compare as strings
+    const selectedCategory = this.photoSystem.categories.find(cat => String(cat.id) === String(categoryId));
+    const categorySlug = selectedCategory?.slug;
+
+    // Disable submit button during upload
+    this.submitButton.disabled = true;
+    this.uploadStatus.style.display = 'none';
+
+    try {
+      const formData = new FormData();
+      formData.append('category_id', categoryId);
+
+      // Add all files to FormData
+      this.selectedFiles.forEach((file) => {
+        formData.append('photos', file);
+      });
+
+      // Show initial progress
+      this.showProgress(10, 'Preparing upload...');
+
+      // Upload to server
+      const response = await fetch('/api/photos/batch', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      this.showProgress(90, 'Processing photos...');
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Upload failed');
+      }
+
+      this.showProgress(100, 'Upload complete!');
+
+      // Show results
+      const { results } = data;
+      const succeeded = results.summary.succeeded;
+      const failed = results.summary.failed;
+
+      let statusMessage = '';
+      if (succeeded > 0 && failed === 0) {
+        statusMessage = `✓ Successfully uploaded ${succeeded} photo${succeeded > 1 ? 's' : ''}!`;
+        this.showStatus(statusMessage, 'success');
+      } else if (succeeded > 0 && failed > 0) {
+        statusMessage = `Uploaded ${succeeded} photo${succeeded > 1 ? 's' : ''}, but ${failed} failed. `;
+        const duplicates = results.failed.filter(f => f.duplicate).length;
+        if (duplicates > 0) {
+          statusMessage += `${duplicates} ${duplicates > 1 ? 'were' : 'was'} duplicate${duplicates > 1 ? 's' : ''}.`;
+        }
+        this.showStatus(statusMessage, 'warning');
+      } else {
+        statusMessage = `Failed to upload photos. ${results.failed[0]?.error || 'Please try again.'}`;
+        this.showStatus(statusMessage, 'error');
+      }
+
+      // If any photos were uploaded successfully, switch to category and scroll to first photo
+      if (succeeded > 0) {
+        const firstUploadedPhotoId = results.successful[0]?.id;
+
+        setTimeout(async () => {
+          this.closeModal();
+
+          // Switch to the uploaded category
+          if (categorySlug) {
+            // Manually switch category
+            this.photoSystem.currentCategory = categorySlug;
+
+            // Update active category button
+            document.querySelectorAll('.category-btn').forEach(btn => {
+              btn.classList.remove('active');
+              if (btn.getAttribute('data-category') === categorySlug) {
+                btn.classList.add('active');
+              }
+            });
+
+            // Switch to 'newest' sort to ensure uploaded photo is in first batch
+            // This prevents issues when there are hundreds of photos in the category
+            this.photoSystem.currentSort = 'newest';
+
+            // Load photos for the new category with newest sort
+            await this.photoSystem.loadPhotos(true);
+
+            // Scroll to the first uploaded photo
+            setTimeout(() => {
+              const photoElement = document.querySelector(`[data-photo-id="${firstUploadedPhotoId}"]`);
+              if (photoElement) {
+                photoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 800); // Longer delay to ensure gallery is fully rendered
+          } else {
+            // No category slug, just reload all photos
+            await this.photoSystem.loadPhotos(true);
+          }
+
+          // Reload categories to update counts and buttons (non-blocking)
+          this.photoSystem.loadCategories();
+        }, 2000);
+      }
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      this.showStatus(`Upload failed: ${error.message}`, 'error');
+      this.hideProgress();
+      this.submitButton.disabled = false;
+    }
+  }
+}
