@@ -570,13 +570,17 @@ class PhotoUpload {
     this.selectedFiles.forEach((file, index) => {
       const reader = new FileReader();
 
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
+        // Get EXIF orientation
+        const orientation = await this.getImageOrientation(file);
+        const transform = this.getOrientationTransform(orientation);
+
         const previewItem = document.createElement('div');
         previewItem.className = 'photo-preview-item';
         previewItem.dataset.index = index;
 
         previewItem.innerHTML = `
-          <img src="${e.target.result}" alt="${file.name}">
+          <img src="${e.target.result}" alt="${file.name}" style="${transform}">
           <button class="photo-preview-remove" data-index="${index}">×</button>
           <div class="photo-preview-info">${this.formatFileSize(file.size)}</div>
         `;
@@ -592,6 +596,96 @@ class PhotoUpload {
 
       reader.readAsDataURL(file);
     });
+  }
+
+  // Read EXIF orientation from image file
+  async getImageOrientation(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const view = new DataView(e.target.result);
+
+        // Check if it's a JPEG
+        if (view.getUint16(0, false) !== 0xFFD8) {
+          resolve(1); // Not a JPEG, return default orientation
+          return;
+        }
+
+        const length = view.byteLength;
+        let offset = 2;
+
+        while (offset < length) {
+          const marker = view.getUint16(offset, false);
+          offset += 2;
+
+          // Check for APP1 marker (0xFFE1) which contains EXIF data
+          if (marker === 0xFFE1) {
+            const exifOffset = offset + 2;
+
+            // Check for "Exif" string
+            if (view.getUint32(exifOffset, false) !== 0x45786966) {
+              resolve(1);
+              return;
+            }
+
+            // Get byte alignment (big or little endian)
+            const tiffOffset = exifOffset + 6;
+            const littleEndian = view.getUint16(tiffOffset, false) === 0x4949;
+
+            // Get offset to first IFD
+            const ifdOffset = view.getUint32(tiffOffset + 4, littleEndian);
+            const tagCount = view.getUint16(tiffOffset + ifdOffset, littleEndian);
+
+            // Loop through IFD tags to find orientation (tag 0x0112)
+            for (let i = 0; i < tagCount; i++) {
+              const tagOffset = tiffOffset + ifdOffset + 2 + (i * 12);
+              const tag = view.getUint16(tagOffset, littleEndian);
+
+              if (tag === 0x0112) { // Orientation tag
+                const orientation = view.getUint16(tagOffset + 8, littleEndian);
+                resolve(orientation);
+                return;
+              }
+            }
+
+            resolve(1); // No orientation tag found
+            return;
+          } else {
+            // Skip to next marker
+            const segmentLength = view.getUint16(offset, false);
+            offset += segmentLength;
+          }
+        }
+
+        resolve(1); // Default orientation
+      };
+
+      reader.onerror = () => resolve(1);
+      reader.readAsArrayBuffer(file.slice(0, 64 * 1024)); // Read first 64KB
+    });
+  }
+
+  // Get CSS transform based on EXIF orientation
+  getOrientationTransform(orientation) {
+    switch (orientation) {
+      case 2:
+        return 'transform: scaleX(-1);'; // Flip horizontal
+      case 3:
+        return 'transform: rotate(180deg);'; // Rotate 180°
+      case 4:
+        return 'transform: scaleY(-1);'; // Flip vertical
+      case 5:
+        return 'transform: rotate(90deg) scaleX(-1);'; // Rotate 90° CW and flip
+      case 6:
+        return 'transform: rotate(90deg);'; // Rotate 90° CW
+      case 7:
+        return 'transform: rotate(270deg) scaleX(-1);'; // Rotate 270° CW and flip
+      case 8:
+        return 'transform: rotate(270deg);'; // Rotate 270° CW
+      default:
+        return ''; // Normal orientation
+    }
   }
 
   removeFile(index) {

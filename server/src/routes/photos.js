@@ -93,20 +93,22 @@ const processAndSaveImage = async (buffer, originalFilename, photoId) => {
     const optimizedPath = path.join(uploadsDir, optimizedFilename);
     const thumbnailPath = path.join(uploadsDir, thumbnailFilename);
     
-    // Process optimized version
+    // Process optimized version (with EXIF orientation handling)
     const optimizedBuffer = await sharp(buffer)
-      .resize(2048, 2048, { 
+      .rotate() // Auto-rotate based on EXIF orientation
+      .resize(2048, 2048, {
         fit: 'inside',
-        withoutEnlargement: true 
+        withoutEnlargement: true
       })
       .jpeg({ quality: 85 })
       .toBuffer();
-    
+
     await fs.writeFile(optimizedPath, optimizedBuffer);
-    
-    // Process thumbnail
+
+    // Process thumbnail (with EXIF orientation handling)
     const thumbnailBuffer = await sharp(buffer)
-      .resize(300, 300, { 
+      .rotate() // Auto-rotate based on EXIF orientation
+      .resize(300, 300, {
         fit: 'cover',
         position: 'center'
       })
