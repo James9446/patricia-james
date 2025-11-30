@@ -145,10 +145,10 @@ router.get('/', async (req, res) => {
       category = null 
     } = req.query;
     
-    let whereClause = 'WHERE p.is_approved = true AND u.deleted_at IS NULL';
+    let whereClause = 'WHERE p.is_approved = true AND u.deleted_at IS NULL AND p.deleted_at IS NULL';
     let params = [];
     let paramCount = 0;
-    
+
     if (category) {
       paramCount++;
       whereClause += ` AND c.slug = $${paramCount}`;
@@ -160,25 +160,26 @@ router.get('/', async (req, res) => {
     const validSortOptions = ['newest', 'oldest', 'most_liked', 'most_commented', 'featured'];
     const sortOption = validSortOptions.includes(sort) ? sort : 'newest';
 
+    // Featured photos always appear first, then secondary sort
     let orderBy;
     switch (sortOption) {
       case 'newest':
-        orderBy = 'p.upload_date DESC';
+        orderBy = 'p.is_featured DESC, p.upload_date DESC';
         break;
       case 'oldest':
-        orderBy = 'p.upload_date ASC';
+        orderBy = 'p.is_featured DESC, p.upload_date ASC';
         break;
       case 'most_liked':
-        orderBy = 'like_count DESC, p.upload_date DESC';
+        orderBy = 'p.is_featured DESC, like_count DESC, p.upload_date DESC';
         break;
       case 'most_commented':
-        orderBy = 'comment_count DESC, p.upload_date DESC';
+        orderBy = 'p.is_featured DESC, comment_count DESC, p.upload_date DESC';
         break;
       case 'featured':
         orderBy = 'p.is_featured DESC, p.upload_date DESC';
         break;
       default:
-        orderBy = 'p.upload_date DESC';
+        orderBy = 'p.is_featured DESC, p.upload_date DESC';
     }
 
     const result = await query(`

@@ -11,6 +11,7 @@ const rsvpsRouter = require('./routes/rsvps');
 const authRouter = require('./routes/auth');
 const photosRouter = require('./routes/photos');
 const categoriesRouter = require('./routes/categories');
+const adminRouter = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -88,6 +89,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/rsvps', rsvpsRouter);
 app.use('/api/photos', photosRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/admin', adminRouter);
 
 // Serve the main HTML file for all non-API routes (SPA routing)
 app.use((req, res) => {

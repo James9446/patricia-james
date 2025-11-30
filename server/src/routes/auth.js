@@ -173,7 +173,7 @@ router.post('/register', authLimiter, async (req, res) => {
         account_status = 'registered',
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $3
-      RETURNING id, email, first_name, last_name, full_name, partner_id, plus_one_allowed, account_status
+      RETURNING id, email, first_name, last_name, full_name, partner_id, plus_one_allowed, account_status, is_admin
     `, [email, password_hash, user_id]);
 
     // Get partner info if exists
@@ -230,6 +230,7 @@ router.post('/register', authLimiter, async (req, res) => {
             full_name: updatedUser.rows[0].full_name,
             plus_one_allowed: updatedUser.rows[0].plus_one_allowed,
             account_status: updatedUser.rows[0].account_status,
+            is_admin: updatedUser.rows[0].is_admin || false,
             partner: partnerInfo
           }
         });
@@ -273,6 +274,7 @@ router.post('/login', authLimiter, async (req, res) => {
         u.partner_id,
         u.plus_one_allowed,
         u.account_status,
+        u.is_admin,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
         p.full_name as partner_full_name,
@@ -339,6 +341,7 @@ router.post('/login', authLimiter, async (req, res) => {
             last_name: user.last_name,
             full_name: user.full_name,
             plus_one_allowed: user.plus_one_allowed,
+            is_admin: user.is_admin || false,
             partner: user.partner_id ? {
               first_name: user.partner_first_name,
               last_name: user.partner_last_name,
@@ -376,7 +379,7 @@ router.get('/me', async (req, res) => {
     }
 
     const result = await query(`
-      SELECT 
+      SELECT
         u.id,
         u.email,
         u.first_name,
@@ -385,6 +388,7 @@ router.get('/me', async (req, res) => {
         u.partner_id,
         u.plus_one_allowed,
         u.account_status,
+        u.is_admin,
         p.first_name as partner_first_name,
         p.last_name as partner_last_name,
         p.full_name as partner_full_name,
@@ -413,6 +417,7 @@ router.get('/me', async (req, res) => {
         full_name: user.full_name,
         plus_one_allowed: user.plus_one_allowed,
         account_status: user.account_status,
+        is_admin: user.is_admin || false,
         partner: user.partner_id ? {
           first_name: user.partner_first_name,
           last_name: user.partner_last_name,

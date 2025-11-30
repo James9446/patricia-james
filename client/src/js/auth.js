@@ -599,10 +599,10 @@ class AuthSystemV5 {
   updateUI() {
     // Update navigation based on auth status
     const navItems = document.querySelectorAll('.nav-item');
-    
+
     navItems.forEach(item => {
       const pageId = item.dataset.page;
-      
+
       if (pageId === 'home') {
         // Home is always accessible
         item.style.display = 'block';
@@ -611,6 +611,16 @@ class AuthSystemV5 {
         item.style.display = 'block';
       } else {
         // Hide protected pages for unauthenticated users
+        item.style.display = 'none';
+      }
+    });
+
+    // Show/hide admin nav links based on admin status
+    const adminNavItems = document.querySelectorAll('.nav-item-admin');
+    adminNavItems.forEach(item => {
+      if (this.isAuthenticated && this.currentUser && this.currentUser.is_admin) {
+        item.style.display = 'block';
+      } else {
         item.style.display = 'none';
       }
     });
