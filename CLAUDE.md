@@ -16,6 +16,116 @@ Patricia y James Wedding Website - A modern, interactive wedding website with gu
 
 ## CRITICAL DEVELOPMENT RULES
 
+### 🚨 DATABASE SAFETY RULES - ABSOLUTE PRIORITY
+
+**CRITICAL:** Database changes can cause catastrophic data loss. Follow these rules without exception.
+
+#### ⛔ NEVER Touch Production Database
+
+**ABSOLUTE RULE:** You must NEVER make ANY changes to the production database. Not reads, not writes, not schema changes, NOTHING.
+
+- ❌ NEVER connect to production database
+- ❌ NEVER run queries against production database
+- ❌ NEVER modify production data
+- ❌ NEVER apply migrations to production database
+- ❌ NEVER run scripts against production database
+
+**Only Exception:** Reading from production database dump files that user has explicitly provided in `/tmp/` directory for restoration purposes.
+
+#### ⚠️ Development Database Changes Require Explicit Plan
+
+**BEFORE making ANY changes to the development database:**
+
+1. **STOP and INVESTIGATE** - Never immediately "fix" database issues
+   - Understand WHY the problem exists
+   - Check what data currently exists
+   - Assess the impact of any changes
+   - Identify root cause before taking action
+
+2. **CREATE EXPLICIT PLAN** - Present detailed plan to user
+   - What exactly will be changed
+   - What data will be affected
+   - What backup strategy will be used
+   - What the expected outcome is
+   - Alternative approaches considered
+
+3. **GET EXPLICIT APPROVAL** - User must approve the plan
+   - Wait for clear "yes" or "proceed"
+   - Never assume approval
+   - If unsure, ask again
+
+4. **BACKUP FIRST** - Always create backup before destructive operations
+   ```bash
+   # Always backup before ANY destructive database operation
+   pg_dump patricia_james_wedding_dev > backups/before_[operation]_$(date +%Y%m%d_%H%M%S).sql
+   ```
+
+5. **WARN STRONGLY** - Issue clear warning before execution
+   - "⚠️ WARNING: About to [drop/modify/delete] [what]. This will [impact]. Backup created at [path]. Proceeding..."
+
+#### 🚫 Prohibited Database Operations Without Explicit Plan
+
+These operations are FORBIDDEN without following the process above:
+
+- ❌ `dropdb` (dropping database)
+- ❌ `DROP TABLE` (dropping tables)
+- ❌ `TRUNCATE` (clearing table data)
+- ❌ `DELETE FROM` without WHERE clause
+- ❌ `UPDATE` affecting multiple critical records
+- ❌ Schema migrations on existing data
+- ❌ `./db reset` (resets entire database)
+
+#### ✅ Safe Database Operations
+
+These are generally safe but still require care:
+
+- ✅ `SELECT` queries (read-only)
+- ✅ `./db stats` (read-only statistics)
+- ✅ `./db users` (read-only view)
+- ✅ `./db rsvps` (read-only view)
+- ✅ Single-record INSERT (if part of approved plan)
+- ✅ Single-record UPDATE with specific WHERE clause (if part of approved plan)
+
+#### 🔍 When Database Issues Occur
+
+**NEVER immediately run destructive operations. Instead:**
+
+1. **Investigate First**
+   - What error occurred?
+   - What does the current database state look like?
+   - When did this issue start?
+   - What changed recently?
+
+2. **Gather Information**
+   - Check current data: `./db stats`, `./db users`
+   - Check logs for clues
+   - Check git history for recent changes
+   - Check if production is affected
+
+3. **Present Findings to User**
+   - "I found [issue]. Current state is [description]. Possible causes: [list]. Recommended approach: [plan]. Shall I proceed?"
+
+4. **Wait for Approval**
+   - Do not proceed until user explicitly approves
+
+#### Why This Matters
+
+**Previous Incident:** Carelessly dropped development database without investigation, destroying:
+- 256 photos (weeks of work)
+- 6 registered users
+- All RSVPs and data
+
+This was caused by:
+- Not investigating WHY schema was wrong
+- Not checking what data existed
+- Not creating backup first
+- Not asking about data importance
+- Immediately jumping to "fix" by dropping database
+
+**Never let this happen again.**
+
+---
+
 ### ⛔ NEVER Push to GitHub Without User Testing
 
 **ABSOLUTE RULE:** You must NEVER push any code to GitHub until the user has explicitly tested the changes and given permission to push.
