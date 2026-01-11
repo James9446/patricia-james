@@ -645,6 +645,14 @@ router.post('/users', async (req, res) => {
       RETURNING id, first_name, last_name, full_name, email, address, partner_id, plus_one_allowed, account_status, created_at
     `, [first_name, last_name, email, address, partner_id, plus_one_allowed, account_status]);
 
+    // Handle bidirectional partner relationship
+    if (partner_id) {
+      await query(
+        'UPDATE users SET partner_id = $1 WHERE id = $2 AND deleted_at IS NULL',
+        [result.rows[0].id, partner_id]
+      );
+    }
+
     logger.info(`User ${result.rows[0].id} created by admin ${req.user.email}`);
 
     res.status(201).json({
@@ -717,6 +725,14 @@ router.put('/users/:id', async (req, res) => {
 
     // Validate partner_id if provided
     if (partner_id !== undefined && partner_id !== null) {
+      // Prevent self-partnering
+      if (partner_id === id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Users cannot be their own partner'
+        });
+      }
+
       const partnerCheck = await query(
         'SELECT id FROM users WHERE id = $1 AND deleted_at IS NULL',
         [partner_id]
@@ -780,12 +796,42 @@ router.put('/users/:id', async (req, res) => {
     paramCount++;
     values.push(id);
 
+    // Get the user's old partner_id before update
+    const oldUserData = await query('SELECT partner_id FROM users WHERE id = $1', [id]);
+    const oldPartnerId = oldUserData.rows[0]?.partner_id;
+
     const result = await query(`
       UPDATE users
       SET ${updates.join(', ')}
       WHERE id = $${paramCount}
       RETURNING id, first_name, last_name, full_name, email, address, partner_id, plus_one_allowed, account_status, created_at, deleted_at
     `, values);
+
+    // Handle bidirectional partner relationship changes
+    if (partner_id !== undefined) {
+      // If old partner exists and is different from new partner, unlink them
+      if (oldPartnerId && oldPartnerId !== partner_id) {
+        await query(
+          'UPDATE users SET partner_id = NULL WHERE id = $1 AND partner_id = $2',
+          [oldPartnerId, id]
+        );
+      }
+
+      // If new partner is set, link them bidirectionally
+      if (partner_id) {
+        await query(
+          'UPDATE users SET partner_id = $1 WHERE id = $2 AND deleted_at IS NULL',
+          [id, partner_id]
+        );
+      }
+      // If partner_id is being cleared (null), unlink the old partner
+      else if (oldPartnerId) {
+        await query(
+          'UPDATE users SET partner_id = NULL WHERE id = $1 AND partner_id = $2',
+          [oldPartnerId, id]
+        );
+      }
+    }
 
     logger.info(`User ${id} updated by admin ${req.user.email}`);
 
@@ -814,6 +860,13 @@ router.delete('/users/:id', async (req, res) => {
 
     if (isPermanent) {
       // Hard delete - permanently remove from database
+      // First, unlink any partners
+      await query(`
+        UPDATE users
+        SET partner_id = NULL
+        WHERE partner_id = $1
+      `, [id]);
+
       const result = await query(`
         DELETE FROM users
         WHERE id = $1
@@ -835,10 +888,16 @@ router.delete('/users/:id', async (req, res) => {
         user: result.rows[0]
       });
     } else {
-      // Soft delete - mark as deleted
+      // Soft delete - mark as deleted and unlink partners
+      await query(`
+        UPDATE users
+        SET partner_id = NULL
+        WHERE partner_id = $1
+      `, [id]);
+
       const result = await query(`
         UPDATE users
-        SET deleted_at = CURRENT_TIMESTAMP
+        SET deleted_at = CURRENT_TIMESTAMP, partner_id = NULL
         WHERE id = $1 AND deleted_at IS NULL
         RETURNING id, full_name, email
       `, [id]);

@@ -2847,6 +2847,126 @@ body:not(.home-page) .full-screen-background {
   display: none;
 }
 
+/* Generic Modal Styles - SIMPLIFIED */
+#user-modal,
+#delete-user-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  overflow-y: scroll;
+  padding: 50px 20px;
+}
+
+#user-modal .modal-content,
+#delete-user-modal .modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  padding: 2rem;
+  margin: 0 auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  color: #333;
+}
+
+#user-modal .close,
+#delete-user-modal .close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #666;
+  cursor: pointer;
+  background: none;
+  border: none;
+  line-height: 1;
+}
+
+#user-modal .close:hover,
+#delete-user-modal .close:hover {
+  color: #000;
+}
+
+#user-modal h2,
+#delete-user-modal h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.75rem;
+}
+
+#user-modal .form-group {
+  margin-bottom: 1.25rem;
+}
+
+#user-modal .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #333;
+}
+
+#user-modal .form-group input[type="text"],
+#user-modal .form-group input[type="email"],
+#user-modal .form-group select,
+#user-modal .form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+#user-modal .form-group input:focus,
+#user-modal .form-group select:focus,
+#user-modal .form-group textarea:focus {
+  outline: none;
+  border-color: #c9a86a;
+}
+
+#user-modal .form-group small {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+#user-modal .form-group input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+#user-modal .form-actions,
+#delete-user-modal .form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #ddd;
+}
+
+#user-modal .form-actions .btn,
+#delete-user-modal .form-actions .btn {
+  flex: 1;
+}
+
+/* Delete confirmation modal - smaller width */
+#delete-user-modal .modal-content {
+  max-width: 400px;
+}
+
+#delete-user-modal p {
+  margin-bottom: 1.5rem;
+  color: var(--charcoal);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .photo-modal.active {
   display: flex;
   align-items: center;
@@ -2862,7 +2982,7 @@ body:not(.home-page) .full-screen-background {
   background: rgba(0, 0, 0, 0.8);
 }
 
-.modal-content {
+.photo-modal .modal-content {
   position: relative;
   max-width: 90vw;
   max-height: 90vh;

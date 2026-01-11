@@ -86,8 +86,14 @@ class PhotoSystem {
       }
     });
 
-    // Infinite scroll
+    // Infinite scroll (only on photos page)
     window.addEventListener('scroll', () => {
+      // Only trigger on photos page
+      const photosPage = document.getElementById('photos');
+      if (!photosPage || !photosPage.classList.contains('active')) {
+        return;
+      }
+
       // Check if user is near bottom of page
       const scrollPosition = window.innerHeight + window.scrollY;
       const pageHeight = document.documentElement.scrollHeight;
