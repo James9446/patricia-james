@@ -117,6 +117,11 @@ photos.tar.gz
 *.sql.tmp
 migrate-production.sql
 
+# Database backups
+backups/
+/backups
+*.sql.backup
+
 # Application logs
 /server/logs
 logs/
