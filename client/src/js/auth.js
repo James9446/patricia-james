@@ -406,6 +406,11 @@ class AuthSystemV5 {
                 <input type="email" id="registerEmail" name="email" required>
               </div>
               <div class="form-group">
+                <label for="registerEmailConfirm">Confirm Email:</label>
+                <input type="email" id="registerEmailConfirm" name="emailConfirm" required onpaste="return false" autocomplete="off">
+                <small class="email-confirmation-hint">Please type your email again (pasting is disabled to prevent errors)</small>
+              </div>
+              <div class="form-group">
                 <label for="registerPassword">Password:</label>
                 <div class="password-input-wrapper">
                   <input type="password" id="registerPassword" name="password" required>
@@ -580,6 +585,7 @@ class AuthSystemV5 {
       const firstName = document.getElementById('firstName').value.trim();
       const lastName = document.getElementById('lastName').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
+      const emailConfirm = document.getElementById('registerEmailConfirm').value.trim();
       const password = document.getElementById('registerPassword').value;
       const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
 
@@ -590,8 +596,14 @@ class AuthSystemV5 {
       }
 
       // Basic validation
-      if (!firstName || !lastName || !email || !password || !passwordConfirm) {
+      if (!firstName || !lastName || !email || !emailConfirm || !password || !passwordConfirm) {
         this.showAuthMessage('Please fill in all fields', false);
+        return;
+      }
+
+      // Email confirmation validation
+      if (email !== emailConfirm) {
+        this.showAuthMessage('Email addresses do not match', false);
         return;
       }
 

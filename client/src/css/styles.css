@@ -2561,6 +2561,16 @@ body:not(.home-page) .full-screen-background {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+.email-confirmation-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--slate-gray);
+  line-height: 1.5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-style: italic;
+}
+
 /* Authentication Messages */
 .auth-message {
   margin: 20px;
