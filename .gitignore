@@ -120,3 +120,6 @@ migrate-production.sql
 # Application logs
 /server/logs
 logs/
+
+# Internal admin documentation (contains sensitive credentials)
+admin_notes.md

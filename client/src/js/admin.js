@@ -652,7 +652,7 @@ class AdminDashboard {
     if (!tbody) return;
 
     if (this.users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--gray-600);">No users found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--gray-600);">No users found</td></tr>';
       return;
     }
 
@@ -669,6 +669,20 @@ class AdminDashboard {
 
       return `
         <tr>
+          <td style="font-family: monospace; font-size: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button
+                class="btn-icon"
+                onclick="adminDashboard.copyToClipboard('${user.id}', this)"
+                title="Copy User ID"
+                style="padding: 0.25rem; font-size: 0.875rem;">
+                📋
+              </button>
+              <span style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${user.id}">
+                ${user.id}
+              </span>
+            </div>
+          </td>
           <td>
             ${user.full_name}
           </td>
@@ -894,6 +908,23 @@ class AdminDashboard {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
+    });
+  }
+
+  copyToClipboard(text, buttonElement) {
+    navigator.clipboard.writeText(text).then(() => {
+      // Visual feedback: change icon temporarily
+      const originalText = buttonElement.textContent;
+      buttonElement.textContent = '✓';
+      buttonElement.style.color = '#10b981'; // green
+
+      setTimeout(() => {
+        buttonElement.textContent = originalText;
+        buttonElement.style.color = '';
+      }, 1500);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy to clipboard');
     });
   }
 

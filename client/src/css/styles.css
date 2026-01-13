@@ -2847,6 +2847,24 @@ body:not(.home-page) .full-screen-background {
   display: none;
 }
 
+/* Add User Button - Make it more visible */
+#add-user-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+  color: white !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+#add-user-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%) !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+#add-user-btn:active {
+  transform: translateY(0);
+}
+
 /* Generic Modal Styles - SIMPLIFIED */
 #user-modal,
 #delete-user-modal {
