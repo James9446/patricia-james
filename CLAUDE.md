@@ -142,12 +142,89 @@ This was caused by:
 - Production site is live at patriciajames.fyi
 - Untested changes can break the site for wedding guests
 - User needs to verify changes work as expected before deployment
-- Render auto-deploys from GitHub (push = instant production deploy)
+- Deployment to Render is manual (user controls when changes go live)
 
 **If User Asks to "Deploy" or "Push Changes":**
 - First confirm: "I see you have uncommitted changes. Would you like me to commit them locally first so you can test?"
 - After testing: "Have you tested these changes and verified they work correctly?"
 - Only after explicit confirmation: Push to GitHub
+
+---
+
+### 🔄 Database Migration Best Practices
+
+**When database schema changes are made, follow this logical sequence:**
+
+#### Standard Development Workflow
+
+1. **Make Changes Locally**
+   - Develop feature with code changes
+   - Create migration file if schema changes needed
+   - Run migration on local database
+   - Test thoroughly locally
+
+2. **Commit to GitHub**
+   - Commit code changes and migration files
+   - Push to GitHub (saves work, enables collaboration)
+   - GitHub push does NOT trigger deployment
+
+3. **Before Manual Deployment to Render**
+   - ⚠️ **CRITICAL STEP**: Run migration on production database FIRST
+   - Verify migration succeeded
+   - Then manually deploy on Render dashboard
+   - Test deployed changes
+
+#### Migration Reminder Protocol
+
+**Whenever a migration file is created or schema changes are made, I will:**
+
+1. **Track the migration** - Note which migration files need production deployment
+2. **Remind before manual deployment** - When user is about to deploy to Render:
+   ```
+   ⚠️ REMINDER: Production database migration required before deploying on Render
+
+   Migration file: server/database/migrations/XXX_migration_name.sql
+
+   Steps:
+   1. Run migration on production:
+      psql "[PRODUCTION_EXTERNAL_URL]" -f server/database/migrations/XXX_migration_name.sql
+
+   2. Verify migration succeeded:
+      [verification command]
+
+   3. Then manually deploy on Render dashboard
+
+   Have you run the production migration?
+   ```
+
+#### Why This Order Matters
+
+**Correct Sequence:**
+1. Run migration on production database ✅
+2. Deploy code on Render ✅
+3. Code expects schema → Schema exists → App works ✅
+
+**Incorrect Sequence:**
+1. Deploy code on Render ❌
+2. Code expects schema → Schema missing → 500 errors ❌
+3. Run migration on production (too late) ❌
+
+#### When to Issue Migration Reminders
+
+Remind about production migrations when:
+- User is about to manually deploy on Render
+- User asks "can I deploy this?"
+- User says "push to production"
+- Any indication they're moving changes to production
+
+#### Migration Tracking
+
+Keep track of pending migrations in conversation:
+- "📋 Pending migration: 012_add_user_address.sql (not yet run on production)"
+- Update status when user confirms migration was run
+- Clear when deployment is complete
+
+---
 
 ## Current Development Priorities (IMPORTANT)
 
