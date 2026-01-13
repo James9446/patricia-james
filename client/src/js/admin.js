@@ -18,6 +18,18 @@ class AdminDashboard {
       status: 'all',
       sort: 'name'
     };
+    this.users = [];
+    this.userFilters = {
+      status: 'all',
+      has_partner: 'all',
+      plus_one: 'all',
+      sort: 'name',
+      search: '',
+      limit: 100,
+      offset: 0
+    };
+    this.selectedUserId = null;
+    this.allUsers = []; // For partner dropdown
 
     this.init();
   }
@@ -85,6 +97,103 @@ class AdminDashboard {
       this.photoFilters.offset += this.photoFilters.limit;
       this.loadPhotos(true); // append mode
     });
+
+    // User filters
+    document.getElementById('admin-user-status-filter')?.addEventListener('change', (e) => {
+      this.userFilters.status = e.target.value;
+      this.userFilters.offset = 0;
+      this.loadUsers();
+    });
+
+    document.getElementById('admin-user-partner-filter')?.addEventListener('change', (e) => {
+      this.userFilters.has_partner = e.target.value;
+      this.userFilters.offset = 0;
+      this.loadUsers();
+    });
+
+    document.getElementById('admin-user-plusone-filter')?.addEventListener('change', (e) => {
+      this.userFilters.plus_one = e.target.value;
+      this.userFilters.offset = 0;
+      this.loadUsers();
+    });
+
+    document.getElementById('admin-user-sort')?.addEventListener('change', (e) => {
+      this.userFilters.sort = e.target.value;
+      this.userFilters.offset = 0;
+      this.loadUsers();
+    });
+
+    document.getElementById('admin-user-search')?.addEventListener('input', (e) => {
+      this.userFilters.search = e.target.value;
+      this.userFilters.offset = 0;
+      clearTimeout(this.userSearchTimeout);
+      this.userSearchTimeout = setTimeout(() => this.loadUsers(), 500);
+    });
+
+    // Add user button
+    document.getElementById('add-user-btn')?.addEventListener('click', () => {
+      this.openUserModal();
+    });
+
+    // Load more users
+    document.getElementById('admin-load-more-users')?.addEventListener('click', () => {
+      this.userFilters.offset += this.userFilters.limit;
+      this.loadUsers(true); // append mode
+    });
+
+    // User modal close/cancel
+    document.getElementById('close-user-modal')?.addEventListener('click', () => {
+      this.closeUserModal();
+    });
+
+    document.getElementById('cancel-user-modal')?.addEventListener('click', () => {
+      this.closeUserModal();
+    });
+
+    document.getElementById('user-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'user-modal') {
+        this.closeUserModal();
+      }
+    });
+
+    // User form submission - using event delegation for both submit and button click
+    document.addEventListener('submit', (e) => {
+      if (e.target.id === 'user-form') {
+        console.log('📝 Form submit event triggered via delegation!');
+        e.preventDefault();
+        this.handleUserFormSubmit();
+      }
+    });
+
+    // Also listen for clicks on the save button directly
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#user-form .btn-primary[type="submit"]')) {
+        console.log('📝 Save button clicked!');
+        e.preventDefault();
+        this.handleUserFormSubmit();
+      }
+    });
+
+    console.log('📝 Form submit and button click listeners attached via delegation');
+
+    // Delete confirmation modal
+    document.getElementById('close-delete-modal')?.addEventListener('click', () => {
+      this.closeDeleteModal();
+    });
+
+    document.getElementById('cancel-delete-user')?.addEventListener('click', () => {
+      this.closeDeleteModal();
+    });
+
+    document.getElementById('confirm-delete-user')?.addEventListener('click', () => {
+      this.confirmDeleteUser();
+    });
+
+    document.getElementById('delete-user-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'delete-user-modal') {
+        this.closeDeleteModal();
+      }
+    });
   }
 
   switchTab(tabName) {
@@ -115,6 +224,9 @@ class AdminDashboard {
         break;
       case 'rsvps':
         this.loadRSVPs();
+        break;
+      case 'users':
+        this.loadUsers();
         break;
     }
   }
@@ -482,6 +594,313 @@ class AdminDashboard {
     }).join('');
   }
 
+  async loadUsers(append = false) {
+    try {
+      const params = new URLSearchParams({
+        status: this.userFilters.status,
+        has_partner: this.userFilters.has_partner,
+        plus_one: this.userFilters.plus_one,
+        search: this.userFilters.search,
+        sort: this.userFilters.sort,
+        limit: this.userFilters.limit,
+        offset: this.userFilters.offset
+      });
+
+      const response = await fetch(`/api/admin/users?${params}`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load users');
+      }
+
+      const data = await response.json();
+
+      if (append) {
+        this.users = [...this.users, ...data.users];
+      } else {
+        this.users = data.users;
+      }
+
+      // Store all users for partner dropdown
+      this.allUsers = data.users;
+
+      this.renderUsers();
+      this.renderUserStats(data.stats);
+
+      // Show/hide load more button
+      const loadMoreBtn = document.getElementById('admin-load-more-users');
+      if (loadMoreBtn) {
+        loadMoreBtn.style.display = (this.userFilters.offset + this.userFilters.limit < data.total) ? 'inline-block' : 'none';
+      }
+
+    } catch (error) {
+      console.error('Error loading users:', error);
+      this.showError('Failed to load users');
+    }
+  }
+
+  renderUserStats(stats) {
+    document.getElementById('stat-total-users').textContent = stats.total_active || '0';
+    document.getElementById('stat-registered-users').textContent = stats.total_registered || '0';
+    document.getElementById('stat-partnered-users').textContent = stats.total_with_partner || '0';
+    document.getElementById('stat-plus-one-users').textContent = stats.total_plus_one_allowed || '0';
+  }
+
+  renderUsers() {
+    const tbody = document.getElementById('admin-users-tbody');
+    if (!tbody) return;
+
+    if (this.users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--gray-600);">No users found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = this.users.map(user => {
+      const statusBadge = user.account_status === 'registered'
+        ? '<span class="badge badge-success">Registered</span>'
+        : '<span class="badge badge-pending">Guest</span>';
+
+      const rsvpBadge = user.rsvp_status === 'attending'
+        ? '<span class="badge badge-success">✓ Attending</span>'
+        : user.rsvp_status === 'not_attending'
+        ? '<span class="badge badge-danger">✗ Not Attending</span>'
+        : '<span class="badge badge-pending">Pending</span>';
+
+      return `
+        <tr>
+          <td style="font-family: monospace; font-size: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button
+                class="btn-icon"
+                onclick="adminDashboard.copyToClipboard('${user.id}', this)"
+                title="Copy User ID"
+                style="padding: 0.25rem; font-size: 0.875rem;">
+                📋
+              </button>
+              <span style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${user.id}">
+                ${user.id}
+              </span>
+            </div>
+          </td>
+          <td>
+            ${user.full_name}
+          </td>
+          <td>${user.email || '-'}</td>
+          <td>${user.address || '-'}</td>
+          <td>${user.partner_name || '-'}</td>
+          <td>${statusBadge}</td>
+          <td>${user.plus_one_allowed ? '✓ Yes' : '-'}</td>
+          <td>${rsvpBadge}</td>
+          <td>
+            <button class="btn-icon" onclick="adminDashboard.openUserModal('${user.id}')" title="Edit User">
+              ✏️
+            </button>
+            <button class="btn-icon danger" onclick="adminDashboard.deleteUser('${user.id}')" title="Delete User">
+              🗑️
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async openUserModal(userId = null) {
+    this.selectedUserId = userId;
+    const modal = document.getElementById('user-modal');
+    const form = document.getElementById('user-form');
+    const title = document.getElementById('user-modal-title');
+
+    // Load all users for partner dropdown (exclude current user if editing)
+    await this.loadPartnerOptions(userId);
+
+    if (userId) {
+      // Edit mode - load user data
+      title.textContent = 'Edit User';
+      try {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load user');
+        }
+
+        const data = await response.json();
+        const user = data.user;
+
+        // Populate form
+        document.getElementById('user-id').value = user.id;
+        document.getElementById('user-first-name').value = user.first_name;
+        document.getElementById('user-last-name').value = user.last_name;
+        document.getElementById('user-email').value = user.email || '';
+        document.getElementById('user-address').value = user.address || '';
+        document.getElementById('user-partner').value = user.partner_id || '';
+        document.getElementById('user-account-status').value = user.account_status;
+        document.getElementById('user-plus-one').checked = user.plus_one_allowed;
+
+      } catch (error) {
+        console.error('Error loading user:', error);
+        alert('Failed to load user data');
+        return;
+      }
+    } else {
+      // Add mode - clear form
+      title.textContent = 'Add New User';
+      form.reset();
+      document.getElementById('user-id').value = '';
+    }
+
+    modal.style.display = 'block';
+    // Scroll modal to top
+    modal.scrollTop = 0;
+    // Scroll page to top to ensure modal is visible
+    window.scrollTo(0, 0);
+  }
+
+  closeUserModal() {
+    const modal = document.getElementById('user-modal');
+    modal.style.display = 'none';
+    document.getElementById('user-form').reset();
+    this.selectedUserId = null;
+  }
+
+  async loadPartnerOptions(excludeUserId = null) {
+    const select = document.getElementById('user-partner');
+    if (!select) return;
+
+    try {
+      const response = await fetch('/api/admin/users?limit=500&sort=name', {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load users for partner dropdown');
+      }
+
+      const data = await response.json();
+
+      // Clear and rebuild options
+      select.innerHTML = '<option value="">No Partner</option>';
+
+      data.users.forEach(user => {
+        // Exclude the current user being edited (prevent self-partnering)
+        if (excludeUserId && user.id === excludeUserId) {
+          return;
+        }
+
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = user.full_name;
+        select.appendChild(option);
+      });
+
+    } catch (error) {
+      console.error('Error loading partner options:', error);
+    }
+  }
+
+  async handleUserFormSubmit() {
+    console.log('📝 Form submission started');
+
+    const userId = document.getElementById('user-id').value;
+    const formData = {
+      first_name: document.getElementById('user-first-name').value.trim(),
+      last_name: document.getElementById('user-last-name').value.trim(),
+      email: document.getElementById('user-email').value.trim() || null,
+      address: document.getElementById('user-address').value.trim() || null,
+      partner_id: document.getElementById('user-partner').value || null,
+      account_status: document.getElementById('user-account-status').value,
+      plus_one_allowed: document.getElementById('user-plus-one').checked
+    };
+
+    console.log('📝 Form data:', formData);
+    console.log('📝 User ID:', userId);
+
+    // Validate required fields
+    if (!formData.first_name || !formData.last_name) {
+      alert('First name and last name are required');
+      return;
+    }
+
+    try {
+      const url = userId ? `/api/admin/users/${userId}` : '/api/admin/users';
+      const method = userId ? 'PUT' : 'POST';
+
+      console.log(`📝 Sending ${method} request to ${url}`);
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(formData)
+      });
+
+      console.log('📝 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('📝 Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to save user');
+      }
+
+      const data = await response.json();
+      console.log('📝 Success:', data.message);
+
+      // Close modal and reload users
+      this.closeUserModal();
+      this.userFilters.offset = 0;
+      this.loadUsers();
+
+    } catch (error) {
+      console.error('📝 Error saving user:', error);
+      alert(error.message || 'Failed to save user');
+    }
+  }
+
+  deleteUser(userId) {
+    this.selectedUserId = userId;
+    const modal = document.getElementById('delete-user-modal');
+    modal.style.display = 'block';
+    // Scroll modal to top
+    modal.scrollTop = 0;
+    // Scroll page to top to ensure modal is visible
+    window.scrollTo(0, 0);
+  }
+
+  closeDeleteModal() {
+    const modal = document.getElementById('delete-user-modal');
+    modal.style.display = 'none';
+    this.selectedUserId = null;
+  }
+
+  async confirmDeleteUser() {
+    if (!this.selectedUserId) return;
+
+    try {
+      const response = await fetch(`/api/admin/users/${this.selectedUserId}?permanent=false`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+
+      const data = await response.json();
+      console.log(data.message);
+
+      // Close modal and reload users
+      this.closeDeleteModal();
+      this.userFilters.offset = 0;
+      this.loadUsers();
+
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user');
+    }
+  }
+
   formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -489,6 +908,23 @@ class AdminDashboard {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
+    });
+  }
+
+  copyToClipboard(text, buttonElement) {
+    navigator.clipboard.writeText(text).then(() => {
+      // Visual feedback: change icon temporarily
+      const originalText = buttonElement.textContent;
+      buttonElement.textContent = '✓';
+      buttonElement.style.color = '#10b981'; // green
+
+      setTimeout(() => {
+        buttonElement.textContent = originalText;
+        buttonElement.style.color = '';
+      }, 1500);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy to clipboard');
     });
   }
 
