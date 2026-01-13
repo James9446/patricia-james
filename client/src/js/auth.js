@@ -378,7 +378,12 @@ class AuthSystemV5 {
               </div>
               <div class="form-group">
                 <label for="loginPassword">Password:</label>
-                <input type="password" id="loginPassword" name="password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="loginPassword" name="password" required>
+                  <button type="button" class="toggle-password" data-target="loginPassword" aria-label="Show password">
+                    <span class="toggle-text">Show</span>
+                  </button>
+                </div>
               </div>
               <button type="submit" class="auth-button">Login</button>
             </form>
@@ -402,7 +407,24 @@ class AuthSystemV5 {
               </div>
               <div class="form-group">
                 <label for="registerPassword">Password:</label>
-                <input type="password" id="registerPassword" name="password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="registerPassword" name="password" required>
+                  <button type="button" class="toggle-password" data-target="registerPassword" aria-label="Show password">
+                    <span class="toggle-text">Show</span>
+                  </button>
+                </div>
+                <small class="password-requirements">
+                  Must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character (!@#$%^&*)
+                </small>
+              </div>
+              <div class="form-group">
+                <label for="registerPasswordConfirm">Confirm Password:</label>
+                <div class="password-input-wrapper">
+                  <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required>
+                  <button type="button" class="toggle-password" data-target="registerPasswordConfirm" aria-label="Show password">
+                    <span class="toggle-text">Show</span>
+                  </button>
+                </div>
               </div>
               <button type="submit" class="auth-button">Register</button>
             </form>
@@ -418,6 +440,34 @@ class AuthSystemV5 {
   }
 
   /**
+   * Validate password complexity (Option A requirements)
+   */
+  validatePasswordComplexity(password) {
+    const errors = [];
+
+    if (password.length < 8) {
+      errors.push('At least 8 characters');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('At least 1 uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('At least 1 lowercase letter');
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push('At least 1 number');
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      errors.push('At least 1 special character (!@#$%^&*)');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
    * Set up authentication modal event handlers
    */
   setupAuthModalEvents() {
@@ -426,6 +476,31 @@ class AuthSystemV5 {
     const tabs = document.querySelectorAll('.auth-tab');
     const loginForm = document.getElementById('loginFormElement');
     const registerForm = document.getElementById('registerFormElement');
+
+    // Set up password toggle buttons
+    const setupPasswordToggles = () => {
+      const toggleButtons = document.querySelectorAll('.toggle-password');
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const targetId = button.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          const toggleText = button.querySelector('.toggle-text');
+
+          if (input.type === 'password') {
+            input.type = 'text';
+            toggleText.textContent = 'Hide';
+            button.setAttribute('aria-label', 'Hide password');
+          } else {
+            input.type = 'password';
+            toggleText.textContent = 'Show';
+            button.setAttribute('aria-label', 'Show password');
+          }
+        });
+      });
+    };
+
+    // Initialize password toggles
+    setupPasswordToggles();
 
     // Close modal
     closeBtn.addEventListener('click', () => {
@@ -501,29 +576,38 @@ class AuthSystemV5 {
     // Register form submission
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const firstName = document.getElementById('firstName').value.trim();
       const lastName = document.getElementById('lastName').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
       const password = document.getElementById('registerPassword').value;
-      
+      const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
       // Check if user is already logged in
       if (this.isAuthenticated) {
         this.showAuthMessage('You are already logged in. Please logout first if you want to create a different account.', false);
         return;
       }
-      
+
       // Basic validation
-      if (!firstName || !lastName || !email || !password) {
+      if (!firstName || !lastName || !email || !password || !passwordConfirm) {
         this.showAuthMessage('Please fill in all fields', false);
         return;
       }
-      
-      if (password.length < 6) {
-        this.showAuthMessage('Password must be at least 6 characters long', false);
+
+      // Password confirmation validation
+      if (password !== passwordConfirm) {
+        this.showAuthMessage('Passwords do not match', false);
         return;
       }
-      
+
+      // Password complexity validation
+      const passwordValidation = this.validatePasswordComplexity(password);
+      if (!passwordValidation.valid) {
+        this.showAuthMessage('Password requirements not met:\n' + passwordValidation.errors.join('\n'), false);
+        return;
+      }
+
       // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {

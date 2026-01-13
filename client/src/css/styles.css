@@ -755,16 +755,23 @@ body.home-page {
   resize: vertical;
 }
 
-.form-group input[type="text"] {
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"] {
   width: 100%;
-  padding: var(--spacing-md);
+  padding: 14px 16px;
   border: 2px solid var(--light-gray);
   border-radius: var(--radius-md);
   font-size: var(--text-base);
+  line-height: 1.5;
+  height: 48px;
+  box-sizing: border-box;
   transition: border-color 0.3s ease;
 }
 
-.form-group input[type="text"]:focus {
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus {
   outline: none;
   border-color: var(--solstice-blue);
   box-shadow: 0 0 0 3px rgba(77, 197, 227, 0.1);
@@ -959,6 +966,12 @@ body.home-page {
   border: 1px solid var(--gray-300);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.form-input,
+.form-select {
+  height: 48px;
 }
 
 .form-input:focus,
@@ -2493,6 +2506,61 @@ body:not(.home-page) .full-screen-background {
   transform: translateY(0);
 }
 
+/* Password Input Wrapper and Toggle */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48px;
+}
+
+.password-input-wrapper input {
+  flex: 1;
+  height: 48px;
+  padding: 14px 55px 14px 16px; /* Make room for the toggle button */
+  box-sizing: border-box;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--solstice-blue);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: color 0.2s ease, opacity 0.2s ease;
+  z-index: 10;
+}
+
+.toggle-password:hover {
+  color: var(--lavender-haze);
+  opacity: 0.8;
+}
+
+.toggle-password:active {
+  opacity: 0.6;
+}
+
+.toggle-password .toggle-text {
+  display: inline-block;
+  user-select: none;
+}
+
+/* Password Requirements Text */
+.password-requirements {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--slate-gray);
+  line-height: 1.5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 /* Authentication Messages */
 .auth-message {
   margin: 20px;
@@ -2624,8 +2692,19 @@ body:not(.home-page) .full-screen-background {
   }
   
   .form-group input {
-    padding: 12px;
+    padding: 12px 14px;
     font-size: 14px;
+    height: 44px;
+    box-sizing: border-box;
+  }
+
+  .password-input-wrapper {
+    height: 44px;
+  }
+
+  .password-input-wrapper input {
+    height: 44px;
+    padding: 12px 50px 12px 14px;
   }
   
   .auth-button {
