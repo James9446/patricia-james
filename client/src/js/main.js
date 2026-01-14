@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileMenu = document.getElementById('mobile-menu');
 
     // Function to show a specific page
-    function showPage(pageId) {
+    function showPage(pageId, queryString = '') {
         // Hide all pages
         pages.forEach(page => {
             page.classList.remove('active');
@@ -116,13 +116,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     initVenueShowcase();
                 }, 100);
             }
+
+            // Initialize reset password page if shown
+            if (pageId === 'reset-password') {
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    if (window.authSystem) {
+                        window.authSystem.initializeResetPasswordPage();
+                    }
+                }, 100);
+            }
         }
 
         // Close mobile menu if open
         mobileMenu.classList.remove('active');
 
-        // Update URL without page reload
-        history.pushState({ page: pageId }, '', `#${pageId}`);
+        // Update URL without page reload (preserve query string if present)
+        const newHash = queryString ? `#${pageId}?${queryString}` : `#${pageId}`;
+        history.pushState({ page: pageId }, '', newHash);
     }
 
     // Make showPage available globally for authentication system
@@ -165,8 +176,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle initial page load with hash
     const hash = window.location.hash.substring(1);
-    if (hash && document.getElementById(hash)) {
-        showPage(hash);
+    // Extract page name and query string from hash
+    const pageName = hash.split('?')[0];
+    const queryString = hash.includes('?') ? hash.split('?')[1] : '';
+    if (pageName && document.getElementById(pageName)) {
+        showPage(pageName, queryString);
     } else {
         showPage('home');
     }
@@ -219,14 +233,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Add loading animation for form submissions
-    const submitButtons = document.querySelectorAll('button[type="submit"]');
+    // Add loading animation for form submissions (exclude auth forms which handle their own state)
+    const submitButtons = document.querySelectorAll('button[type="submit"]:not(#resetPasswordForm button):not(.auth-modal button)');
     submitButtons.forEach(button => {
         button.addEventListener('click', function() {
             const originalText = this.textContent;
             this.textContent = 'Submitting...';
             this.disabled = true;
-            
+
             // Re-enable after 2 seconds (in case of error)
             setTimeout(() => {
                 this.textContent = originalText;

@@ -386,6 +386,9 @@ class AuthSystemV5 {
                 </div>
               </div>
               <button type="submit" class="auth-button">Login</button>
+              <div class="forgot-password-link">
+                <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+              </div>
             </form>
           </div>
 
@@ -482,9 +485,9 @@ class AuthSystemV5 {
     const loginForm = document.getElementById('loginFormElement');
     const registerForm = document.getElementById('registerFormElement');
 
-    // Set up password toggle buttons
+    // Set up password toggle buttons (only for auth modals, not reset password page)
     const setupPasswordToggles = () => {
-      const toggleButtons = document.querySelectorAll('.toggle-password');
+      const toggleButtons = document.querySelectorAll('.auth-modal .toggle-password');
       toggleButtons.forEach(button => {
         button.addEventListener('click', () => {
           const targetId = button.getAttribute('data-target');
@@ -667,6 +670,16 @@ class AuthSystemV5 {
         }
       }
     });
+
+    // Forgot password link
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.style.display = 'none';
+        this.showForgotPasswordModal();
+      });
+    }
   }
 
   /**
@@ -678,15 +691,151 @@ class AuthSystemV5 {
       console.error('Auth message element not found! Modal may not be created.');
       return;
     }
-    
+
     messageEl.textContent = message;
     messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
-    
+
     // Clear message after 5 seconds
     setTimeout(() => {
       messageEl.textContent = '';
       messageEl.className = 'auth-message';
     }, 5000);
+  }
+
+  /**
+   * Show forgot password modal
+   */
+  showForgotPasswordModal() {
+    // Create modal if it doesn't exist
+    if (!document.getElementById('forgotPasswordModal')) {
+      this.createForgotPasswordModal();
+    }
+
+    // Show modal
+    const modal = document.getElementById('forgotPasswordModal');
+    modal.style.display = 'block';
+  }
+
+  /**
+   * Create forgot password modal
+   */
+  createForgotPasswordModal() {
+    const modalHTML = `
+      <div id="forgotPasswordModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+          <span class="forgot-password-close">&times;</span>
+
+          <div class="auth-form active">
+            <h2>Reset Your Password</h2>
+            <p>Enter your email address and we'll send you a link to reset your password.</p>
+            <form id="forgotPasswordFormElement">
+              <div class="form-group">
+                <label for="forgotPasswordEmail">Email:</label>
+                <input type="email" id="forgotPasswordEmail" name="email" required>
+              </div>
+              <button type="submit" class="auth-button">Send Reset Link</button>
+            </form>
+          </div>
+
+          <div id="forgotPasswordMessage" class="auth-message"></div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    this.setupForgotPasswordModalEvents();
+  }
+
+  /**
+   * Set up forgot password modal event handlers
+   */
+  setupForgotPasswordModalEvents() {
+    const modal = document.getElementById('forgotPasswordModal');
+    const closeBtn = modal.querySelector('.forgot-password-close');
+    const form = document.getElementById('forgotPasswordFormElement');
+
+    // Close modal
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('forgotPasswordEmail').value.trim();
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        this.showForgotPasswordMessage('Please enter a valid email address', false);
+        return;
+      }
+
+      // Show loading state
+      this.showForgotPasswordMessage('Sending reset link...', true);
+
+      const result = await this.requestPasswordReset(email);
+      this.showForgotPasswordMessage(result.message, result.success);
+
+      // Clear form if successful
+      if (result.success) {
+        form.reset();
+      }
+    });
+  }
+
+  /**
+   * Show message in forgot password modal
+   */
+  showForgotPasswordMessage(message, isSuccess) {
+    const messageEl = document.getElementById('forgotPasswordMessage');
+    if (!messageEl) {
+      console.error('Forgot password message element not found!');
+      return;
+    }
+
+    messageEl.textContent = message;
+    messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
+
+    // Clear message after 8 seconds (longer than normal since user needs to check email)
+    setTimeout(() => {
+      messageEl.textContent = '';
+      messageEl.className = 'auth-message';
+    }, 8000);
+  }
+
+  /**
+   * Request password reset email
+   */
+  async requestPasswordReset(email) {
+    try {
+      const response = await fetch(`${this.apiBase}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      return {
+        success: false,
+        message: 'Failed to send reset email. Please try again later.'
+      };
+    }
   }
 
   /**
@@ -801,6 +950,161 @@ class AuthSystemV5 {
   }
 
   /**
+   * Initialize reset password page
+   */
+  initializeResetPasswordPage() {
+    const form = document.getElementById('resetPasswordForm');
+    if (!form) return; // Not on reset password page
+
+    // Set up password toggle buttons for reset password page
+    const toggleButtons = document.querySelectorAll('#reset-password .toggle-password');
+    toggleButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const targetId = button.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        const toggleText = button.querySelector('.toggle-text');
+
+        if (!input || !toggleText) return;
+
+        if (input.type === 'password') {
+          input.type = 'text';
+          toggleText.textContent = 'Hide';
+          button.setAttribute('aria-label', 'Hide password');
+        } else {
+          input.type = 'password';
+          toggleText.textContent = 'Show';
+          button.setAttribute('aria-label', 'Show password');
+        }
+      });
+    });
+
+    // Get token from URL hash (format: #reset-password?token=abc123)
+    const hash = window.location.hash;
+    const queryString = hash.includes('?') ? hash.split('?')[1] : '';
+    const urlParams = new URLSearchParams(queryString);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      this.showResetPasswordMessage('Invalid or missing reset token', false);
+      // Disable the form
+      const inputs = form.querySelectorAll('input, button');
+      inputs.forEach(input => input.disabled = true);
+      return;
+    }
+
+    // Verify token with backend
+    this.verifyResetToken(token);
+
+    // Handle form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const password = document.getElementById('resetPasswordNew').value;
+      const passwordConfirm = document.getElementById('resetPasswordConfirm').value;
+
+      // Validate passwords match
+      if (password !== passwordConfirm) {
+        this.showResetPasswordMessage('Passwords do not match', false);
+        return;
+      }
+
+      // Validate password complexity
+      const validation = this.validatePasswordComplexity(password);
+      if (validation.length > 0) {
+        this.showResetPasswordMessage('Password requirements:\n' + validation.join('\n'), false);
+        return;
+      }
+
+      // Show loading state
+      this.showResetPasswordMessage('Resetting password...', true);
+
+      // Submit password reset
+      const result = await this.submitPasswordReset(token, password);
+      this.showResetPasswordMessage(result.message, result.success);
+
+      // Redirect to home on success (user is now logged in)
+      if (result.success) {
+        setTimeout(() => {
+          window.location.href = '/#home';
+          // Force auth check after redirect
+          window.location.reload();
+        }, 2000);
+      }
+    });
+  }
+
+  /**
+   * Verify reset token with backend
+   */
+  async verifyResetToken(token) {
+    try {
+      const response = await fetch(`${this.apiBase}/auth/verify-reset-token?token=${token}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        this.showResetPasswordMessage(data.message || 'Invalid or expired reset token', false);
+        // Disable the form
+        const form = document.getElementById('resetPasswordForm');
+        if (form) {
+          const inputs = form.querySelectorAll('input, button');
+          inputs.forEach(input => input.disabled = true);
+        }
+      }
+
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      this.showResetPasswordMessage('Failed to verify reset token', false);
+    }
+  }
+
+  /**
+   * Submit password reset
+   */
+  async submitPasswordReset(token, password) {
+    try {
+      const response = await fetch(`${this.apiBase}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ token, password })
+      });
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error('Password reset failed:', error);
+      return {
+        success: false,
+        message: 'Failed to reset password. Please try again.'
+      };
+    }
+  }
+
+  /**
+   * Show message on reset password page
+   */
+  showResetPasswordMessage(message, isSuccess) {
+    const messageEl = document.getElementById('resetPasswordMessage');
+    if (!messageEl) {
+      console.error('Reset password message element not found!');
+      return;
+    }
+
+    messageEl.textContent = message;
+    messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
+  }
+
+  /**
    * Wait for authentication to be initialized
    */
   async waitForInitialization() {
@@ -819,10 +1123,13 @@ class AuthSystemV5 {
 // Initialize authentication system after main.js has loaded
 window.addEventListener('load', () => {
   console.log('🔐 Initializing AuthSystem v5...');
-  
+
   // Initialize immediately
   window.authSystem = new AuthSystemV5();
   console.log('🔐 AuthSystem v5 initialized');
+
+  // Initialize reset password page if we're on it
+  window.authSystem.initializeResetPasswordPage();
 });
 
 // Export for use in other scripts

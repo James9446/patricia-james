@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { query } = require('../config/db');
 const { hashPassword, verifyPassword, validatePassword } = require('../utils/password');
 const logger = require('../config/logger');
 const { authLimiter } = require('../middleware/rateLimiter');
+const { sendEmail } = require('../config/email');
+const { getPasswordResetEmail } = require('../utils/emailTemplates');
 
 /**
  * POST /api/auth/check-guest
@@ -499,6 +502,220 @@ router.get('/status', (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to check authentication status',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/auth/forgot-password
+ * Request password reset email
+ */
+router.post('/forgot-password', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
+    // Look up user by email
+    const result = await query(
+      'SELECT id, email, first_name, last_name FROM users WHERE email = $1 AND account_status = \'registered\' AND deleted_at IS NULL',
+      [email]
+    );
+
+    // Always return success message (don't reveal if email exists or not - security best practice)
+    if (result.rows.length === 0) {
+      logger.info(`Password reset requested for non-existent email: ${email}`);
+      return res.json({
+        success: true,
+        message: 'If an account exists with that email, a password reset link has been sent.'
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Generate secure reset token (32 random bytes = 64 hex characters)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Save token to database
+    await query(
+      'UPDATE users SET reset_token = $1, reset_token_expires = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [resetToken, resetTokenExpires, user.id]
+    );
+
+    // Send password reset email
+    const resetUrl = `${process.env.SITE_URL || 'https://patriciajames.fyi'}/#reset-password?token=${resetToken}`;
+    const emailHtml = getPasswordResetEmail(user.first_name, resetUrl);
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Password Reset Request - Patricia y James Wedding',
+      html: emailHtml
+    });
+
+    logger.info(`Password reset email sent to: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'If an account exists with that email, a password reset link has been sent.'
+    });
+
+  } catch (error) {
+    logger.error(`Error in forgot-password: ${error.message}`, { stack: error.stack });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process password reset request',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/auth/verify-reset-token
+ * Verify that a reset token is valid and not expired
+ */
+router.get('/verify-reset-token', async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token is required'
+      });
+    }
+
+    // Look up user by reset token
+    const result = await query(
+      'SELECT id, email, first_name, reset_token_expires FROM users WHERE reset_token = $1 AND deleted_at IS NULL',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Check if token has expired
+    if (new Date() > new Date(user.reset_token_expires)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token has expired. Please request a new password reset.'
+      });
+    }
+
+    // Token is valid
+    res.json({
+      success: true,
+      message: 'Reset token is valid',
+      data: {
+        email: user.email,
+        first_name: user.first_name
+      }
+    });
+
+  } catch (error) {
+    logger.error(`Error verifying reset token: ${error.message}`, { stack: error.stack });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify reset token',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using valid token
+ */
+router.post('/reset-password', authLimiter, async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token and new password are required'
+      });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password does not meet requirements',
+        errors: passwordValidation.errors
+      });
+    }
+
+    // Look up user by reset token
+    const result = await query(
+      'SELECT id, email, first_name, reset_token_expires FROM users WHERE reset_token = $1 AND deleted_at IS NULL',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Check if token has expired
+    if (new Date() > new Date(user.reset_token_expires)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token has expired. Please request a new password reset.'
+      });
+    }
+
+    // Hash the new password
+    const password_hash = await hashPassword(password);
+
+    // Update password and clear reset token
+    await query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [password_hash, user.id]
+    );
+
+    // Create session for the user (auto-login after password reset)
+    req.session.userId = user.id;
+    req.session.userEmail = user.email;
+
+    logger.info(`Password reset successful for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully. You are now logged in.'
+    });
+
+  } catch (error) {
+    logger.error(`Error resetting password: ${error.message}`, { stack: error.stack });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
       error: error.message
     });
   }
