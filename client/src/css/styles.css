@@ -2426,6 +2426,23 @@ body:not(.home-page) .full-screen-background {
   color: var(--charcoal);
 }
 
+.forgot-password-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--slate-gray);
+  cursor: pointer;
+  z-index: 1031;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.forgot-password-close:hover {
+  color: var(--charcoal);
+}
+
 /* Authentication Tabs */
 .auth-tabs {
   display: flex;

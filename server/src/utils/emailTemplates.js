@@ -16,7 +16,7 @@ function getEmailWrapper(content) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Patricia & James Wedding</title>
+  <title>Patricia y James Wedding</title>
   <style>
     body {
       margin: 0;
@@ -121,13 +121,14 @@ function getEmailWrapper(content) {
 <body>
   <div class="email-container">
     <div class="email-header">
-      <h1>Patricia & James</h1>
+      <h1>Patricia y James</h1>
     </div>
     <div class="email-body">
       ${content}
     </div>
     <div class="email-footer">
       <p>This email was sent from Patricia & James Wedding Website</p>
+      <p>Replies to this email will go directly James' inbox</p>
       <p><a href="https://patriciajames.fyi">patriciajames.fyi</a></p>
       <p class="small-text">If you didn't request this email, you can safely ignore it.</p>
     </div>
@@ -135,6 +136,28 @@ function getEmailWrapper(content) {
 </body>
 </html>
   `.trim();
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatRsvpStatus(status) {
+  if (status === 'attending') return 'Attending';
+  if (status === 'not_attending') return 'Not attending';
+  if (status) return escapeHtml(status);
+  return 'Not answered';
+}
+
+function formatDetail(value, fallback = 'None noted') {
+  const trimmed = typeof value === 'string' ? value.trim() : value;
+  return trimmed ? escapeHtml(trimmed) : fallback;
 }
 
 /**
@@ -199,6 +222,166 @@ function getPasswordResetEmail(firstName, resetLink) {
   `;
 
   return getEmailWrapper(content);
+}
+
+/**
+ * RSVP Confirmation Template
+ * @param {Object} data - RSVP data
+ * @param {Object} data.user - Primary guest info
+ * @param {Object|null} data.partner - Partner info (if any)
+ * @param {Object|null} data.plusOne - Plus-one info (if any)
+ * @param {Object} data.rsvp - RSVP details
+ * @param {string} [data.siteUrl] - Base site URL
+ * @returns {Object} - { subject, html, text }
+ */
+function getRsvpConfirmationEmail(data) {
+  const {
+    user,
+    partner,
+    plusOne,
+    rsvp,
+    siteUrl
+  } = data;
+
+  const baseUrl = siteUrl || process.env.SITE_URL || 'https://patriciajames.fyi';
+  const rsvpUrl = `${baseUrl}/#rsvp`;
+  const photosUrl = `${baseUrl}/#photos`;
+
+  const userName = escapeHtml(user.first_name);
+  const partnerName = partner ? escapeHtml(partner.first_name) : null;
+  const plusOneName = plusOne ? escapeHtml(plusOne.first_name) : null;
+
+  const userAttending = rsvp.response_status === 'attending';
+  const partnerAttending = rsvp.partner_response_status === 'attending';
+  const partnerDeclined = rsvp.partner_response_status === 'not_attending';
+  const anyAttending = userAttending || partnerAttending;
+
+  let introLine = '';
+  if (partnerName) {
+    if (userAttending && partnerAttending) {
+      introLine = `Patricia and I are so excited you and ${partnerName} can make it!`;
+    } else if (userAttending && partnerDeclined) {
+      introLine = `Patricia and I are thrilled you can make it! We'll miss ${partnerName}, but we understand.`;
+    } else if (!userAttending && partnerAttending) {
+      introLine = `Patricia and I will miss you, but we're glad ${partnerName} can make it!`;
+    } else {
+      introLine = `Patricia and I are bummed we won't see you both, but we really appreciate the heads up.`;
+    }
+  } else if (userAttending) {
+    introLine = "Patricia and I are thrilled you can make it!";
+  } else {
+    introLine = "Patricia and I are bummed you can't make it, but we understand.";
+  }
+
+  const peopleRows = [
+    {
+      name: `${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}`,
+      status: rsvp.response_status,
+      dietary: rsvp.dietary_restrictions,
+      message: rsvp.message
+    }
+  ];
+
+  if (partner) {
+    peopleRows.push({
+      name: `${escapeHtml(partner.first_name)} ${escapeHtml(partner.last_name)}`,
+      status: rsvp.partner_response_status,
+      dietary: rsvp.partner_dietary_restrictions,
+      message: rsvp.partner_message
+    });
+  }
+
+  if (plusOne) {
+    peopleRows.push({
+      name: `${escapeHtml(plusOne.first_name)} ${escapeHtml(plusOne.last_name)}`,
+      status: 'attending',
+      dietary: plusOne.dietary_restrictions,
+      message: 'Plus-one'
+    });
+  }
+
+  const attendingCount = peopleRows.filter(person => person.status === 'attending').length;
+
+  const rowsHtml = peopleRows.map(person => `
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eeeeee;">${person.name}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eeeeee;">${formatRsvpStatus(person.status)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eeeeee;">${formatDetail(person.dietary)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eeeeee;">${formatDetail(person.message, '—')}</td>
+    </tr>
+  `).join('');
+
+  const closingLine = anyAttending
+    ? "Can't wait to celebrate with you soon!"
+    : "We'll miss you, and we appreciate you letting us know.";
+
+  const content = `
+    <h2>Hi ${userName}!</h2>
+    <p>${introLine}</p>
+
+    <p>Here's what we have on file:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 10px 12px; background: #f5f5f5; border-bottom: 2px solid #dddddd;">Guest</th>
+          <th style="text-align: left; padding: 10px 12px; background: #f5f5f5; border-bottom: 2px solid #dddddd;">Status</th>
+          <th style="text-align: left; padding: 10px 12px; background: #f5f5f5; border-bottom: 2px solid #dddddd;">Dietary</th>
+          <th style="text-align: left; padding: 10px 12px; background: #f5f5f5; border-bottom: 2px solid #dddddd;">Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+      </tbody>
+    </table>
+
+    <p><strong>Guests attending:</strong> ${attendingCount}</p>
+    <p class="small-text">Need to make a change? You can update your RSVP anytime here: <a href="${rsvpUrl}" style="color: #4DC5E3;">${rsvpUrl}</a></p>
+
+    <div class="divider"></div>
+
+    <h2>One more favor</h2>
+    <p>If you have any photos of James or Patricia (or both!), please share them in our gallery. Totally fine if it's just one of us - we want them all.</p>
+    <div style="text-align: center;">
+      <a href="${photosUrl}" class="button">Upload Photos</a>
+    </div>
+
+    <p class="small-text">We'll also add the professional wedding photos to the site once we get them and will send a quick note when they're up.</p>
+
+    <div class="divider"></div>
+
+    <p>${closingLine}</p>
+    <p style="margin-top: 24px;">With love,<br><strong>James & Patricia</strong></p>
+  `;
+
+  const subject = anyAttending
+    ? "RSVP confirmed for Patricia & James' wedding"
+    : "Thanks for your RSVP for Patricia & James' wedding";
+
+  const text = `
+Hi ${user.first_name},
+
+${introLine}
+
+RSVP details:
+${peopleRows.map(person => `- ${person.name}: ${formatRsvpStatus(person.status)} (Dietary: ${formatDetail(person.dietary)}, Note: ${formatDetail(person.message, '—')})`).join('\n')}
+
+Guests attending: ${attendingCount}
+Update your RSVP any time: ${rsvpUrl}
+
+Photos please! If you have photos of James or Patricia (or both), upload them here: ${photosUrl}
+We’ll also add the professional photos once we have them.
+
+${closingLine}
+
+With love,
+James & Patricia
+  `.trim();
+
+  return {
+    subject,
+    html: getEmailWrapper(content),
+    text
+  };
 }
 
 /**
@@ -268,5 +451,6 @@ module.exports = {
   getVerificationEmail,
   getPasswordResetEmail,
   getWelcomeEmail,
-  getTestEmail
+  getTestEmail,
+  getRsvpConfirmationEmail
 };

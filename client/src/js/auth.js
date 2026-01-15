@@ -1013,8 +1013,8 @@ class AuthSystemV5 {
 
       // Validate password complexity
       const validation = this.validatePasswordComplexity(password);
-      if (validation.length > 0) {
-        this.showResetPasswordMessage('Password requirements:\n' + validation.join('\n'), false);
+      if (!validation.valid) {
+        this.showResetPasswordMessage('Password requirements:\n' + validation.errors.join('\n'), false);
         return;
       }
 

@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const { query } = require('../config/db');
 const { hashPassword, verifyPassword, validatePassword } = require('../utils/password');
 const logger = require('../config/logger');
-const { authLimiter } = require('../middleware/rateLimiter');
+const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 const { sendEmail } = require('../config/email');
 const { getPasswordResetEmail } = require('../utils/emailTemplates');
 
@@ -511,7 +511,7 @@ router.get('/status', (req, res) => {
  * POST /api/auth/forgot-password
  * Request password reset email
  */
-router.post('/forgot-password', authLimiter, async (req, res) => {
+router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -579,8 +579,7 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
     logger.error(`Error in forgot-password: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
-      message: 'Failed to process password reset request',
-      error: error.message
+      message: 'Failed to process password reset request'
     });
   }
 });
@@ -637,8 +636,7 @@ router.get('/verify-reset-token', async (req, res) => {
     logger.error(`Error verifying reset token: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
-      message: 'Failed to verify reset token',
-      error: error.message
+      message: 'Failed to verify reset token'
     });
   }
 });
@@ -647,7 +645,7 @@ router.get('/verify-reset-token', async (req, res) => {
  * POST /api/auth/reset-password
  * Reset password using valid token
  */
-router.post('/reset-password', authLimiter, async (req, res) => {
+router.post('/reset-password', passwordResetLimiter, async (req, res) => {
   try {
     const { token, password } = req.body;
 
@@ -715,8 +713,7 @@ router.post('/reset-password', authLimiter, async (req, res) => {
     logger.error(`Error resetting password: ${error.message}`, { stack: error.stack });
     res.status(500).json({
       success: false,
-      message: 'Failed to reset password',
-      error: error.message
+      message: 'Failed to reset password'
     });
   }
 });

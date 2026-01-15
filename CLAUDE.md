@@ -126,76 +126,88 @@ This was caused by:
 
 ---
 
-### ⛔ NEVER Push to GitHub Without User Testing
+### ⛔ Git Workflow and GitHub Branch Rules
 
-**ABSOLUTE RULE:** You must NEVER push any code to GitHub until the user has explicitly tested the changes and given permission to push.
+**ABSOLUTE RULE:** Always follow this exact Git workflow. Never deviate from this process.
 
-**Workflow:**
-1. ✅ Make code changes as requested
-2. ✅ Commit changes locally (so they're saved)
-3. ✅ User tests changes thoroughly
-4. ⛔ **STOP** - Do NOT push to GitHub yet
-5. ✅ User explicitly says "push to production" or "push to GitHub"
-6. ✅ ONLY THEN can you run `git push`
+#### Standard Git Workflow
+
+**Local Development:**
+1. ✅ Work on local `dev` branch
+2. ✅ Make code changes as requested
+3. ✅ Commit changes locally (so they're saved)
+4. ✅ User tests changes thoroughly on localhost
+5. ⛔ **STOP** - Do NOT push to GitHub yet
+
+**Push to GitHub (ONLY after user testing):**
+6. ✅ User explicitly says "push to production" or "push to GitHub"
+7. ✅ **CRITICAL:** Always push to GitHub `develop` branch:
+   ```bash
+   git push origin dev:develop
+   ```
+8. ❌ **NEVER** push to any other branch name (`dev`, `initial-deployment`, etc.)
+
+**Testing on Render:**
+9. ✅ User tests `develop` branch on Render production environment
+10. ✅ If issues found, fix locally and repeat process
+
+**Merge to Main (ONLY after successful Render testing):**
+11. ✅ User merges GitHub `develop` → `main` on GitHub
+12. ✅ This is done by the user, not by you
 
 **Why This Matters:**
 - Production site is live at patriciajames.fyi
 - Untested changes can break the site for wedding guests
 - User needs to verify changes work as expected before deployment
-- Deployment to Render is manual (user controls when changes go live)
+- The `develop` branch is tested on Render before merging to `main`
+- This provides a safety buffer before final production deployment
 
 **If User Asks to "Deploy" or "Push Changes":**
-- First confirm: "I see you have uncommitted changes. Would you like me to commit them locally first so you can test?"
-- After testing: "Have you tested these changes and verified they work correctly?"
-- Only after explicit confirmation: Push to GitHub
+- First confirm: "Have you tested these changes locally and verified they work correctly?"
+- Remind: "I'll push to the `develop` branch on GitHub for testing on Render."
+- Only after explicit confirmation: `git push origin dev:develop`
 
 ---
 
-### 🔄 Database Migration Best Practices
+### 🔄 Database Migration Protocol - CRITICAL
 
-**When database schema changes are made, follow this logical sequence:**
+**ABSOLUTE RULE:** When database schema changes are made, you MUST remind the user about production migrations BEFORE pushing to GitHub.
 
-#### Standard Development Workflow
+#### Migration Workflow
 
-1. **Make Changes Locally**
-   - Develop feature with code changes
-   - Create migration file if schema changes needed
-   - Run migration on local database
-   - Test thoroughly locally
+**1. Local Development with Schema Changes:**
+- Create migration file in `server/database/migrations/`
+- Run migration on local database
+- Test thoroughly locally
+- Commit migration file with code changes
 
-2. **Commit to GitHub**
-   - Commit code changes and migration files
-   - Push to GitHub (saves work, enables collaboration)
-   - GitHub push does NOT trigger deployment
+**2. BEFORE Pushing to GitHub - MANDATORY REMINDER:**
 
-3. **Before Manual Deployment to Render**
-   - ⚠️ **CRITICAL STEP**: Run migration on production database FIRST
-   - Verify migration succeeded
-   - Then manually deploy on Render dashboard
-   - Test deployed changes
+**YOU MUST display this exact reminder before pushing:**
 
-#### Migration Reminder Protocol
+```
+⚠️⚠️⚠️ DATABASE MIGRATION REQUIRED ⚠️⚠️⚠️
 
-**Whenever a migration file is created or schema changes are made, I will:**
+Migration file: server/database/migrations/XXX_migration_name.sql
 
-1. **Track the migration** - Note which migration files need production deployment
-2. **Remind before manual deployment** - When user is about to deploy to Render:
-   ```
-   ⚠️ REMINDER: Production database migration required before deploying on Render
+BEFORE testing on Render, you must:
 
-   Migration file: server/database/migrations/XXX_migration_name.sql
+1. Apply migration to production database:
+   psql "[PRODUCTION_EXTERNAL_URL]" -f server/database/migrations/XXX_migration_name.sql
 
-   Steps:
-   1. Run migration on production:
-      psql "[PRODUCTION_EXTERNAL_URL]" -f server/database/migrations/XXX_migration_name.sql
+2. Verify migration succeeded:
+   [specific verification command for this migration]
 
-   2. Verify migration succeeded:
-      [verification command]
+3. THEN Render can deploy the new code
 
-   3. Then manually deploy on Render dashboard
+Push to GitHub develop branch now? (Yes/No)
+```
 
-   Have you run the production migration?
-   ```
+**3. After User Confirms Migration Plan:**
+- Push to GitHub `develop` branch: `git push origin dev:develop`
+- User applies migration to production database
+- User tests on Render
+- If successful, user merges `develop` → `main`
 
 #### Why This Order Matters
 
@@ -528,7 +540,7 @@ psql "postgresql://user:pass@host.oregon-postgres.render.com:5432/db" \
 3. Configure:
    - **Name**: `patricia-james-wedding`
    - **Region**: **Oregon (US West)** (same as database!)
-   - **Branch**: `initial-deployment` (or `main`)
+   - **Branch**: `develop` (for testing) or `main` (for production)
    - **Root Directory**: Leave blank
    - **Build Command**: `cd server && npm install`
    - **Start Command**: `cd server && npm start`
@@ -656,19 +668,22 @@ curl https://patriciajames.fyi/api/health
 
 ---
 
-### Manual Deploy Workflow (Free Tier)
+### Deploy Workflow
 
-Since free tier has limited deploy quota:
+**Standard Workflow:**
 
-1. Make changes locally and test
-2. Commit to `initial-deployment` branch
-3. Push to GitHub: `git push origin initial-deployment`
-4. **Wait** - don't auto-deploy yet
-5. Batch multiple changes together
-6. Go to Render → **"Manual Deploy"** when ready
-7. Select branch and deploy
+1. Make changes locally on `dev` branch and test thoroughly
+2. Commit changes locally
+3. Push to GitHub `develop` branch: `git push origin dev:develop`
+4. Render auto-deploys from `develop` branch (if configured)
+5. Test changes on Render production environment
+6. If successful, merge `develop` → `main` on GitHub (user does this)
+7. This triggers final production deployment from `main` branch
 
-**Auto-Deploy:** Can be enabled in Settings → Build & Deploy, but uses quota faster.
+**Manual Deploy Option:**
+- Can disable auto-deploy and manually deploy from Render dashboard
+- Go to Render → **"Manual Deploy"** → Select branch (`develop` or `main`)
+- Useful for batching changes or controlling deploy timing
 
 ---
 

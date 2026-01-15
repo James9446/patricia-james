@@ -37,6 +37,30 @@ const authLimiter = rateLimit({
 });
 
 /**
+ * Rate limiter for password reset requests
+ * Counts all requests to avoid email spam
+ */
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many password reset attempts. Please try again in 15 minutes.',
+    code: 'RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    logger.warn(`Password reset rate limit exceeded for IP: ${req.ip} on ${req.path}`);
+    res.status(429).json({
+      success: false,
+      message: 'Too many password reset attempts. Please try again in 15 minutes.',
+      code: 'RATE_LIMIT_EXCEEDED'
+    });
+  }
+});
+
+/**
  * Moderate rate limiter for general API endpoints
  * 100 requests per 15 minutes per IP
  */
@@ -86,6 +110,7 @@ const uploadLimiter = rateLimit({
 
 module.exports = {
   authLimiter,
+  passwordResetLimiter,
   apiLimiter,
   uploadLimiter
 };
