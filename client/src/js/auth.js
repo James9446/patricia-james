@@ -956,30 +956,79 @@ class AuthSystemV5 {
     const form = document.getElementById('resetPasswordForm');
     if (!form) return; // Not on reset password page
 
-    // Set up password toggle buttons for reset password page
-    const toggleButtons = document.querySelectorAll('#reset-password .toggle-password');
-    toggleButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
+    const setFormEnabled = (isEnabled) => {
+      const inputs = form.querySelectorAll('input, button');
+      inputs.forEach(input => {
+        input.disabled = !isEnabled;
+      });
+    };
+
+    if (!form.dataset.resetInitialized) {
+      // Set up password toggle buttons for reset password page
+      const toggleButtons = document.querySelectorAll('#reset-password .toggle-password');
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const targetId = button.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          const toggleText = button.querySelector('.toggle-text');
+
+          if (!input || !toggleText) return;
+
+          if (input.type === 'password') {
+            input.type = 'text';
+            toggleText.textContent = 'Hide';
+            button.setAttribute('aria-label', 'Hide password');
+          } else {
+            input.type = 'password';
+            toggleText.textContent = 'Show';
+            button.setAttribute('aria-label', 'Show password');
+          }
+        });
+      });
+
+      // Handle form submission
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        e.stopPropagation();
 
-        const targetId = button.getAttribute('data-target');
-        const input = document.getElementById(targetId);
-        const toggleText = button.querySelector('.toggle-text');
+        const password = document.getElementById('resetPasswordNew').value;
+        const passwordConfirm = document.getElementById('resetPasswordConfirm').value;
 
-        if (!input || !toggleText) return;
+        // Validate passwords match
+        if (password !== passwordConfirm) {
+          this.showResetPasswordMessage('Passwords do not match', false);
+          return;
+        }
 
-        if (input.type === 'password') {
-          input.type = 'text';
-          toggleText.textContent = 'Hide';
-          button.setAttribute('aria-label', 'Hide password');
-        } else {
-          input.type = 'password';
-          toggleText.textContent = 'Show';
-          button.setAttribute('aria-label', 'Show password');
+        // Validate password complexity
+        const validation = this.validatePasswordComplexity(password);
+        if (!validation.valid) {
+          this.showResetPasswordMessage('Password requirements:\n' + validation.errors.join('\n'), false);
+          return;
+        }
+
+        // Show loading state
+        this.showResetPasswordMessage('Resetting password...', true);
+
+        // Submit password reset
+        const token = form.dataset.resetToken;
+        const result = await this.submitPasswordReset(token, password);
+        this.showResetPasswordMessage(result.message, result.success);
+
+        // Redirect to home on success (user is now logged in)
+        if (result.success) {
+          setTimeout(() => {
+            window.location.href = '/#home';
+            // Force auth check after redirect
+            window.location.reload();
+          }, 2000);
         }
       });
-    });
+
+      form.dataset.resetInitialized = 'true';
+    }
 
     // Get token from URL hash (format: #reset-password?token=abc123)
     const hash = window.location.hash;
@@ -990,50 +1039,16 @@ class AuthSystemV5 {
     if (!token) {
       this.showResetPasswordMessage('Invalid or missing reset token', false);
       // Disable the form
-      const inputs = form.querySelectorAll('input, button');
-      inputs.forEach(input => input.disabled = true);
+      setFormEnabled(false);
       return;
     }
 
+    // Store token for submit handler
+    form.dataset.resetToken = token;
+    setFormEnabled(true);
+
     // Verify token with backend
     this.verifyResetToken(token);
-
-    // Handle form submission
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const password = document.getElementById('resetPasswordNew').value;
-      const passwordConfirm = document.getElementById('resetPasswordConfirm').value;
-
-      // Validate passwords match
-      if (password !== passwordConfirm) {
-        this.showResetPasswordMessage('Passwords do not match', false);
-        return;
-      }
-
-      // Validate password complexity
-      const validation = this.validatePasswordComplexity(password);
-      if (!validation.valid) {
-        this.showResetPasswordMessage('Password requirements:\n' + validation.errors.join('\n'), false);
-        return;
-      }
-
-      // Show loading state
-      this.showResetPasswordMessage('Resetting password...', true);
-
-      // Submit password reset
-      const result = await this.submitPasswordReset(token, password);
-      this.showResetPasswordMessage(result.message, result.success);
-
-      // Redirect to home on success (user is now logged in)
-      if (result.success) {
-        setTimeout(() => {
-          window.location.href = '/#home';
-          // Force auth check after redirect
-          window.location.reload();
-        }, 2000);
-      }
-    });
   }
 
   /**
