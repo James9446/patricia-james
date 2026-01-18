@@ -4,6 +4,8 @@ const { query } = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { hashPassword, validatePassword } = require('../utils/password');
 const logger = require('../config/logger');
+const { sendEmail } = require('../config/email');
+const { getRsvpConfirmationEmail } = require('../utils/emailTemplates');
 
 /**
  * POST /api/rsvps
@@ -157,6 +159,46 @@ router.post('/', requireAuth, async (req, res) => {
 
       // Commit transaction
       await query('COMMIT');
+
+      // Send RSVP confirmation email (do not fail RSVP if email fails)
+      try {
+        const rsvpEmailData = {
+          user: {
+            first_name: user.first_name,
+            last_name: user.last_name
+          },
+          partner: user.partner ? {
+            first_name: user.partner.first_name,
+            last_name: user.partner.last_name
+          } : null,
+          plusOne: plus_one ? {
+            first_name: plus_one.first_name,
+            last_name: plus_one.last_name,
+            dietary_restrictions: plus_one.dietary_restrictions
+          } : null,
+          rsvp: {
+            response_status: rsvpResult.rows[0].response_status,
+            dietary_restrictions: rsvpResult.rows[0].dietary_restrictions,
+            message: rsvpResult.rows[0].message,
+            partner_response_status: partnerRsvpResult ? partnerRsvpResult.rows[0].response_status : null,
+            partner_dietary_restrictions: partnerRsvpResult ? partnerRsvpResult.rows[0].dietary_restrictions : null,
+            partner_message: partnerRsvpResult ? partnerRsvpResult.rows[0].message : null
+          }
+        };
+
+        const { subject, html, text } = getRsvpConfirmationEmail(rsvpEmailData);
+        await sendEmail({
+          to: user.email,
+          subject,
+          html,
+          text
+        });
+      } catch (emailError) {
+        logger.error(`Failed to send RSVP confirmation email: ${emailError.message}`, {
+          stack: emailError.stack,
+          user_id: userId
+        });
+      }
       
       res.status(201).json({
         success: true,

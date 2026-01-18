@@ -378,9 +378,17 @@ class AuthSystemV5 {
               </div>
               <div class="form-group">
                 <label for="loginPassword">Password:</label>
-                <input type="password" id="loginPassword" name="password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="loginPassword" name="password" required>
+                  <button type="button" class="toggle-password" data-target="loginPassword" aria-label="Show password">
+                    <span class="toggle-text">Show</span>
+                  </button>
+                </div>
               </div>
               <button type="submit" class="auth-button">Login</button>
+              <div class="forgot-password-link">
+                <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+              </div>
             </form>
           </div>
 
@@ -401,8 +409,30 @@ class AuthSystemV5 {
                 <input type="email" id="registerEmail" name="email" required>
               </div>
               <div class="form-group">
+                <label for="registerEmailConfirm">Confirm Email:</label>
+                <input type="email" id="registerEmailConfirm" name="emailConfirm" required onpaste="return false" autocomplete="off">
+                <small class="email-confirmation-hint">Please type your email again (pasting is disabled to prevent errors)</small>
+              </div>
+              <div class="form-group">
                 <label for="registerPassword">Password:</label>
-                <input type="password" id="registerPassword" name="password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="registerPassword" name="password" required>
+                  <button type="button" class="toggle-password" data-target="registerPassword" aria-label="Show password">
+                    <span class="toggle-text">Show</span>
+                  </button>
+                </div>
+                <small class="password-requirements">
+                  Must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character (!@#$%^&*)
+                </small>
+              </div>
+              <div class="form-group">
+                <label for="registerPasswordConfirm">Confirm Password:</label>
+                <div class="password-input-wrapper">
+                  <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required>
+                  <button type="button" class="toggle-password" data-target="registerPasswordConfirm" aria-label="Show password">
+                    <span class="toggle-text">Show</span>
+                  </button>
+                </div>
               </div>
               <button type="submit" class="auth-button">Register</button>
             </form>
@@ -418,6 +448,34 @@ class AuthSystemV5 {
   }
 
   /**
+   * Validate password complexity (Option A requirements)
+   */
+  validatePasswordComplexity(password) {
+    const errors = [];
+
+    if (password.length < 8) {
+      errors.push('At least 8 characters');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('At least 1 uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('At least 1 lowercase letter');
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push('At least 1 number');
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      errors.push('At least 1 special character (!@#$%^&*)');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
    * Set up authentication modal event handlers
    */
   setupAuthModalEvents() {
@@ -426,6 +484,31 @@ class AuthSystemV5 {
     const tabs = document.querySelectorAll('.auth-tab');
     const loginForm = document.getElementById('loginFormElement');
     const registerForm = document.getElementById('registerFormElement');
+
+    // Set up password toggle buttons (only for auth modals, not reset password page)
+    const setupPasswordToggles = () => {
+      const toggleButtons = document.querySelectorAll('.auth-modal .toggle-password');
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const targetId = button.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          const toggleText = button.querySelector('.toggle-text');
+
+          if (input.type === 'password') {
+            input.type = 'text';
+            toggleText.textContent = 'Hide';
+            button.setAttribute('aria-label', 'Hide password');
+          } else {
+            input.type = 'password';
+            toggleText.textContent = 'Show';
+            button.setAttribute('aria-label', 'Show password');
+          }
+        });
+      });
+    };
+
+    // Initialize password toggles
+    setupPasswordToggles();
 
     // Close modal
     closeBtn.addEventListener('click', () => {
@@ -501,29 +584,45 @@ class AuthSystemV5 {
     // Register form submission
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const firstName = document.getElementById('firstName').value.trim();
       const lastName = document.getElementById('lastName').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
+      const emailConfirm = document.getElementById('registerEmailConfirm').value.trim();
       const password = document.getElementById('registerPassword').value;
-      
+      const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
       // Check if user is already logged in
       if (this.isAuthenticated) {
         this.showAuthMessage('You are already logged in. Please logout first if you want to create a different account.', false);
         return;
       }
-      
+
       // Basic validation
-      if (!firstName || !lastName || !email || !password) {
+      if (!firstName || !lastName || !email || !emailConfirm || !password || !passwordConfirm) {
         this.showAuthMessage('Please fill in all fields', false);
         return;
       }
-      
-      if (password.length < 6) {
-        this.showAuthMessage('Password must be at least 6 characters long', false);
+
+      // Email confirmation validation
+      if (email !== emailConfirm) {
+        this.showAuthMessage('Email addresses do not match', false);
         return;
       }
-      
+
+      // Password confirmation validation
+      if (password !== passwordConfirm) {
+        this.showAuthMessage('Passwords do not match', false);
+        return;
+      }
+
+      // Password complexity validation
+      const passwordValidation = this.validatePasswordComplexity(password);
+      if (!passwordValidation.valid) {
+        this.showAuthMessage('Password requirements not met:\n' + passwordValidation.errors.join('\n'), false);
+        return;
+      }
+
       // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
@@ -571,6 +670,16 @@ class AuthSystemV5 {
         }
       }
     });
+
+    // Forgot password link
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.style.display = 'none';
+        this.showForgotPasswordModal();
+      });
+    }
   }
 
   /**
@@ -582,15 +691,151 @@ class AuthSystemV5 {
       console.error('Auth message element not found! Modal may not be created.');
       return;
     }
-    
+
     messageEl.textContent = message;
     messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
-    
+
     // Clear message after 5 seconds
     setTimeout(() => {
       messageEl.textContent = '';
       messageEl.className = 'auth-message';
     }, 5000);
+  }
+
+  /**
+   * Show forgot password modal
+   */
+  showForgotPasswordModal() {
+    // Create modal if it doesn't exist
+    if (!document.getElementById('forgotPasswordModal')) {
+      this.createForgotPasswordModal();
+    }
+
+    // Show modal
+    const modal = document.getElementById('forgotPasswordModal');
+    modal.style.display = 'block';
+  }
+
+  /**
+   * Create forgot password modal
+   */
+  createForgotPasswordModal() {
+    const modalHTML = `
+      <div id="forgotPasswordModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+          <span class="forgot-password-close">&times;</span>
+
+          <div class="auth-form active">
+            <h2>Reset Your Password</h2>
+            <p>Enter your email address and we'll send you a link to reset your password.</p>
+            <form id="forgotPasswordFormElement">
+              <div class="form-group">
+                <label for="forgotPasswordEmail">Email:</label>
+                <input type="email" id="forgotPasswordEmail" name="email" required>
+              </div>
+              <button type="submit" class="auth-button">Send Reset Link</button>
+            </form>
+          </div>
+
+          <div id="forgotPasswordMessage" class="auth-message"></div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    this.setupForgotPasswordModalEvents();
+  }
+
+  /**
+   * Set up forgot password modal event handlers
+   */
+  setupForgotPasswordModalEvents() {
+    const modal = document.getElementById('forgotPasswordModal');
+    const closeBtn = modal.querySelector('.forgot-password-close');
+    const form = document.getElementById('forgotPasswordFormElement');
+
+    // Close modal
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('forgotPasswordEmail').value.trim();
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        this.showForgotPasswordMessage('Please enter a valid email address', false);
+        return;
+      }
+
+      // Show loading state
+      this.showForgotPasswordMessage('Sending reset link...', true);
+
+      const result = await this.requestPasswordReset(email);
+      this.showForgotPasswordMessage(result.message, result.success);
+
+      // Clear form if successful
+      if (result.success) {
+        form.reset();
+      }
+    });
+  }
+
+  /**
+   * Show message in forgot password modal
+   */
+  showForgotPasswordMessage(message, isSuccess) {
+    const messageEl = document.getElementById('forgotPasswordMessage');
+    if (!messageEl) {
+      console.error('Forgot password message element not found!');
+      return;
+    }
+
+    messageEl.textContent = message;
+    messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
+
+    // Clear message after 8 seconds (longer than normal since user needs to check email)
+    setTimeout(() => {
+      messageEl.textContent = '';
+      messageEl.className = 'auth-message';
+    }, 8000);
+  }
+
+  /**
+   * Request password reset email
+   */
+  async requestPasswordReset(email) {
+    try {
+      const response = await fetch(`${this.apiBase}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      return {
+        success: false,
+        message: 'Failed to send reset email. Please try again later.'
+      };
+    }
   }
 
   /**
@@ -705,6 +950,176 @@ class AuthSystemV5 {
   }
 
   /**
+   * Initialize reset password page
+   */
+  initializeResetPasswordPage() {
+    const form = document.getElementById('resetPasswordForm');
+    if (!form) return; // Not on reset password page
+
+    const setFormEnabled = (isEnabled) => {
+      const inputs = form.querySelectorAll('input, button');
+      inputs.forEach(input => {
+        input.disabled = !isEnabled;
+      });
+    };
+
+    if (!form.dataset.resetInitialized) {
+      // Set up password toggle buttons for reset password page
+      const toggleButtons = document.querySelectorAll('#reset-password .toggle-password');
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const targetId = button.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          const toggleText = button.querySelector('.toggle-text');
+
+          if (!input || !toggleText) return;
+
+          if (input.type === 'password') {
+            input.type = 'text';
+            toggleText.textContent = 'Hide';
+            button.setAttribute('aria-label', 'Hide password');
+          } else {
+            input.type = 'password';
+            toggleText.textContent = 'Show';
+            button.setAttribute('aria-label', 'Show password');
+          }
+        });
+      });
+
+      // Handle form submission
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const password = document.getElementById('resetPasswordNew').value;
+        const passwordConfirm = document.getElementById('resetPasswordConfirm').value;
+
+        // Validate passwords match
+        if (password !== passwordConfirm) {
+          this.showResetPasswordMessage('Passwords do not match', false);
+          return;
+        }
+
+        // Validate password complexity
+        const validation = this.validatePasswordComplexity(password);
+        if (!validation.valid) {
+          this.showResetPasswordMessage('Password requirements:\n' + validation.errors.join('\n'), false);
+          return;
+        }
+
+        // Show loading state
+        this.showResetPasswordMessage('Resetting password...', true);
+
+        // Submit password reset
+        const token = form.dataset.resetToken;
+        const result = await this.submitPasswordReset(token, password);
+        this.showResetPasswordMessage(result.message, result.success);
+
+        // Redirect to home on success (user is now logged in)
+        if (result.success) {
+          setTimeout(() => {
+            window.location.href = '/#home';
+            // Force auth check after redirect
+            window.location.reload();
+          }, 2000);
+        }
+      });
+
+      form.dataset.resetInitialized = 'true';
+    }
+
+    // Get token from URL hash (format: #reset-password?token=abc123)
+    const hash = window.location.hash;
+    const queryString = hash.includes('?') ? hash.split('?')[1] : '';
+    const urlParams = new URLSearchParams(queryString);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      this.showResetPasswordMessage('Invalid or missing reset token', false);
+      // Disable the form
+      setFormEnabled(false);
+      return;
+    }
+
+    // Store token for submit handler
+    form.dataset.resetToken = token;
+    setFormEnabled(true);
+
+    // Verify token with backend
+    this.verifyResetToken(token);
+  }
+
+  /**
+   * Verify reset token with backend
+   */
+  async verifyResetToken(token) {
+    try {
+      const response = await fetch(`${this.apiBase}/auth/verify-reset-token?token=${token}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        this.showResetPasswordMessage(data.message || 'Invalid or expired reset token', false);
+        // Disable the form
+        const form = document.getElementById('resetPasswordForm');
+        if (form) {
+          const inputs = form.querySelectorAll('input, button');
+          inputs.forEach(input => input.disabled = true);
+        }
+      }
+
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      this.showResetPasswordMessage('Failed to verify reset token', false);
+    }
+  }
+
+  /**
+   * Submit password reset
+   */
+  async submitPasswordReset(token, password) {
+    try {
+      const response = await fetch(`${this.apiBase}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ token, password })
+      });
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error('Password reset failed:', error);
+      return {
+        success: false,
+        message: 'Failed to reset password. Please try again.'
+      };
+    }
+  }
+
+  /**
+   * Show message on reset password page
+   */
+  showResetPasswordMessage(message, isSuccess) {
+    const messageEl = document.getElementById('resetPasswordMessage');
+    if (!messageEl) {
+      console.error('Reset password message element not found!');
+      return;
+    }
+
+    messageEl.textContent = message;
+    messageEl.className = `auth-message ${isSuccess ? 'success' : 'error'}`;
+  }
+
+  /**
    * Wait for authentication to be initialized
    */
   async waitForInitialization() {
@@ -723,10 +1138,13 @@ class AuthSystemV5 {
 // Initialize authentication system after main.js has loaded
 window.addEventListener('load', () => {
   console.log('🔐 Initializing AuthSystem v5...');
-  
+
   // Initialize immediately
   window.authSystem = new AuthSystemV5();
   console.log('🔐 AuthSystem v5 initialized');
+
+  // Initialize reset password page if we're on it
+  window.authSystem.initializeResetPasswordPage();
 });
 
 // Export for use in other scripts

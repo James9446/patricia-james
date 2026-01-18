@@ -28,6 +28,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255), -- NULL until registered
     is_admin BOOLEAN DEFAULT false,
     account_status VARCHAR(20) DEFAULT 'guest' CHECK (account_status IN ('guest', 'registered', 'deleted')),
+    reset_token VARCHAR(64),
+    reset_token_expires TIMESTAMP WITH TIME ZONE,
     admin_notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -114,6 +116,7 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_admin ON users(is_admin);
 CREATE INDEX idx_users_status ON users(account_status);
 CREATE INDEX idx_users_deleted ON users(deleted_at);
+CREATE INDEX idx_users_reset_token ON users(reset_token) WHERE reset_token IS NOT NULL;
 
 -- RSVPs
 CREATE INDEX idx_rsvps_user ON rsvps(user_id);

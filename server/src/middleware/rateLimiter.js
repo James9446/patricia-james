@@ -10,25 +10,51 @@ const logger = require('../config/logger');
 
 /**
  * Strict rate limiter for authentication endpoints
- * 5 attempts per 15 minutes per IP
+ * 5 failed attempts per 15 minutes per IP
+ * Only counts failed login/registration attempts, not successful ones
  */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
+  max: 5, // Limit each IP to 5 failed requests per windowMs
   message: {
     success: false,
-    message: 'Too many login attempts. Please try again in 15 minutes.',
+    message: 'Too many failed login attempts. Please try again in 15 minutes.',
     code: 'RATE_LIMIT_EXCEEDED'
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skipSuccessfulRequests: true, // Only count failed requests (4xx and 5xx responses)
   // Automatically extracts real IP from X-Forwarded-For (handles IPv4 and IPv6)
   // No custom keyGenerator needed - library handles this correctly
   handler: (req, res) => {
     logger.warn(`Rate limit exceeded for IP: ${req.ip} on ${req.path}`);
     res.status(429).json({
       success: false,
-      message: 'Too many login attempts. Please try again in 15 minutes.',
+      message: 'Too many failed login attempts. Please try again in 15 minutes.',
+      code: 'RATE_LIMIT_EXCEEDED'
+    });
+  }
+});
+
+/**
+ * Rate limiter for password reset requests
+ * Counts all requests to avoid email spam
+ */
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many password reset attempts. Please try again in 15 minutes.',
+    code: 'RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    logger.warn(`Password reset rate limit exceeded for IP: ${req.ip} on ${req.path}`);
+    res.status(429).json({
+      success: false,
+      message: 'Too many password reset attempts. Please try again in 15 minutes.',
       code: 'RATE_LIMIT_EXCEEDED'
     });
   }
@@ -84,6 +110,7 @@ const uploadLimiter = rateLimit({
 
 module.exports = {
   authLimiter,
+  passwordResetLimiter,
   apiLimiter,
   uploadLimiter
 };

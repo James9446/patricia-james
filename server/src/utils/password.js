@@ -42,7 +42,7 @@ async function verifyPassword(password, hash) {
 }
 
 /**
- * Check if a password meets minimum requirements
+ * Check if a password meets minimum requirements (Option A - Strong complexity)
  * @param {string} password - Password to validate
  * @returns {Object} - {valid: boolean, errors: string[]}
  */
@@ -54,6 +54,7 @@ function validatePassword(password) {
     return { valid: false, errors };
   }
 
+  // Length requirements
   if (password.length < 8) {
     errors.push('Password must be at least 8 characters long');
   }
@@ -62,16 +63,22 @@ function validatePassword(password) {
     errors.push('Password must be less than 128 characters');
   }
 
-  // Optional: Add more validation rules
-  // if (!/[A-Z]/.test(password)) {
-  //   errors.push('Password must contain at least one uppercase letter');
-  // }
-  // if (!/[a-z]/.test(password)) {
-  //   errors.push('Password must contain at least one lowercase letter');
-  // }
-  // if (!/[0-9]/.test(password)) {
-  //   errors.push('Password must contain at least one number');
-  // }
+  // Complexity requirements (Option A)
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+
+  if (!/[0-9]/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+
+  if (!/[!@#$%^&*]/.test(password)) {
+    errors.push('Password must contain at least one special character (!@#$%^&*)');
+  }
 
   return {
     valid: errors.length === 0,

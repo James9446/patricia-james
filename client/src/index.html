@@ -609,6 +609,46 @@
         </div>
       </div>
     </div>
+
+    <!-- Reset Password Page -->
+    <div id="reset-password" class="page">
+      <div class="container">
+        <div class="reset-password-container">
+          <h1 class="text-center mb-4">Reset Your Password</h1>
+          <p class="text-center mb-6">Enter your new password below.</p>
+
+          <form id="resetPasswordForm">
+            <div class="form-group">
+              <label for="resetPasswordNew">New Password:</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="resetPasswordNew" name="password" required>
+                <button type="button" class="toggle-password" data-target="resetPasswordNew" aria-label="Show password">
+                  <span class="toggle-text">Show</span>
+                </button>
+              </div>
+              <small class="password-requirements">
+                Must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character (!@#$%^&*)
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="resetPasswordConfirm">Confirm New Password:</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="resetPasswordConfirm" name="passwordConfirm" required>
+                <button type="button" class="toggle-password" data-target="resetPasswordConfirm" aria-label="Show password">
+                  <span class="toggle-text">Show</span>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="auth-button">Reset Password</button>
+          </form>
+
+          <div id="resetPasswordMessage" class="auth-message mt-4"></div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="./js/utils.js"></script>
