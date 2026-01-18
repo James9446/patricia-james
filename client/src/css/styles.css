@@ -458,6 +458,11 @@ body.home-page .main-content {
   padding-top: 0;
 }
 
+/* Remove top padding for location page since it has hero image at top */
+body.location-page .main-content {
+  padding-top: 0;
+}
+
 /* Prevent scrolling on home page */
 body.home-page {
   overflow: hidden;
@@ -554,12 +559,21 @@ body.home-page {
 .btn-primary {
   background: var(--solstice-blue);
   color: var(--pure-white);
-  border-color: var(--solstice-blue);
+  border: 1px solid var(--solstice-blue-dark);
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 400;
+  font-size: 0.9rem;
+  backdrop-filter: blur(10px);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--solstice-blue-dark);
-  border-color: var(--solstice-blue-dark);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
+  border: 1px solid var(--solstice-blue);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .btn-secondary {
@@ -3404,16 +3418,29 @@ textarea {
 }
 
 .btn-primary {
-  background: var(--primary-blue);
-  color: white;
+  background: var(--solstice-blue);
+  color: var(--pure-white);
+  border: 1px solid var(--solstice-blue-dark);
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 400;
+  font-size: 0.9rem;
+  backdrop-filter: blur(10px);
 }
 
 .btn-primary:hover {
-  background: #1d4ed8;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
+  border: 1px solid var(--solstice-blue);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .btn-primary:disabled {
   background: #9ca3af;
+  color: white;
+  border: 1px solid #9ca3af;
   cursor: not-allowed;
 }
 
@@ -4859,6 +4886,310 @@ button.loading::after {
   .btn-icon {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--text-base);
+  }
+}
+
+/* ===================================
+   LOCATION PAGE STYLES
+   =================================== */
+
+/* Location Page - Remove default padding-top */
+#location {
+  padding-top: 0 !important;
+}
+
+#location .container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Hero Section */
+.location-hero {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  background: linear-gradient(135deg, var(--solstice-blue) 0%, var(--lavender-haze) 100%);
+  background-size: cover;
+  background-position: center 85%;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 0;
+  margin-top: -1px;
+}
+
+.location-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  text-align: center;
+  color: white;
+  padding: 4rem 2rem 2rem 2rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.location-hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.5rem;
+  font-weight: 400;
+  margin: 0 0 0.75rem 0;
+  color: #ffffff;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.03em;
+}
+
+.location-hero-subtitle {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 300;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Section Spacing */
+.location-section {
+  margin-bottom: 5rem;
+}
+
+.location-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--midnight-navy);
+  margin-bottom: 2rem;
+}
+
+/* Venue Description */
+.location-description {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.8;
+  color: var(--slate-gray);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Details Card */
+.location-details-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.location-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 3rem;
+  margin-bottom: 2rem;
+}
+
+.location-detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.location-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--solstice-blue);
+  margin-top: 0.25rem;
+}
+
+.location-detail-item h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--midnight-navy);
+  margin: 0 0 0.5rem 0;
+}
+
+.location-detail-item p {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--slate-gray);
+  margin: 0;
+}
+
+/* Button Large Variant */
+.btn-large {
+  padding: 16px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 240px;
+}
+
+/* Chapel Section */
+.chapel-section {
+  margin-top: 6rem;
+}
+
+.chapel-content {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.chapel-text p {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--slate-gray);
+  margin: 0;
+}
+
+.chapel-image {
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  aspect-ratio: 4/3;
+  background: var(--soft-white);
+}
+
+.chapel-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Venue Gallery */
+.venue-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.venue-gallery-item {
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  aspect-ratio: 4/3;
+  background: var(--soft-white);
+}
+
+.venue-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Image Placeholders (temporary) */
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--soft-white) 0%, #f0f0f5 100%);
+  color: var(--slate-gray);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* ===================================
+   LOCATION PAGE - RESPONSIVE
+   =================================== */
+
+@media (max-width: 1024px) {
+  .chapel-content {
+    grid-template-columns: 1fr;
+  }
+
+  .venue-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .location-hero {
+    height: 400px;
+  }
+
+  .location-hero-title {
+    font-size: 2.5rem;
+  }
+
+  .location-hero-subtitle {
+    font-size: 1.2rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .location-description {
+    font-size: 1.1rem;
+  }
+
+  .location-details-card {
+    padding: 2rem;
+  }
+
+  .location-details {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .chapel-text p {
+    font-size: 1rem;
+  }
+
+  .venue-gallery {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .btn-large {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .location-hero {
+    height: 300px;
+  }
+
+  .location-hero-title {
+    font-size: 2rem;
+  }
+
+  .location-hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .location-details-card {
+    padding: 1.5rem;
+  }
+
+  #location .container {
+    padding: 3rem 1rem !important;
   }
 }
 
