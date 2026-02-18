@@ -1851,69 +1851,175 @@ body:not(.home-page) .full-screen-background {
   font-weight: 500;
 }
 
-.event-card {
-  background: var(--white);
-  border-radius: var(--radius-2xl);
-  padding: var(--spacing-2xl);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all var(--transition-normal);
-  border-left: 5px solid var(--primary-pink);
-  position: relative;
-  overflow: hidden;
+
+.events-page {
+  padding-bottom: var(--spacing-4xl);
 }
 
-.event-card::before {
+
+/* ----------------------------------------
+   Events Timeline
+   ---------------------------------------- */
+
+.events-timeline {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  padding-left: 140px;
+}
+
+/* Vertical line */
+.events-timeline::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, transparent 0%, rgba(77, 197, 227, 0.03) 100%);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
+  left: 120px;
+  top: 20px;
+  bottom: 20px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--primary-pink), var(--lavender-haze), var(--solstice-blue));
+  border-radius: 1px;
 }
 
-.event-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-  border-left-width: 6px;
+.timeline-event {
+  position: relative;
+  padding: var(--spacing-xl) 0;
 }
 
-.event-card:hover::before {
-  opacity: 1;
+.timeline-marker {
+  position: absolute;
+  left: -28px;
+  top: var(--spacing-xl);
+  width: 14px;
+  height: 14px;
+  background: var(--white);
+  border: 3px solid var(--primary-pink);
+  border-radius: 50%;
+  z-index: 1;
 }
 
-.event-card.ceremony {
-  border-left-color: var(--solstice-blue);
+.timeline-event:nth-child(2) .timeline-marker {
+  border-color: var(--solstice-blue);
 }
 
-.event-card.ceremony::before {
-  background: linear-gradient(135deg, transparent 0%, rgba(77, 197, 227, 0.05) 100%);
+.timeline-event:nth-child(3) .timeline-marker {
+  border-color: var(--lavender-haze);
 }
 
-.event-card.reception {
-  border-left-color: var(--lavender-haze);
+.timeline-date {
+  position: absolute;
+  left: -130px;
+  top: var(--spacing-xl);
+  width: 80px;
+  text-align: center;
 }
 
-.event-card.reception::before {
-  background: linear-gradient(135deg, transparent 0%, rgba(237, 159, 227, 0.05) 100%);
+.timeline-day {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--slate-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-.event-card.welcome {
-  border-left-color: var(--blush-pink);
+.timeline-num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  color: var(--charcoal);
+  line-height: 1;
+  margin: 2px 0;
 }
 
-.event-card.welcome::before {
-  background: linear-gradient(135deg, transparent 0%, rgba(251, 207, 232, 0.05) 100%);
+.timeline-month {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--slate-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-.event-card.brunch {
-  border-left-color: var(--blush-pink-dark);
+.timeline-content h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 0 0 var(--spacing-xs);
 }
 
-.event-card.brunch::before {
-  background: linear-gradient(135deg, transparent 0%, rgba(249, 183, 225, 0.05) 100%);
+.timeline-venue {
+  font-family: var(--font-accent);
+  font-size: var(--text-base);
+  color: var(--charcoal);
+  margin: 0 0 var(--spacing-xs);
+}
+
+.timeline-venue-link {
+  display: inline-block;
+  font-family: var(--font-accent);
+  font-size: var(--text-base);
+  color: var(--solstice-blue);
+  text-decoration: none;
+  margin: 0 0 var(--spacing-xs);
+  transition: color var(--transition-fast);
+}
+
+.timeline-venue-link:hover {
+  color: var(--primary-pink);
+  text-decoration: underline;
+}
+
+.timeline-time {
+  font-size: var(--text-sm);
+  color: var(--slate-gray);
+  margin: 0 0 var(--spacing-md);
+}
+
+.timeline-desc {
+  font-size: var(--text-sm);
+  color: var(--slate-gray);
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.timeline-address {
+  font-size: var(--text-sm);
+  color: var(--slate-gray);
+  margin: 0 0 var(--spacing-xs);
+}
+
+
+@media (max-width: 600px) {
+  .events-timeline {
+    padding-left: 30px;
+  }
+
+  .events-timeline::before {
+    left: 6px;
+  }
+
+  .timeline-marker {
+    left: -24px;
+    width: 12px;
+    height: 12px;
+  }
+
+  .timeline-date {
+    position: static;
+    width: auto;
+    text-align: left;
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: baseline;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .timeline-num {
+    font-size: var(--text-xl);
+  }
 }
 
 .photo-gallery {
@@ -2040,8 +2146,7 @@ body:not(.home-page) .full-screen-background {
   }
   
   .card,
-  .rsvp-form,
-  .event-card {
+  .rsvp-form {
     padding: 1rem;
   }
 }

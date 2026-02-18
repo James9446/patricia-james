@@ -141,47 +141,60 @@
 
     <!-- Events Page -->
     <div id="events" class="page">
-      <div class="container">
+      <div class="container events-page">
         <h1 class="text-center mb-6">Wedding Events</h1>
-        
-        <div class="grid grid-cols-2 gap-6">
-          <!-- Ceremony -->
-          <div class="event-card ceremony">
-            <h2 class="card-title text-primary">Wedding Ceremony</h2>
-            <div class="card-body">
-              <p><strong>Date:</strong> Sunday, June 21st, 2026</p>
-              <p><strong>Time:</strong> 5:00 PM</p>
-              <p><strong>Location:</strong> Officer's Club at the Presido</p>
-              <p><strong>Dress Code:</strong> Formal</p>
-              <p class="mt-4">Join us as we exchange vows in a beautiful outdoor ceremony surrounded by our loved ones.</p>
-            </div>
-          </div>
 
-          <!-- Reception -->
-          <div class="event-card reception">
-            <h2 class="card-title text-secondary">Wedding Reception</h2>
-            <div class="card-body">
-              <p><strong>Date:</strong> Sunday, June 21st, 2026</p>
-              <p><strong>Time:</strong> 6:00 PM</p>
-              <p><strong>Location:</strong> Officer's Club at the Presido</p>
-              <p><strong>Dress Code:</strong> Formal</p>
-              <p class="mt-4">Celebrate with us as we dance the night away with dinner, drinks, and dancing.</p>
-            </div>
-          </div>
-
+        <section class="events-timeline">
           <!-- Welcome Party -->
-          <!-- <div class="event-card welcome">
-            <h2 class="card-title text-success">Welcome Party</h2>
-            <div class="card-body">
-              <p><strong>Date:</strong> Friday, June 20th, 2026</p>
-              <p><strong>Time:</strong> 7:00 PM</p>
-              <p><strong>Location:</strong> TBD</p>
-              <p><strong>Dress Code:</strong> Casual</p>
-              <p class="mt-4">Join us for a casual evening of drinks and appetizers to kick off the wedding weekend.</p>
+          <div class="timeline-event">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">
+              <span class="timeline-day">FRI</span>
+              <span class="timeline-num">19</span>
+              <span class="timeline-month">JUNE</span>
             </div>
-          </div> -->
+            <div class="timeline-content">
+              <h2>Welcome Party</h2>
+              <p class="timeline-venue">Enterprise Brewing Company</p>
+              <p class="timeline-address">1150 Howard Street, San Francisco</p>
+              <p class="timeline-time">7:00 PM - 11:00 PM · Casual attire</p>
+              <p class="timeline-desc">Join us for a casual evening of drinks and good company to kick off the weekend.</p>
+            </div>
+          </div>
 
-        </div>
+          <!-- Wedding Ceremony -->
+          <div class="timeline-event">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">
+              <span class="timeline-day">SUN</span>
+              <span class="timeline-num">21</span>
+              <span class="timeline-month">JUNE</span>
+            </div>
+            <div class="timeline-content">
+              <h2>Wedding Ceremony</h2>
+              <a href="#location" class="timeline-venue-link" data-page="location">Chapel of Our Lady</a>
+              <p class="timeline-time">5:00 PM · Semi-formal attire</p>
+              <p class="timeline-desc">Join us as we exchange vows surrounded by our loved ones.</p>
+            </div>
+          </div>
+
+          <!-- Wedding Reception -->
+          <div class="timeline-event">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">
+              <span class="timeline-day">SUN</span>
+              <span class="timeline-num">21</span>
+              <span class="timeline-month">JUNE</span>
+            </div>
+            <div class="timeline-content">
+              <h2>Wedding Reception</h2>
+              <a href="#location" class="timeline-venue-link" data-page="location">Presidio Officers' Club</a>
+              <p class="timeline-time">6:00 PM · Semi-formal attire</p>
+              <p class="timeline-desc">Celebrate with us with dinner, drinks, and dancing.</p>
+            </div>
+          </div>
+        </section>
+
       </div>
     </div>
 
