@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/images/icons/favicon.ico">
   <title>Patricia y James Wedding</title>
   <link rel="stylesheet" href="./css/styles.css?v=20250108m">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -140,59 +141,153 @@
 
     <!-- Events Page -->
     <div id="events" class="page">
-      <div class="container">
+      <div class="container events-page">
         <h1 class="text-center mb-6">Wedding Events</h1>
-        
-        <div class="grid grid-cols-2 gap-6">
-          <!-- Ceremony -->
-          <div class="event-card ceremony">
-            <h2 class="card-title text-primary">Wedding Ceremony</h2>
-            <div class="card-body">
-              <p><strong>Date:</strong> Sunday, June 21st, 2026</p>
-              <p><strong>Time:</strong> 5:00 PM</p>
-              <p><strong>Location:</strong> Officer's Club at the Presido</p>
-              <p><strong>Dress Code:</strong> Formal</p>
-              <p class="mt-4">Join us as we exchange vows in a beautiful outdoor ceremony surrounded by our loved ones.</p>
-            </div>
-          </div>
 
-          <!-- Reception -->
-          <div class="event-card reception">
-            <h2 class="card-title text-secondary">Wedding Reception</h2>
-            <div class="card-body">
-              <p><strong>Date:</strong> Sunday, June 21st, 2026</p>
-              <p><strong>Time:</strong> 6:00 PM</p>
-              <p><strong>Location:</strong> Officer's Club at the Presido</p>
-              <p><strong>Dress Code:</strong> Formal</p>
-              <p class="mt-4">Celebrate with us as we dance the night away with dinner, drinks, and dancing.</p>
-            </div>
-          </div>
-
+        <section class="events-timeline">
           <!-- Welcome Party -->
-          <!-- <div class="event-card welcome">
-            <h2 class="card-title text-success">Welcome Party</h2>
-            <div class="card-body">
-              <p><strong>Date:</strong> Friday, June 20th, 2026</p>
-              <p><strong>Time:</strong> 7:00 PM</p>
-              <p><strong>Location:</strong> TBD</p>
-              <p><strong>Dress Code:</strong> Casual</p>
-              <p class="mt-4">Join us for a casual evening of drinks and appetizers to kick off the wedding weekend.</p>
+          <div class="timeline-event">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">
+              <span class="timeline-day">FRI</span>
+              <span class="timeline-num">19</span>
+              <span class="timeline-month">JUNE</span>
             </div>
-          </div> -->
+            <div class="timeline-content">
+              <h2>Welcome Party</h2>
+              <p class="timeline-venue">Enterprise Brewing Company</p>
+              <p class="timeline-address">1150 Howard Street, San Francisco</p>
+              <p class="timeline-time">7:00 PM - 11:00 PM · Casual attire</p>
+              <p class="timeline-desc">Join us for a casual evening of drinks and good company to kick off the weekend.</p>
+            </div>
+          </div>
 
-        </div>
+          <!-- Wedding Ceremony -->
+          <div class="timeline-event">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">
+              <span class="timeline-day">SUN</span>
+              <span class="timeline-num">21</span>
+              <span class="timeline-month">JUNE</span>
+            </div>
+            <div class="timeline-content">
+              <h2>Wedding Ceremony</h2>
+              <a href="#location" class="timeline-venue-link" data-page="location">Chapel of Our Lady</a>
+              <p class="timeline-time">5:00 PM · Semi-formal attire</p>
+              <p class="timeline-desc">Join us as we exchange vows surrounded by our loved ones.</p>
+            </div>
+          </div>
+
+          <!-- Wedding Reception -->
+          <div class="timeline-event">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">
+              <span class="timeline-day">SUN</span>
+              <span class="timeline-num">21</span>
+              <span class="timeline-month">JUNE</span>
+            </div>
+            <div class="timeline-content">
+              <h2>Wedding Reception</h2>
+              <a href="#location" class="timeline-venue-link" data-page="location">Presidio Officers' Club</a>
+              <p class="timeline-time">6:00 PM · Semi-formal attire</p>
+              <p class="timeline-desc">Celebrate with us with dinner, drinks, and dancing.</p>
+            </div>
+          </div>
+        </section>
+
       </div>
     </div>
 
-    <!-- Location Page - Interactive Venue Showcase -->
-    <!-- Location Page - Under Construction -->
+    <!-- Location Page -->
     <div id="location" class="page">
-      <div class="container text-center" style="padding-top: 8rem;">
-        <h1>Location</h1>
-        <div class="card" style="max-width: 600px; margin: 2rem auto;">
-          <p style="font-size: 1.5rem; margin: 2rem 0;">🚧 Under Construction 🚧</p>
-          <p style="font-size: 1.1rem; color: var(--gray-600);">We're working on something special! Check back soon for venue details.</p>
+      <!-- Hero Image Section -->
+      <div class="location-hero" style="background-image: url('/images/officers_club_presidio/officers_club_presidio_main_photo.png');">
+        <div class="location-hero-overlay">
+          <h1 class="location-hero-title">Presidio Officers' Club</h1>
+          <p class="location-hero-subtitle">San Francisco, California</p>
         </div>
+      </div>
+
+      <div class="container" style="padding: 4rem 1rem;">
+        <!-- Venue Overview Section -->
+        <section class="location-section text-center">
+          <p class="location-description">
+            The Officers' Club was established in 1776, making it the second oldest building in San Francisco.
+            A one-of-a-kind historic landmark offering stunning views of the San Francisco Bay.
+          </p>
+        </section>
+
+        <!-- Practical Details Section -->
+        <section class="location-section location-details-card">
+          <div class="location-details">
+            <div class="location-detail-item">
+              <svg class="location-icon" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <div>
+                <h3>Address</h3>
+                <p>50 Moraga Ave<br>San Francisco, CA 94129</p>
+              </div>
+            </div>
+
+            <div class="location-detail-item">
+              <svg class="location-icon" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+              </svg>
+              <div>
+                <h3>Parking</h3>
+                <p>On-site parking available</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center" style="margin-top: 2rem;">
+            <a href="https://www.google.com/maps/search/?api=1&query=50+Moraga+Ave,+San+Francisco,+CA+94129"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="btn btn-primary btn-large">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              Get Directions
+            </a>
+          </div>
+        </section>
+
+        <!-- Chapel Section -->
+        <section class="location-section chapel-section">
+          <h2 class="section-title text-center">Chapel of Our Lady</h2>
+
+          <div class="chapel-content">
+            <div class="chapel-text">
+              <p>
+                Join us for our ceremony at the Chapel of Our Lady, a historic gem located in the heart of the Presidio.
+                Built in 1864, this non-denominational chapel features hand-painted exposed beams and a soaring arched glass wall behind the altar.
+                Best of all, it is located just steps away from the Officers' Club, where the reception will immediately follow.
+              </p>
+            </div>
+            <div class="chapel-image">
+              <img src="/images/officers_club_presidio/chapel-inside.png" alt="Chapel of Our Lady interior with hand-painted beams and arched glass wall">
+            </div>
+          </div>
+        </section>
+
+        <!-- Venue Photo Gallery Section -->
+        <section class="location-section">
+          <h2 class="section-title text-center">The Venue</h2>
+          <div class="venue-gallery">
+            <div class="venue-gallery-item">
+              <img src="/images/officers_club_presidio/officers_club_reception_hall.jpg" alt="Officers' Club reception hall">
+            </div>
+            <div class="venue-gallery-item">
+              <img src="/images/officers_club_presidio/officers_club_dinning_area.jpg" alt="Officers' Club dining area">
+            </div>
+            <div class="venue-gallery-item">
+              <img src="/images/officers_club_presidio/officer's_club_view.jpg" alt="Officers' Club bay view">
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 
