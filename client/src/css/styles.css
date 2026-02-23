@@ -2661,6 +2661,27 @@ body:not(.home-page) .full-screen-background {
   text-decoration: underline;
 }
 
+/* Auth Form Switch Prompts (Login here / Create an account) */
+.auth-switch-prompt {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--slate-gray);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.auth-switch-link {
+  color: var(--solstice-blue);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-switch-link:hover {
+  color: var(--lavender-haze);
+  text-decoration: underline;
+}
+
 /* Reset Password Page */
 .reset-password-container {
   max-width: 500px;

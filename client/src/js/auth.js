@@ -364,12 +364,12 @@ class AuthSystemV5 {
           <span class="auth-close">&times;</span>
           
           <div class="auth-tabs">
-            <button class="auth-tab active" data-tab="login">Login</button>
-            <button class="auth-tab" data-tab="register">Register</button>
+            <button class="auth-tab" data-tab="login">Login</button>
+            <button class="auth-tab active" data-tab="register">Register</button>
           </div>
 
           <!-- Login Form -->
-          <div id="loginForm" class="auth-form active">
+          <div id="loginForm" class="auth-form">
             <h2>Welcome Back!</h2>
             <form id="loginFormElement">
               <div class="form-group">
@@ -389,11 +389,14 @@ class AuthSystemV5 {
               <div class="forgot-password-link">
                 <a href="#" id="forgotPasswordLink">Forgot Password?</a>
               </div>
+              <p class="auth-switch-prompt">
+                New here? <a href="#" class="auth-switch-link" data-switch-to="register">Create an account</a>
+              </p>
             </form>
           </div>
 
           <!-- Register Form -->
-          <div id="registerForm" class="auth-form">
+          <div id="registerForm" class="auth-form active">
             <h2>Create Your Account</h2>
             <form id="registerFormElement">
               <div class="form-group">
@@ -435,6 +438,9 @@ class AuthSystemV5 {
                 </div>
               </div>
               <button type="submit" class="auth-button">Register</button>
+              <p class="auth-switch-prompt">
+                Already have an account? <a href="#" class="auth-switch-link" data-switch-to="login">Login here</a>
+              </p>
             </form>
           </div>
 
@@ -526,16 +532,32 @@ class AuthSystemV5 {
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const tabName = tab.dataset.tab;
-        
+
         // Update tab appearance
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-        
+
         // Update form visibility
         document.querySelectorAll('.auth-form').forEach(form => {
           form.classList.remove('active');
         });
         document.getElementById(tabName + 'Form').classList.add('active');
+      });
+    });
+
+    // Handle auth switch links (Login here / Create an account)
+    document.querySelectorAll('.auth-switch-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetTab = e.target.dataset.switchTo;
+
+        // Update tabs
+        tabs.forEach(t => t.classList.remove('active'));
+        document.querySelector(`.auth-tab[data-tab="${targetTab}"]`).classList.add('active');
+
+        // Update forms
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        document.getElementById(targetTab + 'Form').classList.add('active');
       });
     });
 
