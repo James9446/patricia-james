@@ -30,16 +30,18 @@
    Summer Solstice Ethereal Theme
    ======================================== */
 :root {
-  /* Summer Solstice Ethereal Color Palette */
+  /* Summer Solstice Color Palette - Blue Harmony */
   --solstice-blue: #4DC5E3;
   --solstice-blue-light: #7DD3ED;
   --solstice-blue-dark: #2BA8C7;
-  --lavender-haze: #ED9FE3;
-  --lavender-haze-light: #F2B5E8;
-  --lavender-haze-dark: #E085D8;
-  --blush-pink: #FBCFE8;
-  --blush-pink-light: #FDD7ED;
-  --blush-pink-dark: #F9B7E1;
+  /* Periwinkle - wedding palette secondary */
+  --lavender-haze: #8B9FD4;
+  --lavender-haze-light: #A8B8E0;
+  --lavender-haze-dark: #7088C4;
+  /* Light Periwinkle - subtle accents */
+  --blush-pink: #A8B8E0;
+  --blush-pink-light: #C5D0EC;
+  --blush-pink-dark: #8B9FD4;
   
   /* Neutral Colors - Clean and Ethereal */
   --cultured-white: #F7F7F7;
@@ -108,7 +110,11 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  
+
+  /* Button shadows - Photos page pattern (smaller shadow on hover) */
+  --btn-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
+  --btn-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.1);
+
   /* Transitions */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
@@ -423,20 +429,32 @@ body.home-page .mobile-menu {
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
   text-align: center;
-  color: var(--solstice-blue-dark);
+  color: var(--slate-gray);
   text-decoration: none;
   transition: all var(--transition-fast);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-nav .nav-link:hover {
-  background: var(--primary-pink-light);
-  color: var(--primary-pink);
+  color: var(--pure-white);
+  background: var(--solstice-blue);
+  border: 1px solid var(--solstice-blue-dark);
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
+  transform: translateY(-2px);
 }
 
 .mobile-nav .nav-link.active {
-  background: var(--primary-pink-light);
   color: var(--solstice-blue);
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid var(--solstice-blue);
   font-weight: 600;
+}
+
+.mobile-nav .nav-link.active:hover {
+  color: var(--pure-white);
+  background: var(--solstice-blue);
 }
 
 /* ========================================
@@ -495,14 +513,14 @@ body.home-page {
 .card {
   background: var(--pure-white);
   border-radius: var(--radius-xl);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   padding: var(--spacing-2xl);
   transition: all var(--transition-normal);
   border: 1px solid rgba(229, 231, 235, 0.6);
 }
 
 .card:hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   transform: translateY(-2px);
   border-color: rgba(77, 197, 227, 0.3);
 }
@@ -543,7 +561,7 @@ body.home-page {
   font-weight: 500;
   line-height: 1.5;
   border-radius: var(--radius-lg);
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   cursor: pointer;
   text-decoration: none;
   transition: all var(--transition-normal);
@@ -559,7 +577,7 @@ body.home-page {
 .btn-primary {
   background: var(--solstice-blue);
   color: var(--pure-white);
-  border: 1px solid var(--solstice-blue-dark);
+  border: 2px solid var(--solstice-blue);
   box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
@@ -571,7 +589,7 @@ body.home-page {
 .btn-primary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.8);
   color: var(--slate-gray);
-  border: 1px solid var(--solstice-blue);
+  border: 2px solid var(--solstice-blue);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
@@ -579,23 +597,30 @@ body.home-page {
 .btn-secondary {
   background: var(--lavender-haze);
   color: var(--pure-white);
-  border-color: var(--lavender-haze);
+  border: 2px solid var(--lavender-haze);
+  box-shadow: 0 4px 15px rgba(139, 159, 212, 0.3);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--lavender-haze-dark);
-  border-color: var(--lavender-haze-dark);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
+  border: 2px solid var(--lavender-haze);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-outline {
-  background: transparent;
-  color: var(--solstice-blue);
-  border-color: var(--solstice-blue);
+  background: transparent !important;
+  color: var(--solstice-blue) !important;
+  border: 2px solid var(--solstice-blue) !important;
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.2);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--solstice-blue);
-  color: var(--pure-white);
+  background: var(--solstice-blue) !important;
+  color: var(--pure-white) !important;
+  border: 2px solid var(--solstice-blue) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .btn-lg {
@@ -648,7 +673,7 @@ body.home-page {
 
 .radio-label:hover {
   border-color: var(--solstice-blue);
-  background: var(--solstice-blue-light);
+  background: rgba(77, 197, 227, 0.08);
 }
 
 .radio-label input[type="radio"] {
@@ -663,15 +688,15 @@ body.home-page {
 
 /* Plus-One Section */
 .plus-one-section {
-  background: var(--blush-pink-light);
-  border: 1px solid var(--blush-pink);
+  background: rgba(139, 159, 212, 0.08);
+  border: 1px solid rgba(139, 159, 212, 0.2);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   margin: var(--spacing-lg) 0;
 }
 
 .plus-one-section h3 {
-  color: var(--lavender-haze-dark);
+  color: var(--solstice-blue-dark);
   margin-bottom: var(--spacing-md);
   font-family: var(--font-heading);
 }
@@ -679,7 +704,7 @@ body.home-page {
 /* Couple Info Header */
 .couple-info-header {
   text-align: center;
-  background: var(--solstice-blue-light);
+  background: rgba(77, 197, 227, 0.1);
   border: 1px solid var(--solstice-blue);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
@@ -728,7 +753,7 @@ body.home-page {
 
 /* Admin Options */
 .admin-notice {
-  background: var(--solstice-blue-light);
+  background: rgba(77, 197, 227, 0.1);
   border: 1px solid var(--solstice-blue);
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
@@ -791,41 +816,43 @@ body.home-page {
   box-shadow: 0 0 0 3px rgba(77, 197, 227, 0.1);
 }
 
-/* Button Enhancements - Modern Design */
+/* Button Enhancements - Based on Photos Page Pattern */
 .btn {
   padding: 14px 28px;
-  border: none;
+  border: 2px solid transparent;
   border-radius: var(--radius-lg);
   font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all 0.3s ease;
   text-decoration: none;
   display: inline-block;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
   position: relative;
   overflow: hidden;
 }
 
 .btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
+  border: 2px solid var(--solstice-blue);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--solstice-blue) 0%, var(--lavender-haze) 100%);
+  background: var(--solstice-blue);
   color: white;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--solstice-blue-dark) 0%, var(--lavender-haze-dark) 100%);
-  box-shadow: 0 6px 20px rgba(77, 197, 227, 0.4);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
 }
 
 .btn-primary:active {
@@ -884,8 +911,8 @@ body.home-page {
 }
 
 .radio-option:hover {
-  border-color: var(--solstice-blue-light);
-  background: var(--cultured-white);
+  border-color: var(--solstice-blue);
+  background: rgba(77, 197, 227, 0.06);
 }
 
 .radio-option input[type="radio"] {
@@ -900,7 +927,7 @@ body.home-page {
 
 .radio-option:has(input[type="radio"]:checked) {
   border-color: var(--solstice-blue);
-  background: var(--blush-pink-light);
+  background: rgba(77, 197, 227, 0.1);
 }
 
 .radio-label {
@@ -929,7 +956,7 @@ body.home-page {
 }
 
 .rsvp-status.status-info {
-  background: var(--solstice-blue-light);
+  background: rgba(77, 197, 227, 0.12);
   color: var(--solstice-blue-dark);
   border: 1px solid var(--solstice-blue);
 }
@@ -1499,7 +1526,7 @@ body:not(.home-page) .full-screen-background {
     135deg,
     rgba(247, 247, 247, 0.85) 0%,
     rgba(125, 211, 237, 0.75) 30%,
-    rgba(237, 159, 227, 0.75) 70%,
+    rgba(139, 159, 212, 0.75) 70%,
     rgba(251, 207, 232, 0.85) 100%
   );
   z-index: 2;
@@ -2265,7 +2292,7 @@ body:not(.home-page) .full-screen-background {
       135deg,
       rgba(247, 247, 247, 0.9) 0%,
       rgba(125, 211, 237, 0.8) 30%,
-      rgba(237, 159, 227, 0.8) 70%,
+      rgba(139, 159, 212, 0.8) 70%,
       rgba(251, 207, 232, 0.9) 100%
     );
   }
@@ -2372,7 +2399,7 @@ body:not(.home-page) .full-screen-background {
       135deg,
       rgba(247, 247, 247, 0.95) 0%,
       rgba(125, 211, 237, 0.85) 30%,
-      rgba(237, 159, 227, 0.85) 70%,
+      rgba(139, 159, 212, 0.85) 70%,
       rgba(251, 207, 232, 0.95) 100%
     );
   }
@@ -2617,13 +2644,13 @@ body:not(.home-page) .full-screen-background {
 
 /* Form styling inherits from main Form Components section above */
 
-/* Authentication Button */
+/* Authentication Button - Photos Page Pattern */
 .auth-button {
   width: 100%;
   padding: 15px;
-  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  background: var(--solstice-blue);
   color: var(--pure-white);
-  border: none;
+  border: 2px solid var(--solstice-blue);
   border-radius: 10px;
   font-size: 18px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -2631,11 +2658,15 @@ body:not(.home-page) .full-screen-background {
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
 }
 
 .auth-button:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
+  border: 2px solid var(--solstice-blue);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(77, 197, 227, 0.3);
 }
 
 .auth-button:active {
@@ -2812,9 +2843,9 @@ body:not(.home-page) .full-screen-background {
 
 .logout-btn {
   padding: var(--spacing-sm) var(--spacing-md);
-  background: linear-gradient(135deg, var(--lavender-haze), var(--blush-pink));
+  background: var(--solstice-blue);
   color: var(--pure-white);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--solstice-blue);
   border-radius: var(--radius-md);
   font-size: 14px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -2822,18 +2853,22 @@ body:not(.home-page) .full-screen-background {
   transition: all 0.3s ease;
   text-decoration: none;
   font-weight: 400;
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
 }
 
 .logout-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(237, 159, 227, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
+  border: 2px solid var(--solstice-blue);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .login-btn {
   padding: var(--spacing-sm) var(--spacing-md);
-  background: linear-gradient(135deg, var(--solstice-blue), var(--lavender-haze));
+  background: var(--solstice-blue);
   color: var(--pure-white);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--solstice-blue);
   border-radius: var(--radius-md);
   font-size: 14px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -2841,11 +2876,15 @@ body:not(.home-page) .full-screen-background {
   transition: all 0.3s ease;
   text-decoration: none;
   font-weight: 400;
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
 }
 
 .login-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(77, 197, 227, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--slate-gray);
+  border: 2px solid var(--solstice-blue);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Responsive Authentication */
@@ -3546,7 +3585,7 @@ textarea {
 .btn-primary {
   background: var(--solstice-blue);
   color: var(--pure-white);
-  border: 1px solid var(--solstice-blue-dark);
+  border: 2px solid var(--solstice-blue);
   box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
@@ -3558,7 +3597,7 @@ textarea {
 .btn-primary:hover {
   background: rgba(255, 255, 255, 0.8);
   color: var(--slate-gray);
-  border: 1px solid var(--solstice-blue);
+  border: 2px solid var(--solstice-blue);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
@@ -3566,7 +3605,7 @@ textarea {
 .btn-primary:disabled {
   background: #9ca3af;
   color: white;
-  border: 1px solid #9ca3af;
+  border: 2px solid #9ca3af;
   cursor: not-allowed;
 }
 
@@ -3574,7 +3613,7 @@ textarea {
 #open-upload-modal {
   background: var(--solstice-blue) !important;
   color: var(--pure-white) !important;
-  border: 1px solid var(--solstice-blue-dark) !important;
+  border: 2px solid var(--solstice-blue) !important;
   box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3) !important;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
@@ -3603,7 +3642,7 @@ textarea {
 #submit-upload:not(:disabled) {
   background: var(--solstice-blue) !important;
   color: var(--pure-white) !important;
-  border: 1px solid var(--solstice-blue-dark) !important;
+  border: 2px solid var(--solstice-blue) !important;
   box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3) !important;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
@@ -3616,7 +3655,7 @@ textarea {
 #submit-upload:disabled {
   background: #9ca3af !important;
   color: white !important;
-  border: 1px solid #9ca3af !important;
+  border: 2px solid #9ca3af !important;
   cursor: not-allowed;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
@@ -3673,13 +3712,13 @@ textarea {
 .space-y-4 > * + * { margin-top: 1rem; }
 .space-y-2 > * + * { margin-top: 0.5rem; }
 
-/* Emergency button fix */
+/* Submit button styles - Photos Page Pattern */
 button[type="submit"] {
   display: inline-block !important;
   padding: 12px 24px !important;
-  background: #3b82f6 !important;
+  background: var(--solstice-blue) !important;
   color: white !important;
-  border: none !important;
+  border: 2px solid var(--solstice-blue) !important;
   border-radius: 6px !important;
   font-size: 16px !important;
   font-weight: 500 !important;
@@ -3687,15 +3726,23 @@ button[type="submit"] {
   text-decoration: none !important;
   margin-top: 16px !important;
   width: 100% !important;
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
+  transition: all 0.3s ease;
 }
 
 button[type="submit"]:hover {
-  background: #1d4ed8 !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: var(--slate-gray) !important;
+  border: 2px solid var(--solstice-blue) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 button[type="submit"]:disabled {
-  background: #9ca3af !important;
+  background: var(--soft-gray) !important;
   cursor: not-allowed !important;
+  box-shadow: none;
+  transform: none;
 }
 
 
@@ -4126,21 +4173,25 @@ button.loading::after {
 }
 
 .accommodations-hero .btn {
-  background: white;
-  color: var(--solstice-blue-dark);
+  background: white !important;
+  color: var(--solstice-blue-dark) !important;
   font-weight: 600;
   padding: 1rem 2.5rem;
   font-size: var(--text-lg);
   border-radius: var(--radius-xl);
+  border: 2px solid white !important;
   text-decoration: none;
   display: inline-block;
-  transition: all var(--transition-normal);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
 }
 
 .accommodations-hero .btn:hover {
+  background: var(--solstice-blue-dark) !important;
+  color: white !important;
+  border: 2px solid var(--solstice-blue-dark) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Content Container */
@@ -4175,7 +4226,7 @@ button.loading::after {
 }
 
 .hotel-card-header {
-  background: linear-gradient(135deg, rgba(77, 197, 227, 0.08) 0%, rgba(237, 159, 227, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(77, 197, 227, 0.08) 0%, rgba(139, 159, 212, 0.08) 100%);
   padding: 1.5rem 2rem;
   border-bottom: 1px solid rgba(77, 197, 227, 0.15);
 }
@@ -4308,7 +4359,7 @@ button.loading::after {
 }
 
 .date-item.date-highlight {
-  background: linear-gradient(135deg, rgba(77, 197, 227, 0.15) 0%, rgba(237, 159, 227, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(77, 197, 227, 0.15) 0%, rgba(139, 159, 212, 0.15) 100%);
   border: 1px solid rgba(77, 197, 227, 0.3);
 }
 
@@ -4383,7 +4434,7 @@ button.loading::after {
 
 /* Urgency Notice */
 .booking-urgency {
-  background: linear-gradient(135deg, rgba(77, 197, 227, 0.05) 0%, rgba(237, 159, 227, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(77, 197, 227, 0.05) 0%, rgba(139, 159, 212, 0.05) 100%);
   border-radius: var(--radius-md);
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -4397,28 +4448,32 @@ button.loading::after {
   text-align: center;
 }
 
-/* Booking CTA */
+/* Booking CTA - Photos Page Pattern */
 .booking-cta {
   text-align: center;
 }
 
 .booking-cta .btn {
-  background: linear-gradient(135deg, var(--solstice-blue) 0%, var(--lavender-haze) 100%);
-  color: white;
+  background: var(--solstice-blue) !important;
+  color: white !important;
   font-weight: 600;
   padding: 1rem 2rem;
   font-size: var(--text-base);
   border-radius: var(--radius-xl);
   text-decoration: none;
   display: inline-block;
-  transition: all var(--transition-normal);
-  border: none;
+  transition: all 0.3s ease;
+  border: 2px solid var(--solstice-blue) !important;
   cursor: pointer;
+  box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3) !important;
 }
 
 .booking-cta .btn:hover {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: var(--slate-gray) !important;
+  border: 2px solid var(--solstice-blue) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(77, 197, 227, 0.3);
 }
 
 /* FAQ Section */
