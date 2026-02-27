@@ -337,7 +337,7 @@ body:not(.home-page) .nav-link:hover {
   color: var(--pure-white);
   background: var(--solstice-blue);
   backdrop-filter: blur(15px);
-  border: 1px solid var(--solstice-blue-dark);
+  border: 1px solid var(--solstice-blue);
   box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
   transform: translateY(-2px) scale(1.05);
 }
@@ -440,7 +440,7 @@ body.home-page .mobile-menu {
 .mobile-nav .nav-link:hover {
   color: var(--pure-white);
   background: var(--solstice-blue);
-  border: 1px solid var(--solstice-blue-dark);
+  border: 1px solid var(--solstice-blue);
   box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
   transform: translateY(-2px);
 }
@@ -3003,7 +3003,7 @@ body:not(.home-page) .full-screen-background {
 .category-btn:hover {
   color: var(--pure-white);
   background: var(--solstice-blue);
-  border: 1px solid var(--solstice-blue-dark);
+  border: 1px solid var(--solstice-blue);
   box-shadow: 0 4px 15px rgba(77, 197, 227, 0.3);
   transform: translateY(-2px) scale(1.05);
 }
@@ -4187,9 +4187,9 @@ button.loading::after {
 }
 
 .accommodations-hero .btn:hover {
-  background: var(--solstice-blue-dark) !important;
+  background: var(--solstice-blue) !important;
   color: white !important;
-  border: 2px solid var(--solstice-blue-dark) !important;
+  border: 2px solid var(--solstice-blue) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(-2px);
 }
