@@ -238,50 +238,26 @@ Keep track of pending migrations in conversation:
 
 ---
 
-## Current Development Priorities (IMPORTANT)
+## Current Development Priorities
 
-**Timeline:** Initial deployment target is 24-48 hours via Render.com
+**Production URL:** https://patriciajames.fyi (deployed on Render.com)
 
-**Focus Areas (in order of priority):**
+**What's Complete:**
+- ✅ All core pages styled and functional (Home, RSVP, Events, Location, Accommodations, Photos)
+- ✅ Authentication system (registration, login, sessions)
+- ✅ RSVP system with partner support
+- ✅ Static photo gallery with optimized images
+- ✅ Responsive design (mobile, tablet, desktop)
+- ✅ Consistent button styling with standardized hover behavior
+- ✅ Periwinkle color scheme implemented site-wide
+- ✅ Glassmorphism navbar on all pages
 
-1. **UI/UX Improvements** - This is the BIGGEST problem area
-   - CSS styling needs significant work throughout the site
-   - Improve visual design, spacing, typography, colors
-   - Enhance user experience and interactions
-   - Mobile responsiveness needs attention
+**Current Focus:**
+- Database-driven photo system (future enhancement)
+- User photo uploads with moderation (future enhancement)
+- Minor UI polish as needed
 
-2. **Code Review & Refactoring**
-   - Database schema needs review and possible refactoring
-   - Review overall code quality and architecture
-   - Identify and fix technical debt
-   - Ensure code is production-ready
-
-3. **Initial Deployment Preparation**
-   - Landing page is ready and acceptable for launch
-   - Other pages can show "Under Construction" placeholders
-   - Photo gallery is a stretch goal for initial deploy (not essential)
-   - Photo upload/approval features NOT needed for initial deploy
-   - Priority: Get something live quickly, even if minimal
-
-**What's Ready:**
-- ✅ Landing page - acceptable quality for launch
-- ✅ Backend architecture and database schema (needs review)
-- ✅ Authentication system basics
-
-**What Needs Work:**
-- ❌ CSS styling across all pages
-- ❌ UI/UX design and polish
-- ❌ Photo gallery (optional for v1)
-- ❌ RSVP page UI
-- ❌ Events, Location, Accommodations pages (can be placeholders)
-
-**Deployment Strategy:**
-- Use Render.com for hosting
-- Deploy with minimal features working
-- Show "Coming Soon" or "Under Construction" for incomplete pages
-- Iterate and improve after initial launch
-
-**Important:** Refer to the README.md for the overall feature plan and roadmap. The README contains comprehensive information about planned features and development phases.
+**Important:** Refer to `docs/style-guide.md` for the color palette and button patterns. All new UI work should follow these established patterns.
 
 ## Essential Commands
 
@@ -469,28 +445,25 @@ psql -d patricia_james_wedding_dev -f server/database/schema.sql
 - Google Fonts: Cormorant Garamond, Inter, Playfair Display, Dancing Script
 - Responsive design with mobile-first approach
 
-### UI/UX Considerations
+### UI/UX Standards
 
-**Current Issues to Address:**
-- CSS needs comprehensive review and improvement
-- Inconsistent spacing and layout across pages
-- Typography hierarchy may need refinement
-- Color scheme and visual design need polish
-- Mobile responsiveness requires testing and fixes
-- User interactions and feedback (buttons, forms, transitions)
+**Refer to `docs/style-guide.md` for:**
+- Color palette (Solstice Blue, Periwinkle, Light Periwinkle)
+- Button patterns (consistent hover behavior, no layout shifts)
+- Typography (font families and usage)
 
-**Design Approach:**
+**Design Principles:**
 - Elegant, romantic aesthetic appropriate for wedding website
 - Clean, modern interface with good readability
-- Smooth animations and transitions (GSAP already integrated)
-- Accessible and user-friendly forms (especially RSVP)
+- Smooth animations and transitions (GSAP integrated)
+- Accessible and user-friendly forms
+- Consistent button behavior: blue buttons turn white on hover, white buttons turn blue
 
 **When Working on UI/UX:**
-- Prioritize visual consistency across all pages
+- Follow the button pattern in `docs/style-guide.md` to prevent layout shifts
+- Use 2px borders that match background color (invisible until hover)
 - Test responsive design on mobile, tablet, desktop
 - Ensure sufficient color contrast for accessibility
-- Keep interactions intuitive and simple
-- Use the existing font stack effectively
 
 ## Deployment
 
@@ -877,23 +850,18 @@ curl -X GET http://localhost:5001/api/rsvps
 
 ## Common Development Tasks
 
-### Improving UI/UX and Styling (PRIORITY)
+### UI/UX and Styling
+
+**Before making CSS changes, reference:**
+- `docs/style-guide.md` - Color palette, button patterns, typography
 
 **Workflow for CSS improvements:**
-1. Identify the page or component needing work
+1. Check `docs/style-guide.md` for established patterns
 2. Review current styles in `client/src/css/styles.css`
 3. Test changes locally with live reload (`npm run dev`)
 4. Test responsive design (mobile, tablet, desktop)
 5. Ensure changes don't break other pages
-6. Consider accessibility (color contrast, font sizes, focus states)
-
-**Key areas to review:**
-- `client/src/css/styles.css` - Main stylesheet
-- Page layouts and spacing consistency
-- Form styling (especially RSVP form)
-- Button and link hover states
-- Mobile navigation and responsiveness
-- Typography scale and hierarchy
+6. Follow button pattern: 2px borders matching background color
 
 **Testing UI changes:**
 ```bash
@@ -905,30 +873,28 @@ cd server && npm run dev
 # Use browser dev tools to test responsive breakpoints
 ```
 
-### Creating "Under Construction" Pages
+### Creating New Pages
 
-For pages not ready for initial deploy:
+**Standard page structure:**
 
 ```html
 <!-- Add to the page div in index.html -->
 <div id="page-name" class="page">
-  <div class="under-construction">
-    <h1>Coming Soon</h1>
-    <p>This page is currently under construction. Check back soon!</p>
+  <div class="container">
+    <h1>Page Title</h1>
+    <!-- Page content -->
   </div>
 </div>
 ```
 
+**Button styling (follow style-guide.md):**
+
 ```css
-/* Add to styles.css */
-.under-construction {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  text-align: center;
-  padding: 2rem;
+/* Standard button - see docs/style-guide.md for full pattern */
+.btn {
+  background: var(--solstice-blue);
+  border: 2px solid var(--solstice-blue); /* invisible border */
+  /* ... */
 }
 ```
 
@@ -1103,27 +1069,24 @@ await sharp(inputBuffer)
 
 ## Current Status Summary
 
-**✅ Working & Ready for Deployment:**
-- Home page (unchanged, looks great)
-- Authentication system (register, login, logout)
-- RSVP form (submit and update RSVPs)
+**✅ Complete & Deployed:**
+- All core pages (Home, RSVP, Events, Location, Accommodations, Photos)
+- Authentication system (register, login, logout, sessions)
+- RSVP form with partner support
 - Static photo gallery (27 engagement photos, optimized)
 - Responsive navigation with glassmorphism
-- Modern UI with gradients and animations
+- Periwinkle color scheme site-wide
+- Standardized button styles (no layout shifts, consistent hover behavior)
+- Mobile-responsive design
 
-**✅ Recently Improved:**
-- Navbar with glassmorphism (all pages except home)
-- Standardized form inputs (consistent 14px padding)
-- Modern button design (gradient backgrounds, hover animations)
-- Enhanced card components (softer shadows, hover effects)
-- Event cards redesigned (color-coded gradients)
-- Photo optimization (95.4% size reduction, 21x faster loading)
+**✅ Recent Improvements:**
+- Button styles standardized using Photos page pattern
+- Hover borders match background color (invisible until hover)
+- Mobile nav buttons match desktop UI
+- Removed pink accent colors, replaced with periwinkle
+- Photo optimization (95.4% size reduction)
 
-**⏳ In Progress:**
-- Location page styling
-- Accommodations page styling
-
-**🔮 Deferred to Post-Launch:**
+**🔮 Future Enhancements:**
 - Database-driven photo gallery
 - User photo upload system
 - Photo moderation/approval workflow
