@@ -9,8 +9,8 @@ const CONFIG = {
   // Wedding Details
   WEDDING_DATE: '2026-06-21', // ISO format: YYYY-MM-DD
   WEDDING_DATE_DISPLAY: 'June 21, 2026',
-  CEREMONY_TIME: '16:00', // 24-hour format
-  CEREMONY_TIME_DISPLAY: '4:00 PM',
+  CEREMONY_TIME: '17:00', // 24-hour format
+  CEREMONY_TIME_DISPLAY: '5:00 PM',
   RECEPTION_TIME: '18:00', // 24-hour format
   RECEPTION_TIME_DISPLAY: '6:00 PM',
 
