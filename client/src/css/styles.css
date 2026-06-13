@@ -2018,6 +2018,24 @@ body:not(.home-page) .full-screen-background {
   margin: 0 0 var(--spacing-xs);
 }
 
+.timeline-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border: 1px solid #F59E0B;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: #92400E;
+}
+
+.timeline-warning .warning-icon {
+  font-size: 1.2em;
+}
+
 
 @media (max-width: 600px) {
   .events-timeline {

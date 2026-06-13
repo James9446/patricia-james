@@ -11,8 +11,8 @@ const CONFIG = {
   WEDDING_DATE_DISPLAY: 'June 21, 2026',
   CEREMONY_TIME: '17:00', // 24-hour format
   CEREMONY_TIME_DISPLAY: '5:00 PM',
-  RECEPTION_TIME: '18:00', // 24-hour format
-  RECEPTION_TIME_DISPLAY: '6:00 PM',
+  RECEPTION_TIME: '17:40', // 24-hour format
+  RECEPTION_TIME_DISPLAY: '5:40 PM',
 
   // Venue Information
   VENUE_NAME: 'Presidio Officers\' Club',
